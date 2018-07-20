@@ -1,9 +1,21 @@
+"""
+Created on July 17, 2018
+
+This module is meant to be used as a helper for other
+Watchmen scripts. Most of this class can be utilized
+for verifying simple checks in S3.
+
+@author Daryan Hanshew
+@email dhanshew@infoblox.com
+
+"""
+
 # External Libraries
 import boto3
 from botocore.exceptions import ClientError
 
 
-class Watchmen:
+class Watchmen(object):
     """
     universal watchmen class
     """
