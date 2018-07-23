@@ -16,7 +16,7 @@ from logging import getLogger
 import pytz
 
 # Watchmen imports
-from watchmen.utils.universal_watchman import Watchmen
+from watchmen.utils.universal_watchmen import Watchmen
 
 LOGGER = getLogger(__name__)
 
@@ -63,7 +63,7 @@ def main():
     status = SUCCESS_MESSAGE
     # Feeds are on both the same time
     check_time = datetime.now(pytz.utc) - timedelta(hours=1)
-    # Hyphen before removes 0 in front of values.
+    # Hyphen before removes 0 in front of values. Eg 2018_07_06 becomes 2018_7_6
     parsed_date_time = check_time.strftime("%Y_%-m_%-d").split('_')
     file_path = '/' + parsed_date_time[0] + '/' + parsed_date_time[1] + '/' + parsed_date_time[2] + '/' + FILE_START
     domain_check = check_for_existing_files(DOMAINS_PATH + file_path, check_time)

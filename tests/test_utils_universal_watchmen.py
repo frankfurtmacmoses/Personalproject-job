@@ -1,7 +1,7 @@
 import unittest
 from mock import patch, MagicMock
 from moto import mock_s3
-from watchmen.utils.universal_watchman import Watchmen
+from watchmen.utils.universal_watchmen import Watchmen
 from botocore.exceptions import ClientError
 
 

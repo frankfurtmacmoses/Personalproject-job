@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "WatchmenBucket",
+    "ParameterValue": "cyber-intel"
+  },
+  {
+    "ParameterKey": "WatchmenBuildsPrefix",
+    "ParameterValue": "watchmen/builds"
+  },
+  {
+    "ParameterKey": "WatchmenLambdasZipFile",
+    "ParameterValue": "watchmen-lambdas.zip"
+  }
+]

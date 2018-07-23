@@ -3,10 +3,8 @@
   "Parameters": {
     "Environment": {
       "Description": "Environment to be deployed.",
-      "Type": "String",
-      "Default": "dev"
+      "Type": "String"
     },
-    "WatchmenLambdaExecutionRoleArn": "???",
     "WatchmenBucket": {
       "Description": "The Watchmen bucket",
       "Type": "String"
@@ -45,11 +43,11 @@
         },
         "Description": "Monitors NOH/D Feed hourly.",
         "Handler": "handler.main",
-        "MemorySize": 128,
+        "MemorySize": 256,
         "Role": {
-
+          "Ref": "WatchmenLambdaExecutionRole"
         },
-        "Timeout": 3,
+        "Timeout": 30,
         "Tags": [
           {"Key": "Owner", "Value": "CyberIntel"},
           {"Key": "Product", "Value": "Watchmen"},
@@ -91,9 +89,9 @@
         "Handler": "handler.main",
         "MemorySize": 128,
         "Role": {
-
+          "Ref": "WatchmenLambdaExecutionRole"
         },
-        "Timeout": 3,
+        "Timeout": 7,
         "Tags": [
           {"Key": "Owner", "Value": "CyberIntel"},
           {"Key": "Product", "Value": "Watchmen"},
@@ -106,6 +104,102 @@
                 "IsProd",
                 "cyberint-prod",
                 "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "MolochScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A hourly event that kicks off Moloch Watchman.",
+        "ScheduleExpression": "cron(59 * * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "MolochScheduler",
+            "Arn": {
+              "Fn:GetAtt": ["WatchmenMolochLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
+    "SilhouetteScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A daily event that kicks off Silhouette Watchman.",
+        "ScheduleExpression": "cron(0 0 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "SilhouetteScheduler",
+            "Arn": {
+              "Fn:GetAtt": ["WatchmenSilhouetteLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
+    "WatchmenLambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [
+              "WatchmenLambdaExecutionRole",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  "WatchmenLambdaExecutionRole",
+                  {
+                    "Ref": "Environment"
+                  }
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudwatch:DescribeAlarmsForMetric",
+                    "cloudwatch:PutMetricAlarm",
+                    "lambda:InvokeFunction",
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "s3:Get*",
+                    "s3:List*"
+                  ],
+                  "Resource": "*"
+                }
               ]
             }
           }

@@ -16,7 +16,7 @@ import pytz
 import json
 
 # Watchmen imports
-from watchmen.utils.universal_watchman import Watchmen
+from watchmen.utils.universal_watchmen import Watchmen
 
 LOGGER = getLogger(__name__)
 

@@ -160,6 +160,32 @@ build-lambdas: $(PROJECT)_build.tee
 	@echo "- DONE: $@"
 	@echo ""
 
+deploy-cf: build
+	@echo
+	@echo "--- Publising AWS cloudformation [$(BUILD_ENV)] ---"
+	BUILD_ENV=$(BUILD_ENV) $(MAKE_PUBLISH)
+	@echo
+	@echo "--- Deploying AWS cloudformation [$(BUILD_ENV)] ---"
+	CHECK_STACK=$(CHECK_STACK) PREFIX_NAME="$(PREFIX_NAME)" $(MAKE_CF) "$(STACK_NAME)" "$(BUILD_ENV)"
+	@echo "- DONE: $@"
+
+deploy-cf-prod: build
+	@echo
+	@echo "--- Publising AWS cloudformation [prod] ---"
+	BUILD_ENV=prod $(MAKE_PUBLISH)
+	@echo
+	@echo "--- Deploying AWS cloudformation [prod] ---"
+	CHECK_STACK=$(CHECK_STACK) PREFIX_NAME="$(PREFIX_NAME)" $(MAKE_CF) "$(STACK_NAME)" prod
+	@echo "- DONE: $@"
+
+deploy-cf-test: build
+	@echo
+	@echo "--- Publising AWS cloudformation [test] ---"
+	BUILD_ENV=test $(MAKE_PUBLISH)
+	@echo
+	@echo "--- Deploying AWS cloudformation [test] ---"
+	CHECK_STACK=$(CHECK_STACK) PREFIX_NAME="$(PREFIX_NAME)" $(MAKE_CF) "$(STACK_NAME)" test
+@echo "- DONE: $@"
 
 # setup and dev-setup targets
 $(PYVENV_NAME)/bin/activate: check-tools $(PROJECT)/requirements-dev.txt
