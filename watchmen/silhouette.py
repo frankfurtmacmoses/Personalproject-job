@@ -11,12 +11,14 @@ ensure that data is coming through into S3.
 
 # Python imports
 from datetime import datetime, timedelta
+from logging import getLogger
 import pytz
 import json
 
 # Watchmen imports
 from watchmen.utils.universal_watchman import Watchmen
 
+LOGGER = getLogger(__name__)
 
 SUCCESS_MESSAGE = "Lookalike feed is up and running!"
 FAILURE_MESSAGE = "ERROR: Lookalike feed never added files from yesterday! The feed may be down!"
@@ -56,5 +58,5 @@ def main():
     if not is_status_valid:
         status = FAILURE_MESSAGE
         # raise alarm
-    print status
+    LOGGER.info(status)
     return status

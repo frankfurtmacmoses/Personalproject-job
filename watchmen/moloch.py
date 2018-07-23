@@ -12,17 +12,19 @@ confirm that the feeds have been running within the past hour.
 
 # Python imports
 from datetime import datetime, timedelta
+from logging import getLogger
 import pytz
 
 # Watchmen imports
 from watchmen.utils.universal_watchman import Watchmen
 
+LOGGER = getLogger(__name__)
 
 SUCCESS_MESSAGE = "NOH/D Feeds are up and running!"
 ERROR = "ERROR: "
-FAILURE_DOMAIN = ERROR + "The domain feed has gone down!"
-FAILURE_HOSTNAME = ERROR + "The hostname feed has gone down!"
-FAILURE_BOTH = ERROR + "Both hostname and domain feed have gone down!"
+FAILURE_DOMAIN = ERROR + "The newly observed domain feed has gone down!"
+FAILURE_HOSTNAME = ERROR + "The newly observed hostname feed has gone down!"
+FAILURE_BOTH = ERROR + "Both newly observed hostname and domain feeds have gone down!"
 
 BUCKET_NAME = "deteque-new-observable-data"
 DOMAINS_PATH = "NewlyObservedDomains"
@@ -75,5 +77,5 @@ def main():
             status = FAILURE_HOSTNAME
         # raise alarm
 
-    print status
+    LOGGER.info(status)
     return status

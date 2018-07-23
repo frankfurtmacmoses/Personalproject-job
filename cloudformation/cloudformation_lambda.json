@@ -1,0 +1,116 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "Environment": {
+      "Description": "Environment to be deployed.",
+      "Type": "String",
+      "Default": "dev"
+    },
+    "WatchmenLambdaExecutionRoleArn": "???",
+    "WatchmenBucket": {
+      "Description": "The Watchmen bucket",
+      "Type": "String"
+    },
+    "WatchmenBuildsPrefix": {
+      "Description": "The S3 prefix that contains the Watchmen builds.",
+      "Type": "String"
+    },
+    "WatchmenLambdasZipFile": {
+      "Description": "The zip file name of the Watchmen lambdas code.",
+      "Type": "String"
+    }
+  },
+  "Conditions": {
+    "IsProd": {"Fn:Equals": [{"Ref": "Environment"}, "prod"]}
+  },
+  "Resources": {
+    "WatchmenMolochLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors NOH/D Feed hourly.",
+        "Handler": "handler.main",
+        "MemorySize": 128,
+        "Role": {
+
+        },
+        "Timeout": 3,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "MolochWatcher"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "WatchmenSilhouetteLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors lookalike feed.",
+        "Handler": "handler.main",
+        "MemorySize": 128,
+        "Role": {
+
+        },
+        "Timeout": 3,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "SilhouetteWatcher"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

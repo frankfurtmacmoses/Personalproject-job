@@ -148,6 +148,17 @@ else
 	VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
 endif
 
+build: test-all build-lambdas
+	@echo ""
+	@echo "- DONE: $@"
+	@echo ""
+
+build-lambdas: $(PROJECT)_build.tee
+	@echo ""
+	@echo "- DIST: $(BUILDS_ALL)"
+	@echo ""
+	@echo "- DONE: $@"
+	@echo ""
 
 
 # setup and dev-setup targets
