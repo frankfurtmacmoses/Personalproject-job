@@ -1,6 +1,6 @@
-'''
-setup for reaper project
-'''
+"""
+setup for watchmen project
+"""
 import os
 
 from setuptools import setup, find_packages

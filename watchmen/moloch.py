@@ -43,13 +43,13 @@ def check_for_existing_files(file_path, check_time):
     :param check_time: the time stamp for files to be checked
     :return: if any file was found
     """
-    watcher = Watchmen()
+    watcher = Watchmen(BUCKET_NAME)
     file_found = False
     count = 0
     # Goes through until it finds a file or all 60 files do not appear in S3.
     while not file_found and count != 60:
         key = file_path + check_time.strftime("%Y_%-m_%-d_%-H_%-m") + FILE_EXT
-        file_found = watcher.validate_file_on_s3(BUCKET_NAME, key)
+        file_found = watcher.validate_file_on_s3(key)
         check_time += timedelta(minutes=1)
         count += 1
     return file_found

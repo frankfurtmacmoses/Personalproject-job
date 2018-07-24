@@ -13,7 +13,7 @@ class TestUniversalWatchman(unittest.TestCase):
         self.example_content_length_zero = {'ContentLength': 0}
         self.example_content_length = {'ContentLength': 200}
         self.example_file = "{Number: 5}"
-        self.watcher = Watchmen()
+        self.watcher = Watchmen(self.example_bucket)
 
     @mock_s3
     def test_validate_file_on_s3(self):
@@ -25,17 +25,17 @@ class TestUniversalWatchman(unittest.TestCase):
         self.watcher.s3_client = client
         # Test when file is not found
         expected_result = False
-        returned_result = self.watcher.validate_file_on_s3(self.example_bucket, self.example_path)
+        returned_result = self.watcher.validate_file_on_s3(self.example_path)
         self.assertEqual(expected_result, returned_result)
         # Test when file is size of zero
         s3_object.get = MagicMock(return_value=self.example_content_length_zero)
         expected_result = False
-        returned_result = self.watcher.validate_file_on_s3(self.example_bucket, self.example_path)
+        returned_result = self.watcher.validate_file_on_s3(self.example_path)
         self.assertEqual(expected_result, returned_result)
         # Test when file is non-zero size
         s3_object.get = MagicMock(return_value=self.example_content_length)
         expected_result = True
-        returned_result = self.watcher.validate_file_on_s3(self.example_bucket, self.example_path)
+        returned_result = self.watcher.validate_file_on_s3(self.example_path)
         self.assertEqual(expected_result, returned_result)
 
     @mock_s3
@@ -47,5 +47,5 @@ class TestUniversalWatchman(unittest.TestCase):
         mock_boto3.return_value = client
         # Test when file contents could not be retrieved
         expected_result = None
-        returned_result = self.watcher.get_file_contents_s3(self.example_bucket, self.example_path)
+        returned_result = self.watcher.get_file_contents_s3(self.example_path)
         self.assertEqual(expected_result, returned_result)
