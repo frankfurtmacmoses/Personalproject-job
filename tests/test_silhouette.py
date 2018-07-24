@@ -30,14 +30,13 @@ class TestSilhouette(unittest.TestCase):
 
     @patch('watchmen.silhouette.process_status')
     def test_main(self, mock_process_status):
+        # Test when lookalike is up
         mock_process_status.return_value = True
         expected_result = SUCCESS_MESSAGE
         returned_result = main()
         self.assertEqual(expected_result, returned_result)
+        # Test when lookalike is down
         mock_process_status.return_value = False
         expected_result = FAILURE_MESSAGE
         returned_result = main()
         self.assertEqual(expected_result, returned_result)
-
-
-

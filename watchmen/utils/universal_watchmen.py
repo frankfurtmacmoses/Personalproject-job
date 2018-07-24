@@ -1,9 +1,27 @@
+"""
+Created on July 17, 2018
+
+This module is meant to be used as a helper for other
+Watchmen scripts. Most of this class can be utilized
+for verifying simple checks in S3.
+
+@author Daryan Hanshew
+@email dhanshew@infoblox.com
+
+"""
+# Python imports
+from logging import getLogger
 # External Libraries
 import boto3
 from botocore.exceptions import ClientError
 
+LOGGER = getLogger(__name__)
 
-class Watchmen:
+FILE_NOT_FOUND_ERROR_MESSAGE = "FILE DOESN'T EXIST!"
+FILE_SIZE_ZERO_ERROR_MESSAGE = "FILE SIZE IS ZERO!"
+
+
+class Watchmen(object):
     """
     universal watchmen class
     """
@@ -23,11 +41,11 @@ class Watchmen:
             # Checks file size if it's zero
             if file_obj.get()['ContentLength'] == 0:
                 is_valid_file = False
-                print "FILE IS OF SIZE ZERO!"
+                LOGGER.info(FILE_SIZE_ZERO_ERROR_MESSAGE)
         except ClientError:
             # Means the file doesn't exist
             is_valid_file = False
-            print "FILE DOES NOT EXIST!"
+            LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
 
         return is_valid_file
 
@@ -42,5 +60,5 @@ class Watchmen:
             file_contents = self.s3_client.Object(bucket_name, key).get()['Body'].read()
         except ClientError:
             file_contents = None
-            print "FILE DOES NOT EXIST!"
+            LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
         return file_contents

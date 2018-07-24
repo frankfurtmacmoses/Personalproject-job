@@ -1,0 +1,210 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "Environment": {
+      "Description": "Environment to be deployed.",
+      "Type": "String"
+    },
+    "WatchmenBucket": {
+      "Description": "The Watchmen bucket",
+      "Type": "String"
+    },
+    "WatchmenBuildsPrefix": {
+      "Description": "The S3 prefix that contains the Watchmen builds.",
+      "Type": "String"
+    },
+    "WatchmenLambdasZipFile": {
+      "Description": "The zip file name of the Watchmen lambdas code.",
+      "Type": "String"
+    }
+  },
+  "Conditions": {
+    "IsProd": {"Fn:Equals": [{"Ref": "Environment"}, "prod"]}
+  },
+  "Resources": {
+    "WatchmenMolochLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors NOH/D Feed hourly.",
+        "Handler": "handler.main",
+        "MemorySize": 256,
+        "Role": {
+          "Ref": "WatchmenLambdaExecutionRole"
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "MolochWatcher"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "WatchmenSilhouetteLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors lookalike feed.",
+        "Handler": "handler.main",
+        "MemorySize": 128,
+        "Role": {
+          "Ref": "WatchmenLambdaExecutionRole"
+        },
+        "Timeout": 7,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "SilhouetteWatcher"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "MolochScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A hourly event that kicks off Moloch Watchman.",
+        "ScheduleExpression": "cron(59 * * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "MolochScheduler",
+            "Arn": {
+              "Fn:GetAtt": ["WatchmenMolochLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
+    "SilhouetteScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A daily event that kicks off Silhouette Watchman.",
+        "ScheduleExpression": "cron(0 0 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "SilhouetteScheduler",
+            "Arn": {
+              "Fn:GetAtt": ["WatchmenSilhouetteLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
+    "WatchmenLambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Join": [
+            "",
+            [
+              "WatchmenLambdaExecutionRole",
+              {
+                "Ref": "Environment"
+              }
+            ]
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "",
+                [
+                  "WatchmenLambdaExecutionRole",
+                  {
+                    "Ref": "Environment"
+                  }
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudwatch:DescribeAlarmsForMetric",
+                    "cloudwatch:PutMetricAlarm",
+                    "lambda:InvokeFunction",
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "s3:Get*",
+                    "s3:List*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
