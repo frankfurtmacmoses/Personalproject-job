@@ -9,7 +9,7 @@
   },
   {
     "ParameterKey": "WatchmenBuildsPrefix",
-    "ParameterValue": "watchmen/builds"
+    "ParameterValue": "__WATCHMEN_BUILDS_PREFIX__"
   },
   {
     "ParameterKey": "WatchmenLambdasZipFile",
