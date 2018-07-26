@@ -19,6 +19,7 @@ class TestMoloch(unittest.TestCase):
             year=self.year, month=self.month, day=self.day,
             hour=self.hour, minute=self.minute, tzinfo=pytz.utc)
         self.example_file_path = 'somepath/to/a/file'
+        self.example_exception_msg = "Something went wrong :("
 
     @mock_s3
     @patch('watchmen.moloch.Watchmen.validate_file_on_s3')
@@ -39,8 +40,9 @@ class TestMoloch(unittest.TestCase):
         returned_result = check_for_existing_files(self.example_file_path, self.example_now)
         self.assertEqual(expected_result, returned_result)
 
+    @patch('watchmen.moloch.raise_alarm')
     @patch('watchmen.moloch.check_for_existing_files')
-    def test_main(self, mock_check):
+    def test_main(self, mock_check, mock_alarm):
         # Test when both feeds are up
         mock_check.side_effect = [True, True]
         expected_result = SUCCESS_MESSAGE
@@ -59,5 +61,10 @@ class TestMoloch(unittest.TestCase):
         # Test when hostname feed is down
         mock_check.side_effect = [True, False]
         expected_result = FAILURE_HOSTNAME
+        returned_result = main()
+        self.assertEqual(expected_result, returned_result)
+        # Test when exception is thrown
+        mock_check.side_effect = Exception(self.example_exception_msg)
+        expected_result = FAILURE_BOTH
         returned_result = main()
         self.assertEqual(expected_result, returned_result)

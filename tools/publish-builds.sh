@@ -26,8 +26,6 @@ builds_path="${script_base}/builds"
 PUBLISH_DATA="${1:-None}"
 PROJECT="${PROJECT:-watchmen}"
 CONFIGURATION="${script_base}/tools/deploy-${PROJECT}.json"
-REPORTABLE_JSON="tide_reportable_v2.json"
-REPORTABLE_FILE="${script_base}/${PROJECT}/utils/${REPORTABLE_JSON}"
 S3_BUCKET="${S3_BUCKET:-cyber-intel}"
 S3_PREFIX="${S3_PREFIX:-${PROJECT}}"
 S3_PREFIX_BUILDS="${S3_PREFIX}/builds"
@@ -55,16 +53,12 @@ function main() {
 
   check_depends
 
-  if [[ "${PUBLISH_DATA}" == "reportable" ]]; then
-    publish_reportable
-  else
-    if [[ "$@" =~ (-no-build-prefix) ]]; then
-      USE_BUILD_PREFIX="false"
-    fi
-    check_git_commit_sha_or_tag
-    copy_cloudformation_templates
-    publish_builds
+  if [[ "$@" =~ (-no-build-prefix) ]]; then
+    USE_BUILD_PREFIX="false"
   fi
+  check_git_commit_sha_or_tag
+  copy_cloudformation_templates
+  publish_builds
 
   echo "----------------------------------------------------------------------"
   echo "- DONE: publish succeeded."
@@ -265,18 +259,6 @@ function publish_builds() {
   echo "- info: ${PROJECT} build published."
   echo "source: ${BUILD_DIR}"
   echo "target: ${s3_url}"
-}
-
-# publish TIDE reportable mapping configuration to s3
-function publish_reportable() {
-  local s3_src="${BUILD_DIR}/${REPORTABLE_JSON}"
-  local s3_url="s3://${S3_BUCKET}/${REPORTABLE_JSON}"
-  local s3_cmd="aws s3 cp ${s3_src} ${s3_url} --acl public-read"
-
-  echo -e "\nPublishing TIDE reportable config to ${s3_url} ...\n\$ ${s3_cmd}\n"
-  ${s3_cmd}
-
-  check_return_code $? "${s3_cmd}"
 }
 
 # log_error() func: exits with non-zero code on error unless $2 specified

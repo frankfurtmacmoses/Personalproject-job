@@ -22,8 +22,11 @@ from cyberint_aws.sns_alerts import raise_alarm
 LOGGER = getLogger(__name__)
 
 SUCCESS_MESSAGE = "Lookalike feed is up and running!"
-FAILURE_MESSAGE = "ERROR: Lookalike feed never added files from yesterday! The feed may be down!"
+FAILURE_MESSAGE = "ERROR: Lookalike feed never added files from yesterday! " \
+                  "The feed may be down or simply did not complete!"
+FAILURE_SUBJECT = "Silhouette watchmen detected an issue with lookalike feed!"
 SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
+
 
 COMPLETED_STATUS = "COMPLETED"
 
@@ -56,9 +59,14 @@ def main():
     :return: status of whether lookalike feed working or not
     """
     status = SUCCESS_MESSAGE
-    is_status_valid = process_status()
+    is_status_valid = False
+    try:
+        is_status_valid = process_status()
+    except Exception as ex:
+        LOGGER.error(ex)
+
     if not is_status_valid:
         status = FAILURE_MESSAGE
-        raise_alarm(SNS_TOPIC_ARN, status, status)
+        raise_alarm(SNS_TOPIC_ARN, status, FAILURE_SUBJECT)
     LOGGER.info(status)
     return status
