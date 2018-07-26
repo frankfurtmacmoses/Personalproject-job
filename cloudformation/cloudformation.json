@@ -19,7 +19,7 @@
     }
   },
   "Conditions": {
-    "IsProd": {"Fn:Equals": [{"Ref": "Environment"}, "prod"]}
+    "IsProd": {"Fn::Equals": [{"Ref": "Environment"}, "prod"]}
   },
   "Resources": {
     "WatchmenMolochLambda": {
@@ -120,7 +120,7 @@
           {
             "Id": "MolochScheduler",
             "Arn": {
-              "Fn:GetAtt": ["WatchmenMolochLambda", "Arn"]
+              "Fn::GetAtt": ["WatchmenMolochLambda", "Arn"]
             }
           }
         ]
@@ -136,7 +136,7 @@
           {
             "Id": "SilhouetteScheduler",
             "Arn": {
-              "Fn:GetAtt": ["WatchmenSilhouetteLambda", "Arn"]
+              "Fn::GetAtt": ["WatchmenSilhouetteLambda", "Arn"]
             }
           }
         ]

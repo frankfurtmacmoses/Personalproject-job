@@ -12,8 +12,6 @@
 #   $1 == '--list' to list stacks (any excluding Status contains 'DELETE')
 #   $3 == '--delete' to delete stack ${PREFIX_NAME}-$1-$2
 # or
-#   $@ == '--stage' continue to deploy stage for api gateway stack
-#   $@ == '--stage-only' to check and deploy stage for existing stack
 #   $@ =~ '--test' to print command only (same as DRY_RUN_ONLY=1)
 #   $@ =~ '--s3' to use s3 files (same as USE_S3=1)
 #
@@ -23,10 +21,10 @@
 #   AWS_SECRET_ACCESS_KEY
 #   AWS_DEFAULT_REGION (optional)
 #   S3_BUCKET (optional, default 'cyber-intel')
-#   S3_PREFIX (optional, default 'reaper')
+#   S3_PREFIX (optional, default 'watchmen')
 #   S3_PREFIX_BUILDS (optional, default '${S3_PREFIX}/builds')
 #   PREFIX_NAME (optional, default 'CyberInt')
-#   STACK_NAME (optional, default 'Reaper')
+#   STACK_NAME (optional, default 'Watchmen')
 #   BUILD_ENV (optional, default to $2 or 'dev')
 # and git workspace having ".git" folder with optional
 #   GIT_REVISION_TAG (or using current commit sha)
@@ -46,10 +44,9 @@ stacks_list="[]"
 BUILD_ENV="${BUILD_ENV:-dev}"
 CHECK_STACK="${CHECK_STACK:-false}"
 CHECK_STACK_ONLY="${CHECK_STACK_ONLY:-false}"
-REST_API_REF_KEY="${REST_API_REF_KEY:-ReaperRestApiId}"
-STACK_NAME="${STACK_NAME:-Reaper}"
+STACK_NAME="${STACK_NAME:-Watchmen}"
 S3_BUCKET="${S3_BUCKET:-cyber-intel}"
-S3_PREFIX="${S3_PREFIX:-reaper}"
+S3_PREFIX="${S3_PREFIX:-watchmen}"
 S3_PREFIX_BUILDS="${S3_PREFIX_BUILDS:-${S3_PREFIX}/builds}"
 DATA_S3_BUCKET="${DATA_S3_BUCKET:-${S3_BUCKET}}"
 DEPLOY_TAG="${GIT_REVISION_TAG:-None}"
@@ -109,7 +106,6 @@ function main() {
     do_deployment "${CF_STACK_NAME}"
   fi
 
-  do_stage_stack "${CF_STACK_NAME}"
   do_cleanup
   do_summary
 }
@@ -139,63 +135,6 @@ function abspath() {
   echo /"${outp[*]}"
   )
   set -u
-}
-
-# check deployment-id by rest-api-id
-#   --- return: set CF_DEPLOYMENT_ID (the deployment-id to create stage)
-function check_cf_deployment_id() {
-  if [[ "${1:-${CF_REST_API_ID}}" == "" ]]; then return; fi
-
-  local rest_id="${1:-${CF_REST_API_ID}}"
-  echo ""
-  echo "Checking deployment-id per rest-api-id: ${rest_id}"
-  echo "......................................................................."
-
-  local aws_cli="aws apigateway"
-  local aws_cmd="${aws_cli} get-deployments"
-  local cmd_arg="--rest-api-id ${rest_id}"
-  local s_query=".items[0].id"
-  local cmd_val="$(${aws_cmd} ${cmd_arg}|jq -M -r ${s_query} 2>/dev/null)"
-
-  if [[ "${cmd_val}" == "" ]]; then
-    echo "${aws_cmd} ${cmd_arg}|jq -M -r '${s_query}'"
-    ${aws_cmd} ${cmd_arg}|jq -M -r '${s_query}'
-    log_trace "Cannot find deployment id for stack: ${cf_name}" WARNING
-  else
-    log_debug "${CF_STACK_NAME}-ApiGatewayStack Deployment Id= ${cmd_val}"
-  fi
-
-  CF_DEPLOYMENT_ID="${cmd_val}"
-}
-
-# check rest-api-id from ApiGatewayStack
-#   --- return: set CF_REST_API_ID (the rest-api-id to create stage)
-function check_cf_rest_api_id() {
-  local cf_name="${1:-${CF_STACK_NAME}}"
-  echo ""
-  echo "Checking rest-api-id [${REST_API_REF_KEY}] value from stack: ${cf_name}"
-  echo "......................................................................."
-
-  local aws_cli="aws cloudformation"
-  local aws_cmd="${aws_cli} describe-stacks"
-  local cmd_arg="--stack-name ${cf_name}"
-  local cmd_out="$(${aws_cmd} 2>/dev/null)"  # no arg to search in all stacks
-  local keyword="${cf_name}-ApiGatewayStack"
-  local s_query=".Stacks[]|select(.StackId|tostring|contains(\"${keyword}\"))"
-  local api_out="$(echo ${cmd_out}|jq -M -r ${s_query} 2>/dev/null)"
-  local o_query=".Outputs[]|select(.OutputKey==\"${REST_API_REF_KEY}\")|.OutputValue"
-  local api_val="$(echo ${api_out}|jq -M -r ${o_query} 2>/dev/null)"
-
-  if [[ "${api_val}" == "" ]]; then
-    echo "Filter result of ${keyword} -"
-    echo "${api_out}"
-    echo "......................................................................."
-    log_trace "Cannot find ApiGatewayStack id for stack: ${cf_name}" WARNING
-  else
-    log_debug "${cf_name}-ApiGatewayStack Api Id= ${api_val}"
-  fi
-
-  CF_REST_API_ID="${api_val}"
 }
 
 # check stack status
@@ -512,7 +451,7 @@ function create_cloudformation_parameter_file() {
   while IFS='' read -r line || [[ -n "${line}" ]]; do
     line="${line//__BUILD_ENV__/${BUILD_ENV}}"
     line="${line//__DATA_S3_BUCKET__/${DATA_S3_BUCKET}}"
-    line="${line//__REAPER_BUILDS_PREFIX__/${S3_PREFIX_BUILDS}}"
+    line="${line//__WATCHMEN_BUILDS_PREFIX__/${S3_PREFIX_BUILDS}}"
     line="${line//__S3_BUCKET__/${S3_BUCKET}}"
     echo "${line}"
   done < "${src}" > "${dst}"
@@ -599,7 +538,7 @@ function do_deploy_stack() {
     fi
   else
     cmd_kv1="ParameterKey=Environment,ParameterValue=${BUILD_ENV}"
-    cmd_kv2="ParameterKey=ReaperDataBucket,ParameterValue=${DATA_S3_BUCKET}"
+    cmd_kv2="ParameterKey=WatchmenDataBucket,ParameterValue=${DATA_S3_BUCKET}"
     cmd_kv3="ParameterKey=ReaperBucket,ParameterValue=${S3_BUCKET}"
     cmd_kv4="ParameterKey=ReaperBuildsPrefix,ParameterValue=${S3_PREFIX}"
     cmd_opt="${cmd_opt} --parameters ${cmd_kv1} ${cmd_kv2} ${cmd_kv3} ${cmd_kv4}"
@@ -641,63 +580,6 @@ function do_list_stacks() {
   echo "${stacks_list}" | jq -M -r "${filters}"
   echo ""
   set -u
-}
-
-# do_stage_stack(): create stage for api gateway
-function do_stage_stack() {
-  local cf_name="${1:-${CF_STACK_NAME}}"
-  local aws_cli="aws apigateway"
-  local aws_cmd="${aws_cli} create-deployment"
-  local cmd_arg="--stage-name ${BUILD_ENV}"
-  local ymd_utc="$(TZ=UTC date +'%Y-%m-%d %H:%M:%S')"
-  local cmd_opt="${cf_name} Build.${BUILD_NAME} [${S3_BUCKET}] @ ${ymd_utc}"
-  local cmdline=""
-  set +u
-  echo "......................................................................."
-  echo "Continue stagging for stack: ${cf_name} [stage: ${BUILD_ENV}]"
-  set -u
-
-  if [[ "${CHECK_STACK}" != "true" ]]; then
-    echo "- NOTE: The stack may still be in progress. Use '--stage' option to continue."
-    return
-  fi
-
-  check_cf_stack_status_complete "${cf_name}"
-
-  check_cf_rest_api_id "${cf_name}"
-
-  if [[ "${CF_REST_API_ID}" == "" ]]; then
-    if [[ ! "${CF_STACK_STATUS}" =~ (.+_COMPLETE) ]]; then
-      log_error "Cannot continue since the stack status is not complete."
-    fi
-    log_trace "${cf_name} status: ${CF_STACK_STATUS}"
-    log_error "Cannot find rest-api-id for stack '${cf_name}'."
-    return
-  fi
-
-  cmd_arg="${cmd_arg} --rest-api-id ${CF_REST_API_ID}"
-  cmd_arg="${cmd_arg} --description"
-  cmdline="${aws_cmd} ${cmd_arg}"
-  set +u
-  echo "......................................................................."
-  echo "Creating deployment for stack ${cf_name}"
-  echo -e "  - name: ${cf_name}"
-  echo -e "  - rest: ${CF_REST_API_ID} [stage: ${BUILD_ENV}]"
-  echo -e "  - exec:\n\n${cmdline} '${cmd_opt}'"
-  echo ""
-  set -u
-
-  if [[ "${DRY_RUN_ONLY}" == "true" ]]; then
-    log_trace "Run the following command to create deployment:"
-    echo ""
-    echo "${cmdline} '${cmd_opt}'"
-    echo ""
-    return
-  fi
-
-  ${cmdline} "${cmd_opt}"
-
-  check_return_code $? "${aws_cmd}"
 }
 
 # print out summary info
