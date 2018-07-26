@@ -7,7 +7,8 @@ class TestSilhouette(unittest.TestCase):
 
     def setUp(self):
         self.example_success_json = {"STATE": "COMPLETED"}
-        self.example_failed_json = {"STATE": "ERROR"}
+        self.example_failed_json = {"STATE": "UNCOMPLETED"}
+        self.example_exception_msg = "Something went wrong"
 
     @patch('json.loads')
     @patch('watchmen.silhouette.Watchmen')
@@ -28,8 +29,9 @@ class TestSilhouette(unittest.TestCase):
         returned_result = process_status()
         self.assertEqual(expected_result, returned_result)
 
+    @patch('watchmen.silhouette.raise_alarm')
     @patch('watchmen.silhouette.process_status')
-    def test_main(self, mock_process_status):
+    def test_main(self, mock_process_status, mock_raise_alarm):
         # Test when lookalike is up
         mock_process_status.return_value = True
         expected_result = SUCCESS_MESSAGE
@@ -37,6 +39,12 @@ class TestSilhouette(unittest.TestCase):
         self.assertEqual(expected_result, returned_result)
         # Test when lookalike is down
         mock_process_status.return_value = False
+        expected_result = FAILURE_MESSAGE
+        returned_result = main()
+        self.assertEqual(expected_result, returned_result)
+        self.assertEqual(expected_result, returned_result)
+        # Test when exception is thrown
+        mock_process_status.side_effect = Exception(self.example_exception_msg)
         expected_result = FAILURE_MESSAGE
         returned_result = main()
         self.assertEqual(expected_result, returned_result)
