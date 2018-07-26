@@ -539,8 +539,8 @@ function do_deploy_stack() {
   else
     cmd_kv1="ParameterKey=Environment,ParameterValue=${BUILD_ENV}"
     cmd_kv2="ParameterKey=WatchmenDataBucket,ParameterValue=${DATA_S3_BUCKET}"
-    cmd_kv3="ParameterKey=ReaperBucket,ParameterValue=${S3_BUCKET}"
-    cmd_kv4="ParameterKey=ReaperBuildsPrefix,ParameterValue=${S3_PREFIX}"
+    cmd_kv3="ParameterKey=WatchmenBucket,ParameterValue=${S3_BUCKET}"
+    cmd_kv4="ParameterKey=WatchmenBuildsPrefix,ParameterValue=${S3_PREFIX}"
     cmd_opt="${cmd_opt} --parameters ${cmd_kv1} ${cmd_kv2} ${cmd_kv3} ${cmd_kv4}"
   fi
 
