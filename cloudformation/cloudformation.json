@@ -45,7 +45,10 @@
         "Handler": "handler.main",
         "MemorySize": 256,
         "Role": {
-          "Ref": "WatchmenLambdaExecutionRole"
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
         },
         "Timeout": 30,
         "Tags": [
@@ -89,7 +92,10 @@
         "Handler": "handler.main",
         "MemorySize": 128,
         "Role": {
-          "Ref": "WatchmenLambdaExecutionRole"
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
         },
         "Timeout": 7,
         "Tags": [
@@ -147,7 +153,7 @@
       "Properties": {
         "RoleName": {
           "Fn::Join": [
-            "",
+            "-",
             [
               "WatchmenLambdaExecutionRole",
               {
