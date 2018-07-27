@@ -53,9 +53,10 @@
         "Timeout": 30,
         "Tags": [
           {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Product", "Value": "watchmen"},
           {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "MolochWatcher"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-moloch"},
           {
             "Key": "Env",
             "Value": {
@@ -100,9 +101,10 @@
         "Timeout": 7,
         "Tags": [
           {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Product", "Value": "watchmen"},
           {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "SilhouetteWatcher"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-silhouette"},
           {
             "Key": "Env",
             "Value": {
