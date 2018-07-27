@@ -44,7 +44,7 @@
         "Description": "Monitors NOH/D Feed hourly.",
         "Handler": "handler.main",
         "MemorySize": 256,
-        "Value": {
+        "Role": {
              "Fn::GetAtt": [
               "WatchmenLambdaExecutionRole",
               "Arn"
@@ -91,7 +91,7 @@
         "Description": "Monitors lookalike feed.",
         "Handler": "handler.main",
         "MemorySize": 128,
-        "Value": {
+        "Role": {
              "Fn::GetAtt": [
               "WatchmenLambdaExecutionRole",
               "Arn"
