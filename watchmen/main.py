@@ -44,17 +44,17 @@ from watchmen import moloch
 from watchmen import silhouette
 
 
-def start_moloch_watcher():
+def start_moloch_watcher(event, context):
     """
     Start the moloch watcher for NOH/D feeds.
     :return: The context that the code is being run in.
     """
-    return moloch.main()
+    return moloch.main(event, context)
 
 
-def start_silhouette_watcher():
+def start_silhouette_watcher(event, context):
     """
     Start the silhouette watcher for lookalike feed.
     :return: The context that the code is being run in.
     """
-    return silhouette.main()
+    return silhouette.main(event, context)

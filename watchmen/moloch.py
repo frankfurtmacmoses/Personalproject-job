@@ -59,7 +59,8 @@ def check_for_existing_files(file_path, check_time):
     return file_found
 
 
-def main():
+# pylint: disable=unused-argument
+def main(event, context):
     """
     main function
     :return: status of the NOH/D feed
