@@ -20,6 +20,8 @@ class TestMoloch(unittest.TestCase):
             hour=self.hour, minute=self.minute, tzinfo=pytz.utc)
         self.example_file_path = 'somepath/to/a/file'
         self.example_exception_msg = "Something went wrong :("
+        self.example_event = {}
+        self.example_context = {}
 
     @mock_s3
     @patch('watchmen.moloch.Watchmen.validate_file_on_s3')
@@ -46,25 +48,25 @@ class TestMoloch(unittest.TestCase):
         # Test when both feeds are up
         mock_check.side_effect = [True, True]
         expected_result = SUCCESS_MESSAGE
-        returned_result = main()
+        returned_result = main(self.example_event, self.example_context)
         self.assertEqual(expected_result, returned_result)
         # Test when both feeds are down
         mock_check.side_effect = [False, False]
         expected_result = FAILURE_BOTH
-        returned_result = main()
+        returned_result = main(self.example_event, self.example_context)
         self.assertEqual(expected_result, returned_result)
         # Test when domain feed is down
         mock_check.side_effect = [False, True]
         expected_result = FAILURE_DOMAIN
-        returned_result = main()
+        returned_result = main(self.example_event, self.example_context)
         self.assertEqual(expected_result, returned_result)
         # Test when hostname feed is down
         mock_check.side_effect = [True, False]
         expected_result = FAILURE_HOSTNAME
-        returned_result = main()
+        returned_result = main(self.example_event, self.example_context)
         self.assertEqual(expected_result, returned_result)
         # Test when exception is thrown
         mock_check.side_effect = Exception(self.example_exception_msg)
         expected_result = FAILURE_BOTH
-        returned_result = main()
+        returned_result = main(self.example_event, self.example_context)
         self.assertEqual(expected_result, returned_result)

@@ -53,7 +53,8 @@ def process_status():
     return is_completed
 
 
-def main():
+# pylint: disable=unused-argument
+def main(event, context):
     """
     main
     :return: status of whether lookalike feed working or not

@@ -42,7 +42,7 @@
           }
         },
         "Description": "Monitors NOH/D Feed hourly.",
-        "Handler": "handler.main",
+        "Handler": "handler.start_moloch_watcher",
         "MemorySize": 256,
         "Role": {
              "Fn::GetAtt": [
@@ -53,9 +53,10 @@
         "Timeout": 30,
         "Tags": [
           {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Product", "Value": "watchmen"},
           {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "MolochWatcher"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-moloch"},
           {
             "Key": "Env",
             "Value": {
@@ -89,7 +90,7 @@
           }
         },
         "Description": "Monitors lookalike feed.",
-        "Handler": "handler.main",
+        "Handler": "handler.start_silhouette_watcher",
         "MemorySize": 128,
         "Role": {
              "Fn::GetAtt": [
@@ -100,9 +101,10 @@
         "Timeout": 7,
         "Tags": [
           {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "Watchmen"},
+          {"Key": "Product", "Value": "watchmen"},
           {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "SilhouetteWatcher"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-silhouette"},
           {
             "Key": "Env",
             "Value": {
