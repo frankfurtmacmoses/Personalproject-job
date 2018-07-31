@@ -1,4 +1,4 @@
-boto3 >= 1.4.7
+boto3 == 1.4.7
 pytz==2018.5
 cyberint-aws==0.0.1
 cyberint-watchmen==0.0.1
