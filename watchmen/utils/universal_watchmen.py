@@ -10,23 +10,29 @@ for verifying simple checks in S3.
 
 """
 # Python imports
-from logging import getLogger
+from datetime import datetime, timedelta
+from logging import getLogger, basicConfig, INFO
+import pytz
 # External Libraries
 import boto3
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-LOGGER = getLogger(__name__)
+LOGGER = getLogger("Universal Watchmen")
 
 FILE_NOT_FOUND_ERROR_MESSAGE = "FILE DOESN'T EXIST!"
 FILE_SIZE_ZERO_ERROR_MESSAGE = "FILE SIZE IS ZERO!"
+EMPTY_METRIC_ERROR = "No metric found for: "
 
 
 class Watchmen(object):
     """
     universal watchmen class
     """
-    def __init__(self, bucket_name):
+    def __init__(self, bucket_name=''):
+        basicConfig(level=INFO)
         self.s3_client = boto3.resource('s3')
+        self.dynamo_client = boto3.resource('dynamodb')
         self.bucket_name = bucket_name
 
     def validate_file_on_s3(self, key):
@@ -61,3 +67,23 @@ class Watchmen(object):
             file_contents = None
             LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
         return file_contents
+
+    def get_feed_metrics(self, table_name, feed):
+        check_time = (datetime.now(pytz.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H").replace('/', '')
+        metric = {}
+        table = self.dynamo_client.Table(table_name)
+        response = table.query(
+            KeyConditionExpression=Key('timestamp').eq(check_time)
+        )
+        for item in response['Items']:
+            if item['source'] == feed:
+                metric = item['metric']
+                break
+
+        if not metric:
+            LOGGER.info(EMPTY_METRIC_ERROR + feed)
+        return metric
+
+    @staticmethod
+    def check_feed_metric(metric, minimum, maximum):
+        return minimum < metric < maximum
