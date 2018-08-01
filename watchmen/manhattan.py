@@ -10,7 +10,7 @@ This script is designed to monitor hourly feeds and ensure proper data flow.
 # Python imports
 from logging import getLogger, basicConfig, INFO
 # Cyberint imports
-from watchmen.utils.universal_watchmen import Watchmen  # add to pypi :(
+from cyberint_watchmen.universal_watchmen import Watchmen
 from cyberint_aws.sns_alerts import raise_alarm
 
 LOGGER = getLogger("Manhattan")
@@ -29,7 +29,7 @@ NOT_A_FEED_ERROR = "ERROR: Feed does not exist or is slotted in the wrong class!
 SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
 
 
-def bambenek_c2_ip(watcher, metric):  # nopep8
+def bambenek_c2_ip(watcher, metric):
     """
     Ensures submitted domain range is valid for Bambenek IP Scraper.
     :param watcher: universal watcher instantiation
@@ -39,17 +39,18 @@ def bambenek_c2_ip(watcher, metric):  # nopep8
     return watcher.check_feed_metric(metric['IPV4_TIDE_SUCCESS'], 50, 300)
 
 
-def cox_feed(watcher, metric):  # nopep8
+def cox_feed(watcher, metric):
     """
     Ensures submitted domain range is valid for Cox Feed.
     :param watcher: universal watcher instantiation
     :param metric: metric of feed from dynamo db
     :return: checks for abnormalities in submission rate
     """
-    return watcher.check_feed_metric(metric['IPV4_TIDE_SUCCESS'], 19000, 23000)
+    return watcher.check_feed_metric(metric['IPV4_TIDE_SUCCESS'], 15000, 30000)
 
 
-def Xylitol_CyberCrime(watcher, metric):  # nopep8
+# pylint: disable=invalid-name
+def Xylitol_CyberCrime(watcher, metric):
     """
     Ensures submitted domain range is valid for Cybercrime Scraper.
     :param watcher: universal watcher instantiation
@@ -59,17 +60,19 @@ def Xylitol_CyberCrime(watcher, metric):  # nopep8
     return watcher.check_feed_metric(metric['URI'], 30, 50)
 
 
-def ecrimeX(watcher, metric):  # nopep8
+# pylint: disable=invalid-name
+def ecrimeX(watcher, metric):
     """
     Ensures submitted domain range is valid for Ecrimex Scraper.
     :param watcher: universal watcher instantiation
     :param metric: metric of feed from dynamo db
     :return: checks for abnormalities in submission rate
     """
-    return watcher.check_feed_metric(metric['URI_TIDE_SUCCESS'], 25, 75)
+    return watcher.check_feed_metric(metric['URI_TIDE_SUCCESS'], 25, 400)
 
 
-def G01Pack_DGA(watcher, metric):  # nopep8
+# pylint: disable=invalid-name
+def G01Pack_DGA(watcher, metric):
     """
     Ensures submitted domain range is valid for G01 DGA.
     :param watcher: universal watcher instantiation
@@ -86,21 +89,11 @@ def tracker_h3x_eu(watcher, metric):
     :param metric: metric of feed from dynamo db
     :return: checks for abnormalities in submission rate
     """
-    return watcher.check_feed_metric(metric['URI'], 5, 35)
+    return watcher.check_feed_metric(metric['URI'], 5, 50)
 
 
-def VX_Vault(watcher, metric):  # nopep8
-    """
-    Ensures submitted domain range is valid for Vx Vault Scraper.
-    :param watcher: universal watcher instantiation
-    :param metric: metric of feed from dynamo db
-    :return: checks for abnormalities in submission rate
-    """
-    # Allowed to submit zero URI's
-    return watcher.check_feed_metric(metric['URI_TIDE_SUCCESS'], -1, 10)
-
-
-def Zeus_Tracker(watcher, metric):  # nopep8
+# pylint: disable=invalid-name
+def Zeus_Tracker(watcher, metric):
     """
     Ensures submitted domain range is valid for Zeus Tracker.
     :param watcher: universal watcher instantiation
@@ -110,37 +103,50 @@ def Zeus_Tracker(watcher, metric):  # nopep8
     return watcher.check_feed_metric(metric['URI_TIDE_SUCCESS'], 35, 55)
 
 
+def process_feeds_metrics(feeds_to_check):
+    """
+    Processes all the feeds metrics
+    :return: list of downed feeds and list of feeds that submitted abnormal amounts of domains
+    """
+    watcher = Watchmen()
+    downed_feeds = []
+    submitted_out_of_range_feeds = []
+    for key, feed in feeds_to_check.iteritems():
+        feed_name = str(feed).split()[1]
+        metric = watcher.get_feed_metrics(TABLE_NAME, feed_name)
+        if metric:
+            feed_func = feeds_to_check.get(key, lambda: NOT_A_FEED_ERROR)
+            if not feed_func(watcher, metric):
+                submitted_out_of_range_feeds.append(feed_name)
+        else:
+            downed_feeds.append(feed_name)
+
+    return downed_feeds, submitted_out_of_range_feeds
+
+
 # pylint: disable=unused-argument
 def main(event, context):
     """
     main function
     :return: status of all hourly feeds
     """
-    status = SUCCESS_MESSAGE
     feeds_to_check = {
         1: bambenek_c2_ip, 2: cox_feed, 3: Xylitol_CyberCrime, 4: ecrimeX, 5: G01Pack_DGA,
-        6: tracker_h3x_eu, 7: VX_Vault, 8: Zeus_Tracker
+        6: tracker_h3x_eu, 7: Zeus_Tracker
     }
-    watcher = Watchmen()
-    downed_feeds = []
-    submitted_out_of_range_feeds = []
-    for count, feed in feeds_to_check.iteritems():
-        feed_name = str(feed).split()[1]
-        metric = watcher.get_feed_metrics(TABLE_NAME, feed_name)
-        if metric:
-            feed_func = feeds_to_check.get(count, lambda: NOT_A_FEED_ERROR)
-            if not feed_func(watcher, metric):
-                submitted_out_of_range_feeds.append(feed_name)
-        else:
-            downed_feeds.append(feed_name)
-
-    if downed_feeds or submitted_out_of_range_feeds:
+    status = SUCCESS_MESSAGE
+    try:
+        downed_feeds, submitted_out_of_range_feeds = process_feeds_metrics(feeds_to_check)
+        if downed_feeds or submitted_out_of_range_feeds:
+            status = FAILURE_MESSAGE
+            message = (
+                    status + '\n' + ERROR_FEEDS + str(downed_feeds) + '\n' +
+                    ABNORMAL_SUBMISSIONS_MESSAGE + str(submitted_out_of_range_feeds)
+            )
+            raise_alarm(SNS_TOPIC_ARN, message, SUBJECT_MESSAGE)
+    except Exception as ex:
         status = FAILURE_MESSAGE
-        message = (
-                status + '\n' + ERROR_FEEDS + str(downed_feeds) + '\n' +
-                ABNORMAL_SUBMISSIONS_MESSAGE + str(submitted_out_of_range_feeds)
-        )
-        print message
-        # raise_alarm(SNS_TOPIC_ARN, message, SUBJECT_MESSAGE)
+        LOGGER.error(ex)
+
     LOGGER.info(status)
     return status

@@ -138,7 +138,7 @@
       "Type": "AWS::Events::Rule",
       "Properties": {
         "Description": "A daily event that kicks off Silhouette Watchman.",
-        "ScheduleExpression": "cron(0 0 * * ? *)",
+        "ScheduleExpression": "cron(15 0 * * ? *)",
         "State": "ENABLED",
         "Targets": [
           {
@@ -237,12 +237,14 @@
                   "Action": [
                     "cloudwatch:DescribeAlarmsForMetric",
                     "cloudwatch:PutMetricAlarm",
+                    "dynamodb:Query",
                     "lambda:InvokeFunction",
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
                     "logs:PutLogEvents",
                     "s3:Get*",
-                    "s3:List*"
+                    "s3:List*",
+                    "SNS:Publish"
                   ],
                   "Resource": "*"
                 }

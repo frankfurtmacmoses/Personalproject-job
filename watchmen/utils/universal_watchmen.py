@@ -68,16 +68,22 @@ class Watchmen(object):
             LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
         return file_contents
 
-    def get_feed_metrics(self, table_name, feed):
+    def get_hourly_feed_metrics(self, table_name, feed):
+        """
+        Retrieves metrics for a particular feed.
+        :param table_name: name of table being searched
+        :param feed: feed itself being checked
+        :return: metrics for a particular feed
+        """
         check_time = (datetime.now(pytz.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H").replace('/', '')
         metric = {}
         table = self.dynamo_client.Table(table_name)
         response = table.query(
             KeyConditionExpression=Key('timestamp').eq(check_time)
         )
-        for item in response['Items']:
-            if item['source'] == feed:
-                metric = item['metric']
+        for item in response.get('Items'):
+            if item.get('source') == feed:
+                metric = item.get('metric')
                 break
 
         if not metric:
@@ -86,4 +92,11 @@ class Watchmen(object):
 
     @staticmethod
     def check_feed_metric(metric, minimum, maximum):
+        """
+        Compares feed metric along two values.
+        :param metric: the metric to be compared
+        :param minimum: max amount metric should be
+        :param maximum: min amount metric should be
+        :return: if the metric is in range
+        """
         return minimum < metric < maximum

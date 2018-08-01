@@ -40,8 +40,7 @@
   }]
 }
 """
-from watchmen import moloch
-from watchmen import silhouette
+from watchmen import moloch, silhouette, manhattan
 
 
 def start_moloch_watcher(event, context):
@@ -58,3 +57,11 @@ def start_silhouette_watcher(event, context):
     :return: The context that the code is being run in.
     """
     return silhouette.main(event, context)
+
+
+def start_manhattan_watcher(event, context):
+    """
+    Start the manhattan watcher for hourly feeds.
+    :return: The context that the code is being run in.
+    """
+    return manhattan.main(event, context)
