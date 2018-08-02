@@ -19,7 +19,7 @@ class TestMain(unittest.TestCase):
         main.start_silhouette_watcher(self.event, self.context)
         mock_silhouette.main.assert_called_once()
 
-    @patch('watchmen.main.manhattan')
-    def test_start_manhattan_watcher(self, mock_manhattan):
-        main.start_manhattan_watcher(self.event, self.context)
+    @patch('watchmen.main.manhattan_hourly')
+    def test_start_manhattan_hourly_watcher(self, mock_manhattan):
+        main.start_manhattan_hourly_watcher(self.event, self.context)
         mock_manhattan.main.assert_called_once()
