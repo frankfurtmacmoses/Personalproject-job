@@ -72,22 +72,30 @@ class TestUniversalWatchman(unittest.TestCase):
         # Test when metric is within range
         mock_get_feed_metrics.return_value = self.example_get_metric_return
         expected_result = [], []
-        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name)
+        returned_result = self.watcher.process_hourly_feeds_metrics(
+            self.example_feeds_to_check, self.example_table_name
+        )
         self.assertEqual(expected_result, returned_result)
         # Test when metric is out of range (too high)
         mock_get_feed_metrics.return_value = self.example_get_metric_return_high
         expected_result = [], ['test_feed']
-        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name)
+        returned_result = self.watcher.process_hourly_feeds_metrics(
+            self.example_feeds_to_check, self.example_table_name
+        )
         self.assertEqual(expected_result, returned_result)
         # Test when metric is out of range (too low)
         mock_get_feed_metrics.return_value = self.example_get_metric_return_low
         expected_result = [], ['test_feed']
-        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name)
+        returned_result = self.watcher.process_hourly_feeds_metrics(
+            self.example_feeds_to_check, self.example_table_name
+        )
         self.assertEqual(expected_result, returned_result)
         # Test when metric is None
         mock_get_feed_metrics.return_value = None
         expected_result = ['test_feed'], []
-        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name)
+        returned_result = self.watcher.process_hourly_feeds_metrics(
+            self.example_feeds_to_check, self.example_table_name
+        )
         self.assertEqual(expected_result, returned_result)
 
     @mock_dynamodb

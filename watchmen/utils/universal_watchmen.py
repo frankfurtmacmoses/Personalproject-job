@@ -68,7 +68,7 @@ class Watchmen(object):
             LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
         return file_contents
 
-    def process_feeds_metrics(self, feeds_to_check, table_name):
+    def process_hourly_feeds_metrics(self, feeds_to_check, table_name):
         """
         Processes all feeds in a particular dictionary format.
         :param feeds_to_check: feeds to be checked

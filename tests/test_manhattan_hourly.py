@@ -11,7 +11,7 @@ class TestManhattanHourlyWatchmen(unittest.TestCase):
         self.example_exception_message = "Something went wrong"
 
     @patch('watchmen.manhattan_hourly.raise_alarm')
-    @patch('watchmen.manhattan_hourly.Watchmen.process_feeds_metrics')
+    @patch('watchmen.manhattan_hourly.Watchmen.process_hourly_feeds_metrics')
     @patch('watchmen.manhattan_hourly.Watchmen.get_dynamo_hourly_time_string')
     def test_main(self, mock_time_string, mock_process_feeds, mock_alarm):
         mock_process_feeds.return_value = self.example_empty_list, self.example_empty_list

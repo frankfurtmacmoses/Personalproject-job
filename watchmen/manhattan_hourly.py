@@ -13,7 +13,7 @@ from logging import getLogger, basicConfig, INFO
 from cyberint_watchmen.universal_watchmen import Watchmen
 from cyberint_aws.sns_alerts import raise_alarm
 
-LOGGER = getLogger("Manhattan")
+LOGGER = getLogger("ManhattanHourly")
 basicConfig(level=INFO)
 
 SUCCESS_MESSAGE = "HOURLY FEEDS ARE UP AND RUNNING NORMALLY!"
@@ -38,6 +38,7 @@ FEEDS_TO_CHECK = {
     'ecrimeX': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 10, 'max': 400},
     'G01Pack_DGA': {'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 15, 'max': 35},
     'tracker_h3x_eu': {'metric_name': 'URI', 'min': 5, 'max': 50},
+    'VX_Vault': {'metric_name': 'URI', 'min': 1, 'max': 20},
     'Zeus_Tracker': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 35, 'max': 55}
 }
 
@@ -51,7 +52,7 @@ def main(event, context):
     watcher = Watchmen()
     status = SUCCESS_MESSAGE
     try:
-        downed_feeds, submitted_out_of_range_feeds = watcher.process_feeds_metrics(FEEDS_TO_CHECK, TABLE_NAME)
+        downed_feeds, submitted_out_of_range_feeds = watcher.process_hourly_feeds_metrics(FEEDS_TO_CHECK, TABLE_NAME)
         if downed_feeds or submitted_out_of_range_feeds:
             status = FAILURE_MESSAGE
             message = (
