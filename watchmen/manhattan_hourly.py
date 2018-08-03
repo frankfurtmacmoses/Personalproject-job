@@ -27,7 +27,7 @@ ERROR_FEEDS = "FAILED/DOWNED FEEDS: "
 ABNORMAL_SUBMISSIONS_MESSAGE = "ABNORMAL SUBMISSION AMOUNTS FROM THESE FEEDS: "
 
 TABLE_NAME = "CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ"
-NOT_A_FEED_ERROR = "ERROR: Feed does not exist or is slotted in the wrong class!"
+NOT_A_FEED_ERROR = "ERROR: Feed does not exist or added in the wrong module!"
 
 SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
 
