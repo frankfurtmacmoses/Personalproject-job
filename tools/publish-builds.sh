@@ -246,7 +246,7 @@ function create_cloudformation_parameter_file() {
 # publish ${PROJECT} build dist to s3
 function publish_builds() {
   local s3_url="s3://${S3_BUCKET}/${S3_PREFIX_BUILDS}"
-  local s3_cmd="aws s3 cp ${BUILD_DIR} ${s3_url} --recursivex"
+  local s3_cmd="aws s3 cp ${BUILD_DIR} ${s3_url} --recursive"
 
   check_files "${BUILD_DIR}"
 
