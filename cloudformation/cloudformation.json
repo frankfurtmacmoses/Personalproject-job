@@ -22,6 +22,54 @@
     "IsProd": {"Fn::Equals": [{"Ref": "Environment"}, "prod"]}
   },
   "Resources": {
+    "WatchmenManhattanHourlyLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors hourly reaper feeds.",
+        "Handler": "handler.start_manhattan_hourly_watcher",
+        "MemorySize": 256,
+        "Role": {
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-manhattan-hourly"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
     "WatchmenMolochLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
@@ -118,6 +166,22 @@
         ]
       }
     },
+    "ManhattanHourlyScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A hourly event that kicks off ManhattanHourly Watchmen",
+        "ScheduleExpression": "cron(0 * * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "ManhattanHourlyScheduler",
+            "Arn": {
+              "Fn::GetAtt": ["WatchmenManhattanHourlyLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
     "MolochScheduledEvent": {
       "Type": "AWS::Events::Rule",
       "Properties": {
@@ -138,7 +202,7 @@
       "Type": "AWS::Events::Rule",
       "Properties": {
         "Description": "A daily event that kicks off Silhouette Watchman.",
-        "ScheduleExpression": "cron(0 0 * * ? *)",
+        "ScheduleExpression": "cron(15 0 * * ? *)",
         "State": "ENABLED",
         "Targets": [
           {
@@ -148,6 +212,25 @@
             }
           }
         ]
+      }
+    },
+    "InvokeManhattanHourlyLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WatchmenManhattanHourlyLambda",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "WatchmenManhattanHourlyLambda",
+            "Arn"
+          ]
+        }
       }
     },
     "InvokeMolochLambdaPermission": {
@@ -237,12 +320,14 @@
                   "Action": [
                     "cloudwatch:DescribeAlarmsForMetric",
                     "cloudwatch:PutMetricAlarm",
+                    "dynamodb:Query",
                     "lambda:InvokeFunction",
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
                     "logs:PutLogEvents",
                     "s3:Get*",
-                    "s3:List*"
+                    "s3:List*",
+                    "SNS:Publish"
                   ],
                   "Resource": "*"
                 }

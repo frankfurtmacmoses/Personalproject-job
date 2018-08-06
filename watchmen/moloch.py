@@ -12,14 +12,15 @@ confirm that the feeds have been running within the past hour.
 
 # Python imports
 from datetime import datetime, timedelta
-from logging import getLogger
+from logging import getLogger, basicConfig, INFO
 import pytz
 
 # Cyberint imports
 from cyberint_watchmen.universal_watchmen import Watchmen
 from cyberint_aws.sns_alerts import raise_alarm
 
-LOGGER = getLogger(__name__)
+LOGGER = getLogger("Moloch")
+basicConfig(level=INFO)
 
 SUCCESS_MESSAGE = "NOH/D Feeds are up and running!"
 ERROR = "ERROR: "

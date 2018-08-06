@@ -11,7 +11,7 @@ ensure that data is coming through into S3.
 
 # Python imports
 from datetime import datetime, timedelta
-from logging import getLogger
+from logging import getLogger, basicConfig, INFO
 import pytz
 import json
 
@@ -19,7 +19,8 @@ import json
 from cyberint_watchmen.universal_watchmen import Watchmen
 from cyberint_aws.sns_alerts import raise_alarm
 
-LOGGER = getLogger(__name__)
+LOGGER = getLogger("Silhouette")
+basicConfig(level=INFO)
 
 SUCCESS_MESSAGE = "Lookalike feed is up and running!"
 FAILURE_MESSAGE = "ERROR: Lookalike feed never added files from yesterday! " \
