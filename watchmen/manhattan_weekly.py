@@ -1,7 +1,7 @@
 """
-Created on July 30, 2018
+Created on August 6, 2018
 
-This script is designed to monitor hourly feeds and ensure proper data flow.
+This script is designed to monitor weekly feeds and ensure proper data flow.
 
 @author: Daryan Hanshew
 @email: dhanshew@infoblox.com
@@ -13,12 +13,12 @@ from logging import getLogger, basicConfig, INFO
 from cyberint_watchmen.universal_watchmen import Watchmen
 from cyberint_aws.sns_alerts import raise_alarm
 
-LOGGER = getLogger("ManhattanHourly")
+LOGGER = getLogger("ManhattanWeekly")
 basicConfig(level=INFO)
 
-SUCCESS_MESSAGE = "Hourly feeds are up and running normally!"
-FAILURE_MESSAGE = "One or more hourly feeds are down or submitting abnormal amounts of domains!"
-SUBJECT_MESSAGE = "Manhattan detected an issue with one or more of hourly feeds being down!"
+SUCCESS_MESSAGE = "Weekly feeds are up and running normally!"
+FAILURE_MESSAGE = "One or more weekly feeds are down or submitting abnormal amounts of domains!"
+SUBJECT_MESSAGE = "Manhattan detected an issue with one or more of weekly feeds being down!"
 
 SUBJECT_EXCEPTION_MESSAGE = "Manhattan watchmen failed due to an exception!"
 EXCEPTION_MESSAGE = "Please check logs for more details about exception!"
@@ -27,19 +27,22 @@ ERROR_FEEDS = "Failed/Downed feeds: "
 ABNORMAL_SUBMISSIONS_MESSAGE = "Abnormal submission amount from these feeds: "
 
 TABLE_NAME = "CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ"
-NOT_A_FEED_ERROR = "ERROR: Feed does not exist or added in the wrong module!"
+NOT_A_FEED_ERROR = "ERROR: Feed does not exist or is slotted in the wrong module!"
 
 SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
 
+# IMPORTANT NOTE: This has to run on Friday in order to ensure proper date traversal!
+# How it works:
+#               Monday: 4
+#               Tuesday: 3
+#               Wednesday: 2
+#               Thursday: 1
+#               Friday: 0
+#               To check for monday you subtract 4 days from the run day on Friday.
+#               IE If the date is 08/10/2018 and I want to check feeds running on Monday
+#                  then I subtract 4 days to 08/06/2018 and check the dynamodb metrics table.
 FEEDS_TO_CHECK = {
-    'bambenek_c2_ip': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 50, 'max': 300},
-    'cox_feed': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 15000, 'max': 30000},
-    'Xylitol_CyberCrime': {'metric_name': 'URI', 'min': 30, 'max': 50},
-    'ecrimeX': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 10, 'max': 400},
-    'G01Pack_DGA': {'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 15, 'max': 35},
-    'tracker_h3x_eu': {'metric_name': 'URI', 'min': 5, 'max': 50},
-    'VX_Vault': {'metric_name': 'URI', 'min': 1, 'max': 20},
-    'Zeus_Tracker': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 35, 'max': 55}
+    'c_APT_ure': {'metric_name': 'FQDN', 'min': 250, 'max': 450, 'hour_submitted': '09', 'days_to_subtract': 4}
 }
 
 
@@ -47,12 +50,12 @@ FEEDS_TO_CHECK = {
 def main(event, context):
     """
     main function
-    :return: status of all hourly feeds
+    :return: status of all daily feeds
     """
     watcher = Watchmen()
     status = SUCCESS_MESSAGE
     try:
-        downed_feeds, submitted_out_of_range_feeds = watcher.process_feeds_metrics(FEEDS_TO_CHECK, TABLE_NAME, 0)
+        downed_feeds, submitted_out_of_range_feeds = watcher.process_feeds_metrics(FEEDS_TO_CHECK, TABLE_NAME, 2)
         if downed_feeds or submitted_out_of_range_feeds:
             status = FAILURE_MESSAGE
             message = (

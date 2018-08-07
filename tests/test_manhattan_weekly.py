@@ -1,6 +1,6 @@
 import unittest
 from mock import patch
-from watchmen.manhattan_hourly import main, SUCCESS_MESSAGE, FAILURE_MESSAGE
+from watchmen.manhattan_weekly import main, SUCCESS_MESSAGE, FAILURE_MESSAGE
 from moto import mock_sns
 
 
@@ -12,9 +12,9 @@ class TestManhattanHourlyWatchmen(unittest.TestCase):
         self.example_exception_message = "Something went wrong"
 
     @mock_sns
-    @patch('watchmen.manhattan_hourly.raise_alarm')
-    @patch('watchmen.manhattan_hourly.Watchmen.process_feeds_metrics')
-    @patch('watchmen.manhattan_hourly.Watchmen.get_dynamo_hourly_time_string')
+    @patch('watchmen.manhattan_weekly.raise_alarm')
+    @patch('watchmen.manhattan_weekly.Watchmen.process_feeds_metrics')
+    @patch('watchmen.manhattan_weekly.Watchmen.get_dynamo_daily_time_string')
     def test_main(self, mock_time_string, mock_process_feeds, mock_alarm):
         mock_process_feeds.return_value = self.example_empty_list, self.example_empty_list
         # Test when all feeds are up and running

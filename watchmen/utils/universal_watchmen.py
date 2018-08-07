@@ -68,30 +68,26 @@ class Watchmen(object):
             LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
         return file_contents
 
-    def process_hourly_feeds_metrics(self, feeds_to_check, table_name):
+    def get_time_string(self, feeds_to_check, feed, time_string_choice):
         """
-        Processes all feeds in a particular dictionary format.
-        :param feeds_to_check: feeds to be checked
-        :param table_name: table to be checked
-        :return: list of feeds that are suspected to be down and list of feeds that submitted abnormal amounts
-                 of domains
+        Selects the time string to use based off choice.
+        :param feeds_to_check: feeds currently being looked at
+        :param feed: the feed itself being checked
+        :param time_string_choice: the selection for time string by user
+                0 = hourly, 1 = daily, 2 = weekly
+        :return: time string for dynamo db
         """
-        watcher = Watchmen()
-        downed_feeds = []
-        submitted_out_of_range_feeds = []
-        check_time = self.get_dynamo_hourly_time_string()
-        for feed in feeds_to_check:
-            metric = watcher.get_feed_metrics(table_name, feed, check_time)
-            if metric:
-                feed_metrics = feeds_to_check.get(feed)
-                metric_val = metric.get(feed_metrics.get('metric_name'))
-                if feed_metrics.get('min') > metric_val or \
-                   feed_metrics.get('max') < metric_val:
-                    submitted_out_of_range_feeds.append(feed)
-            else:
-                downed_feeds.append(feed)
-
-        return downed_feeds, submitted_out_of_range_feeds
+        time_string = None
+        if time_string_choice == 0:
+            time_string = self.get_dynamo_hourly_time_string()
+        elif time_string_choice == 1:
+            time_string = self.get_dynamo_daily_time_string(feeds_to_check.get(feed).get('hour_submitted'))
+        elif time_string_choice == 2:
+            time_string = self.get_dynamo_weekly_time_string(
+                                                             feeds_to_check.get(feed).get('hour_submitted'),
+                                                             feeds_to_check.get(feed).get('days_to_subtract')
+            )
+        return time_string
 
     def get_feed_metrics(self, table_name, feed, check_time):
         """
@@ -116,9 +112,52 @@ class Watchmen(object):
         return metric
 
     @staticmethod
+    def process_feeds_metrics(feeds_to_check, table_name, time_string_choice):
+        """
+        Processes all hourly feeds in a particular dictionary format.
+        :param feeds_to_check: feeds to be checked
+        :param table_name: table to be queried
+        :param time_string_choice: selection for time string to be used
+        :return: list of feeds that are suspected to be down and list of feeds that submitted abnormal amounts
+                 of domains
+        """
+        watcher = Watchmen()
+        downed_feeds = []
+        submitted_out_of_range_feeds = []
+        for feed in feeds_to_check:
+            check_time = watcher.get_time_string(feeds_to_check, feed, time_string_choice)
+            metric = watcher.get_feed_metrics(table_name, feed, check_time)
+            if metric:
+                feed_metrics = feeds_to_check.get(feed)
+                metric_val = metric.get(feed_metrics.get('metric_name'))
+                if feed_metrics.get('min') > metric_val or \
+                   feed_metrics.get('max') < metric_val:
+                    submitted_out_of_range_feeds.append(feed)
+            else:
+                downed_feeds.append(feed)
+
+        return downed_feeds, submitted_out_of_range_feeds
+
+    @staticmethod
+    def get_dynamo_daily_time_string(hour):
+        """
+        Retrieves daily time string based off a user submitted hour
+        :return: daily time string based off a user submitted hour
+        """
+        return (datetime.now(pytz.utc) - timedelta(days=1)).strftime("%Y-%m-%dT") + hour
+
+    @staticmethod
     def get_dynamo_hourly_time_string():
         """
         Retrieves previous hour dynamo db time string.
         :return: previous hour dynamo db time string
         """
         return (datetime.now(pytz.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H").replace('/', '')
+
+    @staticmethod
+    def get_dynamo_weekly_time_string(hour, days_to_subtract):
+        """
+        Retrieves weekly time string based off a user submitted hour and day
+        :return: weekly time string based off a user submitted hour and day
+        """
+        return (datetime.now(pytz.utc) - timedelta(days=days_to_subtract)).strftime("%Y-%m-%dT") + hour

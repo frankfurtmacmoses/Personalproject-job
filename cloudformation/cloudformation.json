@@ -22,6 +22,54 @@
     "IsProd": {"Fn::Equals": [{"Ref": "Environment"}, "prod"]}
   },
   "Resources": {
+    "WatchmenManhattanDailyLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors daily reaper feeds.",
+        "Handler": "handler.start_manhattan_daily_watcher",
+        "MemorySize": 256,
+        "Role": {
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-manhattan-daily"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
     "WatchmenManhattanHourlyLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
@@ -57,6 +105,54 @@
           {"Key": "Protected", "Value": "TRUE"},
           {"Key": "Component", "Value": "lambda"},
           {"Key": "Name", "Value": "watchmen-manhattan-hourly"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "WatchmenManhattanWeeklyLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors weekly reaper feeds.",
+        "Handler": "handler.start_manhattan_weekly_watcher",
+        "MemorySize": 256,
+        "Role": {
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-manhattan-weekly"},
           {
             "Key": "Env",
             "Value": {
@@ -166,11 +262,43 @@
         ]
       }
     },
+    "ManhattanDailyScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A hourly event that kicks off ManhattanHourlyWatchmen",
+        "ScheduleExpression": "cron(0 15 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "ManhattanHourlyScheduler",
+            "Arn": {
+              "Fn::GetAtt": ["WatchmenManhattanHourlyLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
     "ManhattanHourlyScheduledEvent": {
       "Type": "AWS::Events::Rule",
       "Properties": {
-        "Description": "A hourly event that kicks off ManhattanHourly Watchmen",
+        "Description": "A hourly event that kicks off ManhattanHourlyWatchmen",
         "ScheduleExpression": "cron(0 * * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "ManhattanHourlyScheduler",
+            "Arn": {
+              "Fn::GetAtt": ["WatchmenManhattanHourlyLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
+    "ManhattanWeeklyScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A weekly event that kicks off ManhattanWeeklyWatchmen",
+        "ScheduleExpression": "cron(0 15 * * FRI *)",
         "State": "ENABLED",
         "Targets": [
           {
@@ -202,7 +330,7 @@
       "Type": "AWS::Events::Rule",
       "Properties": {
         "Description": "A daily event that kicks off Silhouette Watchman.",
-        "ScheduleExpression": "cron(15 0 * * ? *)",
+        "ScheduleExpression": "cron(0 15 * * ? *)",
         "State": "ENABLED",
         "Targets": [
           {
@@ -212,6 +340,25 @@
             }
           }
         ]
+      }
+    },
+    "InvokeManhattanDailyLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WatchmenManhattanDailyLambda",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "ManhattanDailyScheduledEvent",
+            "Arn"
+          ]
+        }
       }
     },
     "InvokeManhattanHourlyLambdaPermission": {
@@ -227,7 +374,26 @@
         "Principal": "events.amazonaws.com",
         "SourceArn": {
           "Fn::GetAtt": [
-            "WatchmenManhattanHourlyLambda",
+            "ManhattanHourlyScheduledEvent",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "InvokeManhattanWeeklyLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WatchmenManhattanWeeklyLambda",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "ManhattanWeeklyScheduledEvent",
             "Arn"
           ]
         }
