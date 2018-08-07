@@ -265,14 +265,14 @@
     "ManhattanDailyScheduledEvent": {
       "Type": "AWS::Events::Rule",
       "Properties": {
-        "Description": "A hourly event that kicks off ManhattanHourlyWatchmen",
+        "Description": "A daily event that kicks off ManhattanDailyWatchmen",
         "ScheduleExpression": "cron(0 15 * * ? *)",
         "State": "ENABLED",
         "Targets": [
           {
-            "Id": "ManhattanHourlyScheduler",
+            "Id": "ManhattanDailyScheduler",
             "Arn": {
-              "Fn::GetAtt": ["WatchmenManhattanHourlyLambda", "Arn"]
+              "Fn::GetAtt": ["WatchmenManhattanDailyLambda", "Arn"]
             }
           }
         ]
@@ -302,9 +302,9 @@
         "State": "ENABLED",
         "Targets": [
           {
-            "Id": "ManhattanHourlyScheduler",
+            "Id": "ManhattanWeeklyScheduler",
             "Arn": {
-              "Fn::GetAtt": ["WatchmenManhattanHourlyLambda", "Arn"]
+              "Fn::GetAtt": ["WatchmenManhattanWeeklyLambda", "Arn"]
             }
           }
         ]
