@@ -22,7 +22,7 @@
     "IsProd": {"Fn::Equals": [{"Ref": "Environment"}, "prod"]}
   },
   "Resources": {
-    "WatchmenManhattanDailyLambda": {
+    "WatchmenManhattanLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Runtime": "python2.7",
@@ -41,8 +41,8 @@
             ]
           }
         },
-        "Description": "Monitors daily reaper feeds.",
-        "Handler": "handler.start_manhattan_daily_watcher",
+        "Description": "Monitors hourly, daily, and weekly reaper feeds.",
+        "Handler": "handler.start_manhattan_watcher",
         "MemorySize": 256,
         "Role": {
              "Fn::GetAtt": [
@@ -56,151 +56,7 @@
           {"Key": "Product", "Value": "watchmen"},
           {"Key": "Protected", "Value": "TRUE"},
           {"Key": "Component", "Value": "lambda"},
-          {"Key": "Name", "Value": "watchmen-manhattan-daily"},
-          {
-            "Key": "Env",
-            "Value": {
-              "Fn::If": [
-                "IsProd",
-                "cyberint-prod",
-                "cyberint-test"
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "WatchmenManhattanHourlyLambda": {
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Runtime": "python2.7",
-        "Code": {
-          "S3Bucket": {"Ref" : "WatchmenBucket"},
-          "S3Key": {
-            "Fn::Join": [
-              "/", [
-                {
-                  "Ref": "WatchmenBuildsPrefix"
-                },
-                {
-                  "Ref": "WatchmenLambdasZipFile"
-                }
-              ]
-            ]
-          }
-        },
-        "Description": "Monitors hourly reaper feeds.",
-        "Handler": "handler.start_manhattan_hourly_watcher",
-        "MemorySize": 256,
-        "Role": {
-             "Fn::GetAtt": [
-              "WatchmenLambdaExecutionRole",
-              "Arn"
-             ]
-        },
-        "Timeout": 30,
-        "Tags": [
-          {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "watchmen"},
-          {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "lambda"},
-          {"Key": "Name", "Value": "watchmen-manhattan-hourly"},
-          {
-            "Key": "Env",
-            "Value": {
-              "Fn::If": [
-                "IsProd",
-                "cyberint-prod",
-                "cyberint-test"
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "WatchmenOzymandiasLambda": {
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Runtime": "python2.7",
-        "Code": {
-          "S3Bucket": {"Ref" : "WatchmenBucket"},
-          "S3Key": {
-            "Fn::Join": [
-              "/", [
-                {
-                  "Ref": "WatchmenBuildsPrefix"
-                },
-                {
-                  "Ref": "WatchmenLambdasZipFile"
-                }
-              ]
-            ]
-          }
-        },
-        "Description": "Monitors neustar data coming into S3.",
-        "Handler": "handler.start_ozymandias_watcher",
-        "MemorySize": 256,
-        "Role": {
-             "Fn::GetAtt": [
-              "WatchmenLambdaExecutionRole",
-              "Arn"
-             ]
-        },
-        "Timeout": 30,
-        "Tags": [
-          {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "watchmen"},
-          {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "lambda"},
-          {"Key": "Name", "Value": "watchmen-ozymandias"},
-          {
-            "Key": "Env",
-            "Value": {
-              "Fn::If": [
-                "IsProd",
-                "cyberint-prod",
-                "cyberint-test"
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "WatchmenManhattanWeeklyLambda": {
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Runtime": "python2.7",
-        "Code": {
-          "S3Bucket": {"Ref" : "WatchmenBucket"},
-          "S3Key": {
-            "Fn::Join": [
-              "/", [
-                {
-                  "Ref": "WatchmenBuildsPrefix"
-                },
-                {
-                  "Ref": "WatchmenLambdasZipFile"
-                }
-              ]
-            ]
-          }
-        },
-        "Description": "Monitors weekly reaper feeds.",
-        "Handler": "handler.start_manhattan_weekly_watcher",
-        "MemorySize": 256,
-        "Role": {
-             "Fn::GetAtt": [
-              "WatchmenLambdaExecutionRole",
-              "Arn"
-             ]
-        },
-        "Timeout": 30,
-        "Tags": [
-          {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "watchmen"},
-          {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "lambda"},
-          {"Key": "Name", "Value": "watchmen-manhattan-weekly"},
+          {"Key": "Name", "Value": "watchmen-manhattan"},
           {
             "Key": "Env",
             "Value": {
@@ -249,6 +105,54 @@
           {"Key": "Protected", "Value": "TRUE"},
           {"Key": "Component", "Value": "lambda"},
           {"Key": "Name", "Value": "watchmen-moloch"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "WatchmenOzymandiasLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors neustar data coming into S3.",
+        "Handler": "handler.start_ozymandias_watcher",
+        "MemorySize": 256,
+        "Role": {
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-ozymandias"},
           {
             "Key": "Env",
             "Value": {
@@ -320,24 +224,9 @@
           {
             "Id": "ManhattanDailyScheduler",
             "Arn": {
-              "Fn::GetAtt": ["WatchmenManhattanDailyLambda", "Arn"]
-            }
-          }
-        ]
-      }
-    },
-    "OzymandiasScheduledEvent": {
-      "Type": "AWS::Events::Rule",
-      "Properties": {
-        "Description": "A daily event that kicks off OzymandiasWatchmen",
-        "ScheduleExpression": "cron(40 8 * * ? *)",
-        "State": "ENABLED",
-        "Targets": [
-          {
-            "Id": "OzymandiasScheduler",
-            "Arn": {
-              "Fn::GetAtt": ["WatchmenOzymandiasLambda", "Arn"]
-            }
+              "Fn::GetAtt": ["WatchmenManhattanLambda", "Arn"]
+            },
+            "Input": "{\"type\": \"Daily\"}"
           }
         ]
       }
@@ -352,8 +241,9 @@
           {
             "Id": "ManhattanHourlyScheduler",
             "Arn": {
-              "Fn::GetAtt": ["WatchmenManhattanHourlyLambda", "Arn"]
-            }
+              "Fn::GetAtt": ["WatchmenManhattanLambda", "Arn"]
+            },
+            "Input": "{\"type\": \"Hourly\"}"
           }
         ]
       }
@@ -362,14 +252,15 @@
       "Type": "AWS::Events::Rule",
       "Properties": {
         "Description": "A weekly event that kicks off ManhattanWeeklyWatchmen",
-        "ScheduleExpression": "cron(0 15 * * FRI *)",
+        "ScheduleExpression": "cron(0 15 ? * FRI *)",
         "State": "ENABLED",
         "Targets": [
           {
             "Id": "ManhattanWeeklyScheduler",
             "Arn": {
-              "Fn::GetAtt": ["WatchmenManhattanWeeklyLambda", "Arn"]
-            }
+              "Fn::GetAtt": ["WatchmenManhattanLambda", "Arn"]
+            },
+            "Input": "{\"type\": \"Weekly\"}"
           }
         ]
       }
@@ -385,6 +276,22 @@
             "Id": "MolochScheduler",
             "Arn": {
               "Fn::GetAtt": ["WatchmenMolochLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
+    "OzymandiasScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A daily event that kicks off OzymandiasWatchmen",
+        "ScheduleExpression": "cron(40 11 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "OzymandiasScheduler",
+            "Arn": {
+              "Fn::GetAtt": ["WatchmenOzymandiasLambda", "Arn"]
             }
           }
         ]
@@ -411,7 +318,7 @@
       "Properties": {
         "FunctionName": {
           "Fn::GetAtt": [
-            "WatchmenManhattanDailyLambda",
+            "WatchmenManhattanLambda",
             "Arn"
           ]
         },
@@ -425,31 +332,12 @@
         }
       }
     },
-    "InvokeOzymandiasLambdaPermission": {
-      "Type": "AWS::Lambda::Permission",
-      "Properties": {
-        "FunctionName": {
-          "Fn::GetAtt": [
-            "WatchmenOzymandiasLambda",
-            "Arn"
-          ]
-        },
-        "Action": "lambda:InvokeFunction",
-        "Principal": "events.amazonaws.com",
-        "SourceArn": {
-          "Fn::GetAtt": [
-            "OzymandiasScheduledEvent",
-            "Arn"
-          ]
-        }
-      }
-    },
     "InvokeManhattanHourlyLambdaPermission": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
         "FunctionName": {
           "Fn::GetAtt": [
-            "WatchmenManhattanHourlyLambda",
+            "WatchmenManhattanLambda",
             "Arn"
           ]
         },
@@ -468,7 +356,7 @@
       "Properties": {
         "FunctionName": {
           "Fn::GetAtt": [
-            "WatchmenManhattanWeeklyLambda",
+            "WatchmenManhattanLambda",
             "Arn"
           ]
         },
@@ -496,6 +384,25 @@
         "SourceArn": {
           "Fn::GetAtt": [
             "MolochScheduledEvent",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "InvokeOzymandiasLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WatchmenOzymandiasLambda",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "OzymandiasScheduledEvent",
             "Arn"
           ]
         }

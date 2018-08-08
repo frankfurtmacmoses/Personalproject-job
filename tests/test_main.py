@@ -19,20 +19,10 @@ class TestMain(unittest.TestCase):
         main.start_silhouette_watcher(self.event, self.context)
         mock_silhouette.main.assert_called_once()
 
-    @patch('watchmen.main.manhattan_hourly')
-    def test_start_manhattan_hourly_watcher(self, mock_manhattan_hourly):
-        main.start_manhattan_hourly_watcher(self.event, self.context)
-        mock_manhattan_hourly.main.assert_called_once()
-
-    @patch('watchmen.main.manhattan_daily')
-    def test_start_manhattan_daily_watcher(self, mock_manhattan_daily):
-        main.start_manhattan_daily_watcher(self.event, self.context)
-        mock_manhattan_daily.main.assert_called_once()
-
-    @patch('watchmen.main.manhattan_weekly')
-    def test_start_manhattan_weekly_watcher(self, mock_manhattan_weekly):
-        main.start_manhattan_weekly_watcher(self.event, self.context)
-        mock_manhattan_weekly.main.assert_called_once()
+    @patch('watchmen.main.manhattan')
+    def test_start_manhattan_watcher(self, mock_manhattan):
+        main.start_manhattan_watcher(self.event, self.context)
+        mock_manhattan.main.assert_called_once()
 
     @patch('watchmen.main.ozymandias')
     def test_start_ozymandias_watcher(self, mock_ozymandias):

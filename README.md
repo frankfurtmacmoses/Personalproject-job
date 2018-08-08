@@ -15,7 +15,7 @@ Current method for monitor feed is querying the Reaper metrics table!
 Each class contains a dictionary called **FEEDS_TO_CHECK** which contains all the feeds
 being monitored. They are structured like this:
 ```
-FEEDS_TO_CHECK = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>}}
+FEEDS_TO_CHECK_<TYPE> = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>}}
 ```
 For each feed a minimum value and a maximum value is set and an alarm will be raised
 if the metric name returns an associated number outside of this range. If no min or max
@@ -23,13 +23,13 @@ is needed simply place 0 for min and sys.maxint for max.
 
 Hourly:
 ```
-FEEDS_TO_CHECK = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>}}
+FEEDS_TO_CHECK_HOURLY = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>}}
 ```
 Same as example above.
 
 Daily:
 ```
-FEEDS_TO_CHECK = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>, 'hour_submitted': <HOUR>}}
+FEEDS_TO_CHECK_DAILY = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>, 'hour_submitted': <HOUR>}}
 ```
 The hour submitted requires a specific hour in which the metric was submitted. For
 example if a feed submits daily at 09:00 (UTC) then you must place the hour submitted as
@@ -38,7 +38,7 @@ example if a feed submits daily at 09:00 (UTC) then you must place the hour subm
  
 Weekly:
 ```
-FEEDS_TO_CHECK = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>, 'hour_submitted': <HOUR>, 'days_to_subtract': <NUM>}}
+FEEDS_TO_CHECK_WEEKLY = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>, 'hour_submitted': <HOUR>, 'days_to_subtract': <NUM>}}
 ```
 Since the weekly feed Watchmen runs once a week on Friday. In order to get the current date we have to set the date
 a integer value. Currently it goes as following:
