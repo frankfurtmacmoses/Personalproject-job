@@ -118,6 +118,54 @@
         ]
       }
     },
+    "WatchmenOzymandiasLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors neustar data coming into S3.",
+        "Handler": "handler.start_ozymandias_watcher",
+        "MemorySize": 256,
+        "Role": {
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-ozymandias"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
     "WatchmenManhattanWeeklyLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
@@ -278,6 +326,22 @@
         ]
       }
     },
+    "OzymandiasScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A daily event that kicks off OzymandiasWatchmen",
+        "ScheduleExpression": "cron(40 8 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "OzymandiasScheduler",
+            "Arn": {
+              "Fn::GetAtt": ["WatchmenOzymandiasLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
     "ManhattanHourlyScheduledEvent": {
       "Type": "AWS::Events::Rule",
       "Properties": {
@@ -356,6 +420,25 @@
         "SourceArn": {
           "Fn::GetAtt": [
             "ManhattanDailyScheduledEvent",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "InvokeOzymandiasLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WatchmenOzymandiasLambda",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "OzymandiasScheduledEvent",
             "Arn"
           ]
         }

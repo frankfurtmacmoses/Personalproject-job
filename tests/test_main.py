@@ -33,3 +33,8 @@ class TestMain(unittest.TestCase):
     def test_start_manhattan_weekly_watcher(self, mock_manhattan_weekly):
         main.start_manhattan_weekly_watcher(self.event, self.context)
         mock_manhattan_weekly.main.assert_called_once()
+
+    @patch('watchmen.main.ozymandias')
+    def test_start_ozymandias_watcher(self, mock_ozymandias):
+        main.start_ozymandias_watcher(self.event, self.context)
+        mock_ozymandias.main.assert_called_once()
