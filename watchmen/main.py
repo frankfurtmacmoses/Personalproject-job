@@ -40,7 +40,7 @@
   }]
 }
 """
-from watchmen import moloch, silhouette, manhattan_hourly
+from watchmen import moloch, silhouette, manhattan, ozymandias
 
 
 def start_moloch_watcher(event, context):
@@ -59,9 +59,17 @@ def start_silhouette_watcher(event, context):
     return silhouette.main(event, context)
 
 
-def start_manhattan_hourly_watcher(event, context):
+def start_manhattan_watcher(event, context):
     """
-    Start the manhattan watcher for hourly feeds.
+    Start manhattan watcher to monitor hourly, daily and weekly Reaper feeds.
     :return: The context that the code is being run in.
     """
-    return manhattan_hourly.main(event, context)
+    return manhattan.main(event, context)
+
+
+def start_ozymandias_watcher(event, context):
+    """
+    Start the ozymandias watcher for Neustar data.
+    :return: The context that the code is being run in.
+    """
+    return ozymandias.main(event, context)

@@ -20,6 +20,8 @@ class TestUniversalWatchman(unittest.TestCase):
             hour=5, minute=5, tzinfo=pytz.utc
         )
         self.example_time_string = "2018-05-24T04"
+        self.example_one_day_ago_time_string = "2018-05-23T09"
+        self.example_weekly_time_string = "2018-05-20T10"
         self.watcher = Watchmen(self.example_bucket)
         self.example_feed_name = 'test_feed'
         self.example_table_name = 'table'
@@ -67,35 +69,28 @@ class TestUniversalWatchman(unittest.TestCase):
         returned_result = self.watcher.get_file_contents_s3(self.example_path)
         self.assertEqual(expected_result, returned_result)
 
-    @patch('watchmen.utils.universal_watchmen.Watchmen.get_feed_metrics')
-    def test_process_feed_metrics(self, mock_get_feed_metrics):
-        # Test when metric is within range
-        mock_get_feed_metrics.return_value = self.example_get_metric_return
-        expected_result = [], []
-        returned_result = self.watcher.process_hourly_feeds_metrics(
-            self.example_feeds_to_check, self.example_table_name
-        )
+    @patch('watchmen.utils.universal_watchmen.Watchmen.get_dynamo_hourly_time_string')
+    @patch('watchmen.utils.universal_watchmen.Watchmen.get_dynamo_daily_time_string')
+    @patch('watchmen.utils.universal_watchmen.Watchmen.get_dynamo_weekly_time_string')
+    def test_get_time_string(self, mock_weekly, mock_daily, mock_hourly):
+        mock_hourly.return_value = self.example_time_string
+        # Test when it's hourly feed
+        expected_result = self.example_time_string
+        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, 0)
         self.assertEqual(expected_result, returned_result)
-        # Test when metric is out of range (too high)
-        mock_get_feed_metrics.return_value = self.example_get_metric_return_high
-        expected_result = [], ['test_feed']
-        returned_result = self.watcher.process_hourly_feeds_metrics(
-            self.example_feeds_to_check, self.example_table_name
-        )
+        # Test when it's daily feed
+        mock_daily.return_value = self.example_time_string
+        expected_result = self.example_time_string
+        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, 1)
         self.assertEqual(expected_result, returned_result)
-        # Test when metric is out of range (too low)
-        mock_get_feed_metrics.return_value = self.example_get_metric_return_low
-        expected_result = [], ['test_feed']
-        returned_result = self.watcher.process_hourly_feeds_metrics(
-            self.example_feeds_to_check, self.example_table_name
-        )
+        # Test when it's weekly feed
+        mock_weekly.return_value = self.example_time_string
+        expected_result = self.example_time_string
+        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, 2)
         self.assertEqual(expected_result, returned_result)
-        # Test when metric is None
-        mock_get_feed_metrics.return_value = None
-        expected_result = ['test_feed'], []
-        returned_result = self.watcher.process_hourly_feeds_metrics(
-            self.example_feeds_to_check, self.example_table_name
-        )
+        # Test when user doesn't pick correct feed
+        expected_result = None
+        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, None)
         self.assertEqual(expected_result, returned_result)
 
     @mock_dynamodb
@@ -117,10 +112,46 @@ class TestUniversalWatchman(unittest.TestCase):
         )
         self.assertEqual(expected_result, returned_result)
 
+    @patch('watchmen.utils.universal_watchmen.Watchmen.get_feed_metrics')
+    @patch('watchmen.utils.universal_watchmen.Watchmen.get_time_string')
+    def test_process_feed_metrics(self, mock_time_string, mock_get_feed_metrics):
+        mock_get_feed_metrics.return_value = self.example_get_metric_return
+        expected_result = [], []
+        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
+        self.assertEqual(expected_result, returned_result)
+        mock_get_feed_metrics.return_value = self.example_get_metric_return_low
+        expected_result = [], ['test_feed']
+        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
+        self.assertEqual(expected_result, returned_result)
+        mock_get_feed_metrics.return_value = self.example_get_metric_return_high
+        expected_result = [], ['test_feed']
+        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
+        self.assertEqual(expected_result, returned_result)
+        mock_get_feed_metrics.return_value = None
+        expected_result = ['test_feed'], []
+        returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
+        self.assertEqual(expected_result, returned_result)
+
+    @patch('watchmen.utils.universal_watchmen.datetime')
+    def test_get_dynamo_daily_time_string(self, mock_datetime):
+        mock_datetime.now.return_value = self.example_now
+        # Test for a time string for dynamo db setup one day ago
+        expected_result = self.example_one_day_ago_time_string
+        returned_result = self.watcher.get_dynamo_daily_time_string('09')
+        self.assertEqual(expected_result, returned_result)
+
     @patch('watchmen.utils.universal_watchmen.datetime')
     def test_get_dynamo_hourly_time_string(self, mock_datetime):
         mock_datetime.now.return_value = self.example_now
         # Test for a time string for dynamo db setup one hour ago
         expected_result = self.example_time_string
         returned_result = self.watcher.get_dynamo_hourly_time_string()
+        self.assertEqual(expected_result, returned_result)
+
+    @patch('watchmen.utils.universal_watchmen.datetime')
+    def test_get_dynamo_weekly_time_string(self, mock_datetime):
+        mock_datetime.now.return_value = self.example_now
+        # Test for a time string for dynamo db setup on a particular day of the week
+        expected_result = self.example_weekly_time_string
+        returned_result = self.watcher.get_dynamo_weekly_time_string('10', 4)
         self.assertEqual(expected_result, returned_result)
