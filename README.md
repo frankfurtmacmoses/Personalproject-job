@@ -25,9 +25,37 @@ Hourly:
 ```
 FEEDS_TO_CHECK_HOURLY = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>}}
 ```
-Same as example above.
+Fields are the same as above.\
+For the list below you will have to add the actual name that displays in the
+logs at the beginning.\
+For example if you see:
+```
+zeus-tracker-scraper/zeus-tracker-scraper-prod/ffe50104-5272-4832-bf83-5ae02c6f85f6
+```
+Then zeus-tracker-scraper is what you would insert into the list. Nothing
+else should be added after the first slash.\
+**IMPORTANT NOTE**: Even if the name is identical still add it otherwise it will not work.
+You will also notice some feeds have very different names from what's listed in the logs,
+please keep this in mind when adding to this list. 
+```
+FEEDS_HOURLY_NAMES = [
+                      'bambenek-ip-scraper', 'cox-feed', 'cybercrime-scraper', 'ecrimex-scraper',
+                      'g01-dga', 'tracker-h3x-eu-scraper', 'vxvault-scraper', 'ransomware-tracker-scraper',
+                      'zeus-tracker-scraper'
+]
+```
+
 
 Daily:
+
+Same as hourly must be added as well for all daily feeds.
+```
+
+FEEDS_DAILY_NAMES = [
+                     'feodo-scraper', 'ff-goz-dga', 'locky-dga-scraper', 'malc0de-scraper',
+                     'tor-exit-node-scraper'
+]
+```
 ```
 FEEDS_TO_CHECK_DAILY = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>, 'hour_submitted': <HOUR>}}
 ```
@@ -36,10 +64,16 @@ example if a feed submits daily at 09:00 (UTC) then you must place the hour subm
 '09'.\
  **Important to remember the 0 at the front**.
  
-Weekly:
+Weekly:\
+Same as daily and hourly as well.
+```
+FEEDS_WEEKLY_NAMES = [
+                      'ponmocup-scraper'
+]
+```
+
 ```
 FEEDS_TO_CHECK_WEEKLY = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>, 'hour_submitted': <HOUR>, 'days_to_subtract': <NUM>}}
-```
 Since the weekly feed Watchmen runs once a week on Friday. In order to get the current date we have to set the date
 a integer value. Currently it goes as following:
 ```
@@ -56,8 +90,9 @@ Along with that is the hour it was submitted on that day.
 To run any of these watchmen individually you will need to add:
 ```
 ...
-main(None, None)
+main({'type':<Hourly, Daily, Weekly>', None)
 ```
+Choose one of the three above.\
 At the bottom of the script to ensure the added feed does not cause issues.
 ## Getting Started: Dev Setup
 Running a dev-setup script to install the project and libraries

@@ -29,11 +29,13 @@ class Watchmen(object):
     """
     universal watchmen class
     """
-    def __init__(self, bucket_name=''):
+    def __init__(self, bucket_name='', log_group_name=''):
         basicConfig(level=INFO)
         self.s3_client = boto3.resource('s3')
         self.dynamo_client = boto3.resource('dynamodb')
+        self.log_client = boto3.client('logs')
         self.bucket_name = bucket_name
+        self.log_group_name = log_group_name
 
     def validate_file_on_s3(self, key):
         """
@@ -68,7 +70,7 @@ class Watchmen(object):
             LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
         return file_contents
 
-    def get_time_string(self, feeds_to_check, feed, time_string_choice):
+    def select_dynamo_time_string(self, feeds_to_check, feed, time_string_choice):
         """
         Selects the time string to use based off choice.
         :param feeds_to_check: feeds currently being looked at
@@ -111,8 +113,44 @@ class Watchmen(object):
             LOGGER.info(EMPTY_METRIC_ERROR + feed)
         return metric
 
-    @staticmethod
-    def process_feeds_metrics(feeds_to_check, table_name, time_string_choice):
+    def process_feeds_logs(self, feed_names, start, end):
+        """
+        Processes all the logs for feeds and ensures that a log was created.
+        :param feed_names: names of all feeds submitting to Reaper
+        :param start: start time of processing logs
+        :param end: end time of processing logs
+        :return: a list if any feeds that are suspected to be down
+        """
+        response = None
+        feed_name_set = set()
+        downed_feeds = []
+        current_check_time = start + 1
+        while start < current_check_time < end:
+            if not response:
+                response = self.log_client.describe_log_streams(
+                    logGroupName=self.log_group_name,
+                    orderBy='LastEventTime',
+                    descending=True,
+                    limit=50
+                )
+            else:
+                response = self.log_client.describe_log_streams(
+                    logGroupName=self.log_group_name,
+                    orderBy='LastEventTime',
+                    descending=True,
+                    nextToken=response.get('nextToken'),
+                    limit=50
+                )
+            for log_stream in response.get('logStreams'):
+                feed_name_set.add(log_stream.get('logStreamName').split('/')[0])
+                current_check_time = log_stream.get('creationTime')
+
+        for feed in feed_names:
+            if feed not in feed_name_set:
+                downed_feeds.append(feed)
+        return downed_feeds
+
+    def process_feeds_metrics(self, feeds_to_check, table_name, time_string_choice):
         """
         Processes all hourly feeds in a particular dictionary format.
         :param feeds_to_check: feeds to be checked
@@ -121,22 +159,18 @@ class Watchmen(object):
         :return: list of feeds that are suspected to be down and list of feeds that submitted abnormal amounts
                  of domains
         """
-        watcher = Watchmen()
-        downed_feeds = []
         submitted_out_of_range_feeds = []
         for feed in feeds_to_check:
-            check_time = watcher.get_time_string(feeds_to_check, feed, time_string_choice)
-            metric = watcher.get_feed_metrics(table_name, feed, check_time)
+            check_time = self.select_dynamo_time_string(feeds_to_check, feed, time_string_choice)
+            metric = self.get_feed_metrics(table_name, feed, check_time)
             if metric:
                 feed_metrics = feeds_to_check.get(feed)
                 metric_val = metric.get(feed_metrics.get('metric_name'))
                 if feed_metrics.get('min') > metric_val or \
                    feed_metrics.get('max') < metric_val:
                     submitted_out_of_range_feeds.append(feed)
-            else:
-                downed_feeds.append(feed)
 
-        return downed_feeds, submitted_out_of_range_feeds
+        return submitted_out_of_range_feeds
 
     @staticmethod
     def get_dynamo_daily_time_string(hour):
