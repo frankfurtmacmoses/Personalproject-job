@@ -137,7 +137,7 @@ def main(event, context):
                 FEEDS_TO_CHECK_WEEKLY, TABLE_NAME, 2
             )
     except Exception as ex:
-        # raise_alarm(SNS_TOPIC_ARN, EXCEPTION_MESSAGE, SUBJECT_EXCEPTION_MESSAGE)
+        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_MESSAGE, SUBJECT_EXCEPTION_MESSAGE)
         status = FAILURE_MESSAGE
         LOGGER.error(ex)
 
@@ -148,6 +148,6 @@ def main(event, context):
                 ABNORMAL_SUBMISSIONS_MESSAGE + str(submitted_out_of_range_feeds)
         )
         LOGGER.info(message)
-        # raise_alarm(SNS_TOPIC_ARN, message, SUBJECT_MESSAGE)
+        raise_alarm(SNS_TOPIC_ARN, message, SUBJECT_MESSAGE)
     LOGGER.info(event_type + ": " + status)
     return status

@@ -24,6 +24,8 @@ FILE_NOT_FOUND_ERROR_MESSAGE = "FILE DOESN'T EXIST!"
 FILE_SIZE_ZERO_ERROR_MESSAGE = "FILE SIZE IS ZERO!"
 EMPTY_METRIC_ERROR = "No metric found for: "
 
+LAST_EVENT_TIME = 'LastEventTime'
+
 
 class Watchmen(object):
     """
@@ -129,14 +131,14 @@ class Watchmen(object):
             if not response:
                 response = self.log_client.describe_log_streams(
                     logGroupName=self.log_group_name,
-                    orderBy='LastEventTime',
+                    orderBy=LAST_EVENT_TIME,
                     descending=True,
                     limit=50
                 )
             else:
                 response = self.log_client.describe_log_streams(
                     logGroupName=self.log_group_name,
-                    orderBy='LastEventTime',
+                    orderBy=LAST_EVENT_TIME,
                     descending=True,
                     nextToken=response.get('nextToken'),
                     limit=50
