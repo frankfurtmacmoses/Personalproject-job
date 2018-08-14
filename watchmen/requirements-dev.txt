@@ -1,5 +1,5 @@
 boto3 == 1.4.7
-cyberint-aws == 0.0.1
+cyberint-aws == 0.0.2
 cyberint-watchmen == 0.0.2
 flake8 == 3.3.0
 idna == 2.5

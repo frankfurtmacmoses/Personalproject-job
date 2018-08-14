@@ -166,6 +166,59 @@
         ]
       }
     },
+    "WatchmenRorschachLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": {
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors parquet data coming into S3 hourly.",
+        "Environment": [
+          {"Name": "BUCKET_NAME", "Value": "bitaa"},
+          {"Name": "ENVIRONMENT", "Value": "cyberint-prod"},
+          {"Name": "PREFIX", "Value": "parquet/com.farsightsecurity.300021/year=2018"}
+        ],
+        "Handler": "handler.start_rorschach_watcher",
+        "MemorySize": 256,
+        "Role": {
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-rorschach"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
     "WatchmenSilhouetteLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
@@ -297,6 +350,22 @@
         ]
       }
     },
+    "RorschachScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A hourly event that kicks off Rorschach watchmen",
+        "ScheduleExpression": "cron(0 * * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "RorschachScheduler",
+            "Arn": {
+              "Fn::GetAtt": ["WatchmenRorschachLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
     "SilhouetteScheduledEvent": {
       "Type": "AWS::Events::Rule",
       "Properties": {
@@ -408,6 +477,25 @@
         }
       }
     },
+    "InvokeRorschachLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WatchmenRorschachLambda",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "RorschachScheduledEvent",
+            "Arn"
+          ]
+        }
+      }
+    },
     "InvokeSilhouetteLambdaPermission": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
@@ -480,6 +568,7 @@
                     "lambda:InvokeFunction",
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
+                    "logs:DescribeLogStreams",
                     "logs:PutLogEvents",
                     "s3:Get*",
                     "s3:List*",

@@ -32,7 +32,7 @@ SUBJECT_MESSAGE = "Manhattan detected an issue with one or more feeds being down
 SUBJECT_EXCEPTION_MESSAGE = "Manhattan watchmen failed due to an exception!"
 EXCEPTION_MESSAGE = "Please check logs for more details about exception!"
 
-ERROR_FEEDS = "Failed/Downed feeds: "
+ERROR_FEEDS = "Downed feeds: "
 ABNORMAL_SUBMISSIONS_MESSAGE = "Abnormal submission amount from these feeds: "
 
 TABLE_NAME = "CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ"
