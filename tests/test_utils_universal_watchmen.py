@@ -2,7 +2,7 @@ import unittest
 import pytz
 from datetime import datetime
 from mock import patch, MagicMock
-from moto import mock_s3, mock_dynamodb
+from moto import mock_s3, mock_dynamodb, mock_cloudwatch
 from watchmen.utils.universal_watchmen import Watchmen
 from botocore.exceptions import ClientError
 
@@ -33,6 +33,14 @@ class TestUniversalWatchman(unittest.TestCase):
         self.example_get_metric_return = {'success': 40}
         self.example_get_metric_return_low = {'success': 3}
         self.example_get_metric_return_high = {'success': 500}
+
+        self.example_log_response = {
+            'logStreams': [{'logStreamName': 'test-feed/test-feed-prod/abc', 'creationTime': 25}]
+        }
+
+        self.example_multiple_log_response = {
+            'logStreams': [{'logStreamName': 'temp-feed/temp-feed-prod/abc', 'creationTime': 8}]
+        }
 
     @mock_s3
     def test_validate_file_on_s3(self):
@@ -76,21 +84,29 @@ class TestUniversalWatchman(unittest.TestCase):
         mock_hourly.return_value = self.example_time_string
         # Test when it's hourly feed
         expected_result = self.example_time_string
-        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, 0)
+        returned_result = self.watcher.select_dynamo_time_string(
+            self.example_feeds_to_check, self.example_feed_name, 0
+        )
         self.assertEqual(expected_result, returned_result)
         # Test when it's daily feed
         mock_daily.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, 1)
+        returned_result = self.watcher.select_dynamo_time_string(
+            self.example_feeds_to_check, self.example_feed_name, 1
+        )
         self.assertEqual(expected_result, returned_result)
         # Test when it's weekly feed
         mock_weekly.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, 2)
+        returned_result = self.watcher.select_dynamo_time_string(
+            self.example_feeds_to_check, self.example_feed_name, 2
+        )
         self.assertEqual(expected_result, returned_result)
         # Test when user doesn't pick correct feed
         expected_result = None
-        returned_result = self.watcher.get_time_string(self.example_feeds_to_check, self.example_feed_name, None)
+        returned_result = self.watcher.select_dynamo_time_string(
+            self.example_feeds_to_check, self.example_feed_name, None
+        )
         self.assertEqual(expected_result, returned_result)
 
     @mock_dynamodb
@@ -112,23 +128,44 @@ class TestUniversalWatchman(unittest.TestCase):
         )
         self.assertEqual(expected_result, returned_result)
 
+    @mock_cloudwatch
+    @patch('watchmen.utils.universal_watchmen.Watchmen')
+    def test_process_feed_logs(self, mock_watchmen):
+        self.watcher.log_client = MagicMock()
+        self.watcher.log_client.describe_log_streams.return_value = self.example_log_response
+        # Test when feed is found!
+        expected_result = []
+        returned_result = self.watcher.process_feeds_logs(['test-feed'], 5, 10)
+        self.assertEqual(expected_result, returned_result)
+        # Test when feed is not found!
+        expected_result = ['not-found-feed']
+        returned_result = self.watcher.process_feeds_logs(['not-found-feed'], 5, 10)
+        self.assertEqual(expected_result, returned_result)
+        # Test for multiple calls to describe_log_stream
+        self.watcher.log_client.describe_log_streams.side_effect = \
+            self.example_multiple_log_response, self.example_log_response
+
+        expected_result = []
+        returned_result = self.watcher.process_feeds_logs(['temp-feed', 'test-feed'], 5, 10)
+        self.assertEqual(expected_result, returned_result)
+
     @patch('watchmen.utils.universal_watchmen.Watchmen.get_feed_metrics')
-    @patch('watchmen.utils.universal_watchmen.Watchmen.get_time_string')
-    def test_process_feed_metrics(self, mock_time_string, mock_get_feed_metrics):
+    @patch('watchmen.utils.universal_watchmen.Watchmen.select_dynamo_time_string')
+    def test_process_feeds_metrics(self, mock_time_string, mock_get_feed_metrics):
         mock_get_feed_metrics.return_value = self.example_get_metric_return
-        expected_result = [], []
+        expected_result = []
         returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
         self.assertEqual(expected_result, returned_result)
         mock_get_feed_metrics.return_value = self.example_get_metric_return_low
-        expected_result = [], ['test_feed']
+        expected_result = ['test_feed']
         returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
         self.assertEqual(expected_result, returned_result)
         mock_get_feed_metrics.return_value = self.example_get_metric_return_high
-        expected_result = [], ['test_feed']
+        expected_result = ['test_feed']
         returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
         self.assertEqual(expected_result, returned_result)
         mock_get_feed_metrics.return_value = None
-        expected_result = ['test_feed'], []
+        expected_result = []
         returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
         self.assertEqual(expected_result, returned_result)
 
