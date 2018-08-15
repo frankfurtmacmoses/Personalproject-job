@@ -26,7 +26,7 @@ SUCCESS_MESSAGE = "Lookalike feed is up and running!"
 FAILURE_MESSAGE = "ERROR: Lookalike feed never added files from yesterday! " \
                   "The feed may be down or simply did not complete!"
 FAILURE_SUBJECT = "Silhouette watchmen detected an issue with lookalike feed!"
-SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3"
 
 
 COMPLETED_STATUS = "COMPLETED"
