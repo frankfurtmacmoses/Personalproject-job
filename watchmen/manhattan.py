@@ -23,7 +23,7 @@ WEEKLY = "Weekly"
 
 HOUR_IN_MILI = 360000
 DAY_IN_MILI = 86400000
-FOUR_DAYS_IN_MILI = 345600000
+SIX_DAYS_IN_MILI = 518400000
 
 SUCCESS_MESSAGE = "feeds are up and running normally!"
 FAILURE_MESSAGE = "One or more feeds are down or submitting abnormal amounts of domains!"
