@@ -47,7 +47,7 @@ FEEDS_TO_CHECK_HOURLY = {
     'Xylitol_CyberCrime': {'metric_name': 'URI', 'min': 30, 'max': 50},
     'ecrimeX': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 10, 'max': 400},
     'G01Pack_DGA': {'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 15, 'max': 35},
-    'tracker_h3x_eu': {'metric_name': 'URI', 'min': 5, 'max': 50},
+    'tracker_h3x_eu': {'metric_name': 'URI', 'min': 5, 'max': 2000},
     'VX_Vault': {'metric_name': 'URI', 'min': 1, 'max': 20},
     'Ransomware_tracker': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 1, 'max': 15},
     'Zeus_Tracker': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 35, 'max': 55}
@@ -131,7 +131,7 @@ def main(event, context):
                 FEEDS_TO_CHECK_DAILY, TABLE_NAME, 1
             )
         elif event_type == WEEKLY:
-            start = end - FOUR_DAYS_IN_MILI
+            start = end - SIX_DAYS_IN_MILI
             downed_feeds = watcher.process_feeds_logs(FEEDS_WEEKLY_NAMES, start, end)
             submitted_out_of_range_feeds = watcher.process_feeds_metrics(
                 FEEDS_TO_CHECK_WEEKLY, TABLE_NAME, 2

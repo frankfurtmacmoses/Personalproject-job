@@ -44,7 +44,7 @@ def process_status():
     """
     watcher = Watchmen(BUCKET_NAME)
     is_completed = False
-    check_time = (datetime.now(pytz.utc) - timedelta(days=1)).strftime("%Y %m %d").split(' ')
+    check_time = (datetime.now(pytz.utc) - timedelta(days=2)).strftime("%Y %m %d").split(' ')
     key = FILE_PATH + check_time[0] + '/' + check_time[1] + '/' + check_time[2] + '/' + STATUS_FILE
     file_contents = watcher.get_file_contents_s3(key)
     if file_contents:
