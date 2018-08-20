@@ -186,11 +186,13 @@
           }
         },
         "Description": "Monitors parquet data coming into S3 hourly.",
-        "Environment": [
-          {"Name": "BUCKET_NAME", "Value": "bitaa"},
-          {"Name": "ENVIRONMENT", "Value": "cyberint-prod"},
-          {"Name": "PREFIX", "Value": "parquet/com.farsightsecurity.300021/year=2018"}
-        ],
+        "Environment": {
+          "Variables": {
+          "BUCKET_NAME": "bitaa",
+          "ENVIRONMENT": "cyberint-prod",
+          "PREFIX": "parquet/com.farsightsecurity.300021/year=2018"
+          }
+        },
         "Handler": "handler.start_rorschach_watcher",
         "MemorySize": 256,
         "Role": {

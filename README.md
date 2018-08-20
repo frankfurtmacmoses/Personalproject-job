@@ -74,6 +74,7 @@ FEEDS_WEEKLY_NAMES = [
 
 ```
 FEEDS_TO_CHECK_WEEKLY = {'feed_name': {'metric_name': <NAME> min': <NUM>, 'max': <NUM>, 'hour_submitted': <HOUR>, 'days_to_subtract': <NUM>}}
+```
 Since the weekly feed Watchmen runs once a week on Friday. In order to get the current date we have to set the date
 a integer value. Currently it goes as following:
 ```
@@ -84,12 +85,11 @@ Tuesday: 3
 Wednesday: 2
 Thursday: 1
 Friday: 0
-``` 
+```
 Along with that is the hour it was submitted on that day.
 
 To run any of these watchmen individually you will need to add:
 ```
-...
 main({'type':<Hourly, Daily, Weekly>', None)
 ```
 Choose one of the three above.\
@@ -107,14 +107,17 @@ packages.
 ## Testing
 After running the previous command now you can start running unit tests on the current
 code. To run all tests:
+
 ```
 make test-all
 ```
 or to start a clean test (you should do this before adding changes)
 ```
-mak clean test-all
+make clean test-all
 ```
+
 After tests are completed you should see the results in the following format:
+
 ```
 ---------- coverage: platform linux2, python 2.7.12-final-0 ----------
 Name                                   Stmts   Miss  Cover
@@ -132,8 +135,13 @@ watchmen/utils/universal_watchmen.py      74      0   100%
 TOTAL                                    268      0   100%
 Coverage HTML written to dir htmlcov
 ```
-To view individual test coverage go to cyberint-watchmen/htmlcov/<YOUR_FILE> to view
-testing coverage.
+
+
+To view individual test coverage go to
+```
+cyberint-watchmen/htmlcov/<YOUR_FILE> 
+```
+to view testing coverage.
 
 ## Deployment
 The deployment may vary depending on what is added to the cloud formation template.
