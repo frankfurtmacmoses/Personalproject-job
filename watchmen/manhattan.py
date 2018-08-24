@@ -45,7 +45,7 @@ FEEDS_TO_CHECK_HOURLY = {
     'bambenek_c2_ip': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 50, 'max': 300},
     'cox_feed': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 15000, 'max': 35000},
     'Xylitol_CyberCrime': {'metric_name': 'URI', 'min': 30, 'max': 50},
-    'ecrimeX': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 10, 'max': 400},
+    'ecrimeX': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 10, 'max': 700},
     'G01Pack_DGA': {'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 15, 'max': 35},
     'tracker_h3x_eu': {'metric_name': 'URI', 'min': 5, 'max': 2000},
     'VX_Vault': {'metric_name': 'URI', 'min': 1, 'max': 20},
@@ -64,7 +64,7 @@ FEEDS_TO_CHECK_DAILY = {
         'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 2500, 'max': 4500, 'hour_submitted': '09'
     },
     'feodo_tracker': {
-        'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 5, 'max': 35, 'hour_submitted': '21'
+        'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 5, 'max': 50, 'hour_submitted': '21'
     },
     'FastFlux_GameoverZeus_DGA': {
         'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 10000, 'max': 12000, 'hour_submitted': '10'
