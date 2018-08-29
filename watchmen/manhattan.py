@@ -60,6 +60,9 @@ FEEDS_HOURLY_NAMES = [
 ]
 
 FEEDS_TO_CHECK_DAILY = {
+    'bambenek_OSINT_DGA': {
+        'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 40000, 'max': 300000, 'hour_submitted': '11'
+    },
     'CryptoLocker_DGA': {
         'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 2500, 'max': 4500, 'hour_submitted': '09'
     },
@@ -81,7 +84,7 @@ FEEDS_TO_CHECK_DAILY = {
 }
 
 FEEDS_DAILY_NAMES = [
-                     'feodo-scraper', 'ff-goz-dga', 'locky-dga-scraper', 'malc0de-scraper',
+                     'bambenek-dga', 'feodo-scraper', 'ff-goz-dga', 'locky-dga-scraper', 'malc0de-scraper',
                      'tor-exit-node-scraper'
 ]
 
