@@ -11,8 +11,8 @@ This script is designed to monitor daily, hourly, and weekly feeds and ensure pr
 from logging import getLogger, basicConfig, INFO
 from time import time
 # Cyberint imports
-from watchmen.utils.universal_watchmen import Watchmen
-from cyberint_aws.sns_alerts import raise_alarm
+from utils.universal_watchmen import Watchmen
+from utils.sns_alerts import raise_alarm
 
 LOGGER = getLogger("Manhattan")
 basicConfig(level=INFO)

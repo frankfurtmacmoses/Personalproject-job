@@ -113,7 +113,7 @@ class TestRorschach(unittest.TestCase):
         rorschach.RorschachWatcher.bucket = None
         self.assertRaises(AssertionError, rorschach.RorschachWatcher)
 
-    @patch('cyberint_aws.s3.generate_pages')
+    @patch('watchmen.utils.s3.generate_pages')
     def test_process_all_files(self, mock_generate_pages):
 
         expected = {
@@ -145,7 +145,7 @@ class TestRorschach(unittest.TestCase):
 
     @patch('watchmen.rorschach.RorschachWatcher.process_all_files')
     @patch('watchmen.rorschach.RorschachWatcher.raise_alarm')
-    @patch('cyberint_aws.s3.check_empty_folder')
+    @patch('watchmen.utils.s3.check_empty_folder')
     def test_check_parquet_stream(self, mock_check_empty_folder, mock_raise_alarm, mock_process_all_files):
         # Test with Empty Response!
         # should raise the alarm

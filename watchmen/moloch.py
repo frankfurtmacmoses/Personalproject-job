@@ -16,8 +16,8 @@ from logging import getLogger, basicConfig, INFO
 import pytz
 
 # Cyberint imports
-from cyberint_watchmen.universal_watchmen import Watchmen
-from cyberint_aws.sns_alerts import raise_alarm
+from utils.universal_watchmen import Watchmen
+from utils.sns_alerts import raise_alarm
 
 LOGGER = getLogger("Moloch")
 basicConfig(level=INFO)
