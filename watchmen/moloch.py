@@ -24,9 +24,20 @@ basicConfig(level=INFO)
 
 SUCCESS_MESSAGE = "NOH/D Feeds are up and running!"
 ERROR = "ERROR: "
-FAILURE_DOMAIN = ERROR + "The newly observed domain feed has gone down!"
-FAILURE_HOSTNAME = ERROR + "The newly observed hostname feed has gone down!"
-FAILURE_BOTH = ERROR + "Both newly observed hostname and domain feeds have gone down!"
+FAILURE_DOMAIN = ERROR + "The newly observed hostname feed has gone down! To view missing data go run the command " \
+                           "aws s3 ls s3://deteque-new-observable-data/NewlyObservedDomains and head towards the " \
+                           "most recent data. Afterwards contact Devops team to restart Domains tasks in AWS SaaS " \
+                           "account."
+FAILURE_HOSTNAME = ERROR + "The newly observed domains feed has gone down! To view missing data go run the command " \
+                           "aws s3 ls s3://deteque-new-observable-data/NewlyObservedHostname and head towards the " \
+                           "most recent data. Afterwards contact Devops team to restart Hostname tasks in AWS SaaS " \
+                           "account."
+FAILURE_BOTH = ERROR + "Both hostname and domains feed have gone down! To view missing data go run the command " \
+                           "aws s3 ls s3://deteque-new-observable-data/NewlyObservedHostname and " \
+                           "run the command s3 ls s3://deteque-new-observable-data/NewlyObservedDomains  " \
+                           "head towards the most recent data. Afterwards contact Devops team to restart Hostname " \
+                           "and Domains tasks in AWS SaaS account."
+
 FAILURE_SUBJECT = "Moloch watchmen detected an issue with NOH/D feed!"
 
 BUCKET_NAME = "deteque-new-observable-data"

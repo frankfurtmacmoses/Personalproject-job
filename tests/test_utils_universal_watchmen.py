@@ -157,11 +157,11 @@ class TestUniversalWatchman(unittest.TestCase):
         returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
         self.assertEqual(expected_result, returned_result)
         mock_get_feed_metrics.return_value = self.example_get_metric_return_low
-        expected_result = ['test_feed']
+        expected_result = ['test_feed, Amount Submitted: 3, Min Submission Amount 4, Max Submission Amount : 50']
         returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
         self.assertEqual(expected_result, returned_result)
         mock_get_feed_metrics.return_value = self.example_get_metric_return_high
-        expected_result = ['test_feed']
+        expected_result = ['test_feed, Amount Submitted: 500, Min Submission Amount 4, Max Submission Amount : 50']
         returned_result = self.watcher.process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
         self.assertEqual(expected_result, returned_result)
         mock_get_feed_metrics.return_value = None
