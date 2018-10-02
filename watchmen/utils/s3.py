@@ -57,13 +57,11 @@ def check_bucket(bucket_name):
 
     try:
         s3_resource.meta.client.head_bucket(Bucket=bucket_name)
-    except botocore.exceptions.ParamValidationError as expv:
-        result['err'] = expv
-    except botocore.exceptions.ClientError as ex_client_error:
+    except (botocore.exceptions.ClientError, botocore.exceptions.ParamValidationError) as ex_error:
         # If a client error is thrown, then check that it was a 404 error.
         # If it was a 404 error, then the bucket does not exist.
         # error_code = int(e.response['Error']['Code'])
-        result['err'] = ex_client_error
+        result['err'] = ex_error
     except Exception as ex:
         result['err'] = ex
     else:

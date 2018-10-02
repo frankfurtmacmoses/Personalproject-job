@@ -47,8 +47,8 @@ FEEDS_TO_CHECK_HOURLY = {
     'Xylitol_CyberCrime': {'metric_name': 'URI', 'min': 30, 'max': 50},
     'ecrimeX': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 10, 'max': 700},
     'G01Pack_DGA': {'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 15, 'max': 35},
-    'tracker_h3x_eu': {'metric_name': 'URI', 'min': 5, 'max': 2000},
-    'VX_Vault': {'metric_name': 'URI', 'min': 1, 'max': 20},
+    'tracker_h3x_eu': {'metric_name': 'URI', 'min': 1, 'max': 2000},
+    'VX_Vault': {'metric_name': 'URI', 'min': 1, 'max': 100},
     'Ransomware_tracker': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 1, 'max': 15},
     'Zeus_Tracker': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 35, 'max': 55}
 }

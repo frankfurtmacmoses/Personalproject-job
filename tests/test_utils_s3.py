@@ -9,7 +9,7 @@ Test utils for S3 module
 from __future__ import absolute_import
 import unittest
 import watchmen.utils.s3 as s3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ParamValidationError
 from mock import Mock, MagicMock, patch
 
 
@@ -89,7 +89,7 @@ class TestS3(unittest.TestCase):
                 ],
                 # 2 in 'test' (prefix) and 2 in "sub-path"
                 'keys': [
-                    {u'Prefix': u'test/20170116/'},
+                    {u'Prefix': u'test/20170116/', u'Key': u'empty/'},
                     {u'Prefix': u'test/20170116/test1'},
                     {u'Prefix': u'test/abc/'},
                     {u'Prefix': u'test/abc/more_test2'},
@@ -162,6 +162,14 @@ class TestS3(unittest.TestCase):
         with self.assertRaises(ClientError) as context:
             s3.check_bucket("any")
         self.assertTrue(self.err_boto3_msg in context.exception.message)
+
+    @patch('watchmen.utils.s3.boto3_session')
+    def test_check_bucket_s3_param_validation_error(self, mock_boto3):
+        args = {'report': 'example_report'}
+        self.mock_session.resource.side_effect = ParamValidationError(**args)
+        mock_boto3.Session.return_value = self.mock_session
+        with self.assertRaises(ParamValidationError):
+            s3.check_bucket("any")
 
     @patch('watchmen.utils.s3.boto3_session')
     def test_check_bucket_s3_error(self, mock_boto3):
@@ -502,6 +510,17 @@ class TestS3(unittest.TestCase):
         self.assertEqual(key, mock_object)
 
     @patch('watchmen.utils.s3.boto3_session')
+    def test_get_key_none(self, mock_boto3):
+        """
+        test hancock.utils.s3.get_key
+        """
+        key_name = 'some/key'
+        mock_boto3.Session.return_value = self.mock_session
+        expected_result = None
+        returned_result = s3.get_key(key_name, 'bucket')
+        self.assertEqual(expected_result, returned_result)
+
+    @patch('watchmen.utils.s3.boto3_session')
     @patch('watchmen.utils.s3.check_bucket')
     def test_get_keys(self, mock_check, mock_boto3):
         """
@@ -536,6 +555,21 @@ class TestS3(unittest.TestCase):
         self.assertEqual(result[0]['prop1'], 'value1')
         self.assertEqual(result[1]['prop2'], 'value2')
         self.assertEqual(result[2]['prop3'], 'value3')
+
+    @patch('watchmen.utils.s3.convert_parquet_to_json')
+    @patch('watchmen.utils.s3.get_content')
+    def test_get_parquet_data_exception(self, mock_get_content, mock_convert_parquet_to_json):
+        key_name, bucket = "part-", "b"
+        contents = '''
+        {"prop1": "value1"}
+        {"prop2": "value2"}
+        {"prop3": "value3"}
+        '''
+        mock_get_content.return_value = contents
+        mock_convert_parquet_to_json.side_effect = Exception("Something went wrong :(")
+        expected_result = None
+        returned_result = s3.get_parquet_data(key_name, bucket)
+        self.assertEqual(expected_result, returned_result)
 
     @patch('watchmen.utils.s3.boto3_session')
     def test_mv(self, mock_boto3):
@@ -719,7 +753,8 @@ class TestS3(unittest.TestCase):
         self.mock_paginator.paginate.assert_called_with(
             **self.mock_params_test_dirs)
         self.mock_iterator.search.assert_called_with('Contents')
-        self.assertEqual(counts, len(self.mock_prefix_test_dirs))
+        # Minus 1 at the end since the directory gets removed
+        self.assertEqual(counts, len(self.mock_prefix_test_dirs) - 1)
 
     @patch('watchmen.utils.s3.boto3_session')
     @patch('watchmen.utils.s3.check_bucket')
