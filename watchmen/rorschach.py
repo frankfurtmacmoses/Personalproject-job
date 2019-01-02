@@ -67,7 +67,7 @@ class RorschachWatcher(object):
     RorschachWatcher class
     """
 
-    suffix_format = "month=%0m/day=%0d"
+    suffix_format = "year=%0Y/month=%0m/day=%0d"
     prefix = _os.getenv(_PREFIX)
     bucket = _os.getenv(_BUCKET_NAME)
     offset = 3

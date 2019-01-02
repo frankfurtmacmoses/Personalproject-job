@@ -190,7 +190,7 @@
           "Variables": {
           "BUCKET_NAME": "bitaa",
           "ENVIRONMENT": "cyberint-prod",
-          "PREFIX": "parquet/com.farsightsecurity.300021/year=2018"
+          "PREFIX": "parquet/com.farsightsecurity.300021/"
           }
         },
         "Handler": "handler.start_rorschach_watcher",
