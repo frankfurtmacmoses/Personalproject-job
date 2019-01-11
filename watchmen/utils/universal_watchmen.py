@@ -168,11 +168,12 @@ class Watchmen(object):
             if metric:
                 feed_metrics = feeds_to_check.get(feed)
                 metric_val = metric.get(feed_metrics.get('metric_name'))
-                if feed_metrics.get('min') > metric_val or \
-                   feed_metrics.get('max') < metric_val:
-                    submitted_out_of_range_feeds.append(feed + ", Amount Submitted: " + str(metric_val) +
-                                                        ", Min Submission Amount " + str(feed_metrics.get('min')) +
-                                                        ", Max Submission Amount : " + str(feed_metrics.get('max')))
+                if metric_val:
+                    if feed_metrics.get('min') > metric_val or \
+                       feed_metrics.get('max') < metric_val:
+                        submitted_out_of_range_feeds.append(feed + ", Amount Submitted: " + str(metric_val) +
+                                                            ", Min Submission Amount " + str(feed_metrics.get('min')) +
+                                                            ", Max Submission Amount : " + str(feed_metrics.get('max')))
 
         return submitted_out_of_range_feeds
 
