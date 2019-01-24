@@ -54,15 +54,15 @@ def main(event, context):
     LOGGER.info(message)
     #return status
 
+
 def get_s3_filename():
     """
     Gets yesterday's s3 filename
     :return: filename
     """
-    now = datetime.now()
+    now = datetime.now(pytz.utc)
     yesterday = now - timedelta(days=1)
-    fn = yesterday.strftime('%Y') + "/" + yesterday.strftime('%m') + "/gt_mpdns_" + \
-         yesterday.strftime("%Y%m%d") + ".zip"
+    fn = yesterday.strftime('%Y') + "/" + yesterday.strftime('%m') + "/gt_mpdns_" + yesterday.strftime("%Y%m%d") + ".zip"
     return fn
 
 
