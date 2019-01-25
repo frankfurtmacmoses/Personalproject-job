@@ -40,7 +40,15 @@
   }]
 }
 """
-from watchmen import moloch, silhouette, manhattan, ozymandias, rorschach
+from watchmen import spectre, moloch, silhouette, manhattan, ozymandias, rorschach
+
+
+def start_spectre_watcher(event, context):
+    """
+    Start the spectre watcher for Georgia Tech Feed.
+    :return: The context that the code is being run in.
+    """
+    return spectre.main(event, context)
 
 
 def start_moloch_watcher(event, context):
