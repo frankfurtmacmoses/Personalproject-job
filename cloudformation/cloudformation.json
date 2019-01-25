@@ -269,6 +269,54 @@
         ]
       }
     },
+    "WatchmenSpectreLambda": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python2.7",
+        "Code": { 
+          "S3Bucket": {"Ref" : "WatchmenBucket"},
+          "S3Key": {
+            "Fn::Join": [
+              "/", [
+                {
+                  "Ref": "WatchmenBuildsPrefix"
+                },
+                {
+                  "Ref": "WatchmenLambdasZipFile"
+                }
+              ]
+            ]
+          }
+        },
+        "Description": "Monitors Georgia Tech data coming into S3.",
+        "Handler": "handler.start_spectre_watcher",
+        "MemorySize": 256,
+        "Role": {
+             "Fn::GetAtt": [
+              "WatchmenLambdaExecutionRole",
+              "Arn"
+             ]
+        },
+        "Timeout": 30,
+        "Tags": [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-ozymandias"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ]
+      }
+    },
     "ManhattanDailyScheduledEvent": {
       "Type": "AWS::Events::Rule",
       "Properties": {
@@ -379,6 +427,22 @@
             "Id": "SilhouetteScheduler",
             "Arn": {
               "Fn::GetAtt": ["WatchmenSilhouetteLambda", "Arn"]
+            }
+          }
+        ]
+      }
+    },
+    "SpectreScheduledEvent": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "A daily event that kicks off Spectre Watchman",
+        "ScheduleExpression": "cron(0 16 * * ? *)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Id": "SpectreScheduler",
+            "Arn": {
+              "Fn::GetAtt": ["WatchmenSpectreLambda", "Arn"]
             }
           }
         ]
@@ -512,6 +576,25 @@
         "SourceArn": {
           "Fn::GetAtt": [
             "SilhouetteScheduledEvent",
+            "Arn"
+          ]
+        }
+      }
+    },
+    "InvokeSpectreLambdaPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "WatchmenSpectreLambda",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": [
+            "SpectreScheduledEvent",
             "Arn"
           ]
         }
