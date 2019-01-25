@@ -50,9 +50,8 @@ def main(event, context):
         message = FAILURE_MESSAGE
         raise_alarm(SNS_TOPIC_ARN, EXCEPTION_MESSAGE, FAIL_SUBJECT_MESSAGE)
 
-
     LOGGER.info(message)
-    #return status
+    return message
 
 
 def get_s3_filename():
@@ -64,7 +63,6 @@ def get_s3_filename():
     yesterday = now - timedelta(days=1)
     fn = yesterday.strftime('%Y') + "/" + yesterday.strftime('%m') + "/gt_mpdns_" + yesterday.strftime("%Y%m%d") + ".zip"
     return fn
-
 
 
 if __name__ == '__main__':
