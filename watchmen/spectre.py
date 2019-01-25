@@ -37,17 +37,17 @@ def main(event, context):
     watcher = Watchmen(bucket_name=BUCKET_NAME)
     fn = get_s3_filename()
     file_path = '{}{}'.format(PATH_TO_FILES, fn)
-    message = '{} {}'.format(SUCCESS_MESSAGE, fn)
+    message = '{}{}'.format(SUCCESS_MESSAGE, fn)
     try:
         found_file = watcher.validate_file_on_s3(file_path)
         if not found_file:
-            LOGGER.info('File:  {} {}'.format(fn, FILE_NOT_FOUND_ERROR))
-            message = 'ERROR:  {} {}'.format(fn, FAILURE_MESSAGE)
-            raise_alarm(SNS_TOPIC_ARN, 'File:  {} {}'.format(fn, FILE_NOT_FOUND_ERROR), FAIL_SUBJECT_MESSAGE)
+            LOGGER.info('File: {}{}'.format(fn, FILE_NOT_FOUND_ERROR))
+            message = 'ERROR: {}{}'.format(fn, FAILURE_MESSAGE)
+            raise_alarm(SNS_TOPIC_ARN, 'File: {}{}'.format(fn, FILE_NOT_FOUND_ERROR), FAIL_SUBJECT_MESSAGE)
     except Exception as ex:
         LOGGER.error(ex)
         LOGGER.info(EXCEPTION_MESSAGE)
-        message = FAILURE_MESSAGE
+        message = 'ERROR: {}{}'.format(fn, FAILURE_MESSAGE)
         raise_alarm(SNS_TOPIC_ARN, EXCEPTION_MESSAGE, FAIL_SUBJECT_MESSAGE)
 
     LOGGER.info(message)
