@@ -6,7 +6,7 @@ import pytz
 from mock import patch
 from moto import mock_s3
 
-from watchmen.spectre import SUCCESS_MESSAGE, FAILURE_MESSAGE, EXCEPTION_MESSAGE
+from watchmen.spectre import SUCCESS_MESSAGE, FAILURE_MESSAGE
 
 
 class TestSpectre(unittest.TestCase):
@@ -44,7 +44,3 @@ class TestSpectre(unittest.TestCase):
         expected_result = 'ERROR: {}{}'.format(self.example_filename, FAILURE_MESSAGE)
         returned_result = main(None, None)
         self.assertEqual(expected_result, returned_result)
-
-
-
-
