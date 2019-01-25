@@ -37,20 +37,20 @@ def main(event, context):
     :return: status of the file
     """
     watcher = Watchmen(bucket_name=BUCKET_NAME)
-    fn = get_s3_filename()
-    file_path = '{}{}'.format(PATH_TO_FILES, fn)
-    message = '{}{}'.format(SUCCESS_MESSAGE, fn)
+    filename = get_s3_filename()
+    file_path = '{}{}'.format(PATH_TO_FILES, filename)
+    message = '{}{}'.format(SUCCESS_MESSAGE, filename)
     try:
         found_file = watcher.validate_file_on_s3(file_path)
         if not found_file:
-            LOGGER.info('File: {}{}'.format(fn, FILE_NOT_FOUND_ERROR))
-            message = 'ERROR: {}{}'.format(fn, FAILURE_MESSAGE)
-            raise_alarm(SNS_TOPIC_ARN, 'File: {}{}'.format(fn, FILE_NOT_FOUND_ERROR), FAIL_SUBJECT_MESSAGE)
+            LOGGER.info('File: {}{}'.format(filename, FILE_NOT_FOUND_ERROR))
+            message = 'ERROR: {}{}'.format(filename, FAILURE_MESSAGE)
+            raise_alarm(SNS_TOPIC_ARN, 'File: {}{}'.format(filename, FILE_NOT_FOUND_ERROR), FAIL_SUBJECT_MESSAGE)
     except Exception as ex:
         LOGGER.error(ex)
         LOGGER.info(EXCEPTION_MESSAGE)
-        message = 'ERROR: {}{}'.format(fn, FAILURE_MESSAGE)
-        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_MESSAGE, FAIL_SUBJECT_MESSAGE)
+        message = 'ERROR: {}{}'.format(filename, FAILURE_MESSAGE)
+        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_MESSAGE, FAIL_SUBJECT_MESSAGE + "\n\n" + str(ex))
 
     LOGGER.info(message)
     return message
@@ -63,5 +63,6 @@ def get_s3_filename():
     """
     now = datetime.now(pytz.utc)
     yesterday = now - timedelta(days=1)
-    fn = yesterday.strftime('%Y') + "/" + yesterday.strftime('%m') + "/gt_mpdns_" + yesterday.strftime("%Y%m%d") + ".zip"
-    return fn
+    filename = yesterday.strftime('%Y') + "/" + yesterday.strftime('%m') + \
+        "/gt_mpdns_" + yesterday.strftime("%Y%m%d") + ".zip"
+    return filename

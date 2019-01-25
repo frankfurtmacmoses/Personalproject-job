@@ -12,13 +12,13 @@ from watchmen.spectre import SUCCESS_MESSAGE, FAILURE_MESSAGE
 class TestSpectre(unittest.TestCase):
 
     def setUp(self):
-        self.example_yesterday = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
+        self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
         self.example_filename = "2018/12/gt_mpdns_20181217.zip"
         self.example_exception_message = "Something is not working"
 
     @patch('watchmen.spectre.datetime')
     def test_get_s3_filename(self, mock_datetime):
-        mock_datetime.now.return_value = self.example_yesterday
+        mock_datetime.now.return_value = self.example_today
         expected_result = self.example_filename
         returned_result = get_s3_filename()
         self.assertEqual(expected_result, returned_result)

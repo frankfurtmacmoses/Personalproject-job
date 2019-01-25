@@ -9,6 +9,11 @@ class TestMain(unittest.TestCase):
         self.event = {}
         self.context = {}
 
+    @patch('watchmen.main.spectre')
+    def test_start_spectre_watcher(self, mock_spectre):
+        main.start_spectre_watcher(self.event, self.context)
+        mock_spectre.main.assert_called_once()
+
     @patch('watchmen.main.moloch')
     def test_start_moloch_watcher(self, mock_moloch):
         main.start_moloch_watcher(self.event, self.context)
