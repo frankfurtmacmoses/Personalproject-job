@@ -273,7 +273,7 @@
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Runtime": "python2.7",
-        "Code": { 
+        "Code": {
           "S3Bucket": {"Ref" : "WatchmenBucket"},
           "S3Key": {
             "Fn::Join": [
