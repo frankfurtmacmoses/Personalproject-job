@@ -303,7 +303,7 @@
           {"Key": "Product", "Value": "watchmen"},
           {"Key": "Protected", "Value": "TRUE"},
           {"Key": "Component", "Value": "lambda"},
-          {"Key": "Name", "Value": "watchmen-ozymandias"},
+          {"Key": "Name", "Value": "watchmen-spectre"},
           {
             "Key": "Env",
             "Value": {
