@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from logging import getLogger, basicConfig, INFO
 from utils.sns_alerts import raise_alarm
 from utils.universal_watchmen import Watchmen
-import pytz, requests, json, sys
+import pytz, requests, json
 
 
 LOGGER = getLogger("Jupiter")
@@ -91,6 +91,7 @@ def main(event, context):
     else:
         print(message)
         #return message
+
 
 
 
