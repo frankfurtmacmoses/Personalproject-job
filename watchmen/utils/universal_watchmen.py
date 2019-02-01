@@ -19,6 +19,7 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 LOGGER = getLogger("Universal Watchmen")
+basicConfig(level=INFO)
 
 FILE_NOT_FOUND_ERROR_MESSAGE = "FILE DOESN'T EXIST!"
 FILE_SIZE_ZERO_ERROR_MESSAGE = "FILE SIZE IS ZERO!"
