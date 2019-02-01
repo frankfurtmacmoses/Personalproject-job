@@ -1,0 +1,29 @@
+[
+	{
+
+		"name": "sockeye",
+		"contact": "sec-engineer",
+		"path": "http://sng-test.r11.com/",
+		"routes": 
+		[
+			{
+				"name": "api",
+				"path": "v1/info",
+				"format": "json",
+				"keys_check": ["dbinfo"]
+			},
+			{
+				"name": "data",
+				"path": "v1/data/info",
+				"format": "json",
+				"keys_check": ["dbinfo"]
+			},
+			{
+				"name": "hancock",
+				"path": "v1/hancock/info",
+				"format": "json",
+				"keys_check": ["dbinfo"]
+			}
+		]
+	}
+]

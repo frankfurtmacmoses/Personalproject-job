@@ -7,65 +7,50 @@ If data is not found in the database or the endpoint does work correctly, an SNS
 @author: Kayla Ramos
 @email: kramos@infoblox.com
 """
-from datetime import datetime, timedelta
 from logging import getLogger, basicConfig, INFO
 from utils.sns_alerts import raise_alarm
 from utils.universal_watchmen import Watchmen
-import pytz, requests, json
+import requests, json
 
 
-LOGGER = getLogger("Jupiter")
-basicConfig(level=INFO)
+def _check_endpoint(config, **kwargs):
+    env = config.get('env')   # I dont know why this important
+    status_code = config.get('status', 200)
 
-# File Strings
-BUCKET_NAME = "cyber-intel"
-URL_PREFIX = "http://sng.r11.com/v1/"
-USER = "cyberint_dev"
+    parent = {}
+    parent.update(kwargs)
 
-# Message Strings
-EMPTY_DB_ERROR = " does not have any data in database!"
-ENDPOINT_ERROR = "There is not a JSON file on "
-SUCCESS_MESSAGE = "All sockeye endpoints have DB info and correct users!"
+    base_url = parent.get('path', '')
+    path = config.get('path')
+    if parent:
+        parent_path = parent.get(kwargs.keys()[0]).get('path')
+    else:
+        parent_path = parent.get('path')
 
+    if parent_path is not None:
+        path = "{}{}".format(parent_path, path)
 
-def queryJSON(point, data):
-    """
-    Check DB for data, and if the JSON file has a currentUser key, make sure it is the expected user
-    :param data: JSON data pulled from endpoint
-    :return: status message (nothing if everything is working)
-    """
-    message = ''
+    format = config.get('format', 'json')
+
+    data = requests.get(path)
+
+    # Checking status, json, and keys
+    if not data.status_code == status_code:
+        print ("Different status code!")
+        return
+    # if it is the parent, then there should be no JSON file to check
+    # so this says check if it's the parent and loads JSON data
     try:
-        data = json.loads(json.dumps(data))
-        if not (data["dbInfo"]["dbSizeInMb"] > 0):
-            LOGGER.info('{}{}'.format(point, EMPTY_DB_ERROR))
-            message = 'Endpoint \'{}\'{}'.format(point, EMPTY_DB_ERROR)
-        try:
-            data["dbInfo"]["currentUser"]
-            if not (data["dbInfo"]["currentUser"] == USER):
-                print("The user is incorrect!")
-        except KeyError:
-            pass
+        data.json()
     except Exception as ex:
-        print("Something broke")
+        if parent_path is not None:
+            print("Not a JSON file!")
+        else:
+            return
 
-    return message
 
 
-def checkEndpoint(point):
-    """
-    Checks if endpoints are accessible
-    :param point: endpoint that is being checked
-    :return: JSON file contents
-    """
-    try:
-        r = requests.get('{}{}'.format(URL_PREFIX, point))
-        data =r.json()
-    except Exception as ex:
-        LOGGER.error(ex)
-        LOGGER.info('{}{}{}, Please check URL prefix'.format(ENDPOINT_ERROR, URL_PREFIX, point))
-        raise Exception('{}{} does not have an accessible JSON file'.format(URL_PREFIX, point))
-    return data
+
 
 
 # pylint: disable=unused-argument
@@ -74,27 +59,15 @@ def main(event, context):
     main function
     :return: status of Sockeye endpoints
     """
-    #watcher = Watchmen(bucket_name=BUCKET_NAME)
+    with open("endpoints.json") as data_file:
+        data = json.load(data_file)[0]   # converting list to dict
 
-    #for now, hard-coded list of endpoints
-    # once I make the s3 file that contains all the end-points, I will validate and then get contents
-    # if that doesn't work, then I use local copy of endpoint.json containing all the endpoints
-    # local endpoint.json may not be update
-    message = ''
-    endpoints = ["info", "data/info", "hancock/info", "truth/info"]
-    for point in endpoints:
-        message += queryJSON(point, checkEndpoint(point)) + '\n'
-
-    if message.isspace():
-        print(SUCCESS_MESSAGE)
-        #return SUCCESS_MESSAGE
-    else:
-        print(message)
-        #return message
-
-
-
-
+    _check_endpoint(data)
+    routes = data.get('routes')
+    if not isinstance(routes, list):
+        return
+    for route in routes:
+        _check_endpoint(route, data=data)
 
 if __name__ == '__main__':
     main(None, None)
