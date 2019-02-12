@@ -78,6 +78,7 @@ clean clean-cache:
 	@echo "--- Removing pyc and log files"
 	find . -name '.DS_Store' -type f -delete
 	find . -name \*.pyc -type f -delete -o -name \*.log -delete
+	find . -name '__pycache__' -type d -delete
 	rm -Rf .cache
 	rm -Rf .vscode
 	rm -Rf $(PROJECT)/.cache
@@ -97,6 +98,15 @@ clean clean-cache:
 	@echo "--- Removing tox virtualenv"
 	rm -Rf $(PROJECT)/.tox*
 	@echo
+	@echo "--- Removing build"
+	rm -rf $(PROJECT)_build.tee
+	rm -rf $(BUILDS_DIR)
+	rm -rf build
+	@echo
+	@echo "- DONE: $@"
+
+clean-all: clean-cache
+	@echo
 ifneq ("$(VIRTUAL_ENV)","")
 	@echo "--- Cleaning up pip list in $(VIRTUAL_ENV) ..."
 	pip freeze | grep -v "^-e" | xargs pip uninstall -y || true
@@ -104,14 +114,6 @@ else
 	@echo "--- Removing virtual env"
 	rm -Rf $(PROJECT)/.venv*
 endif
-	@echo
-	@echo "--- Removing build"
-	rm -rf $(PROJECT)_build.tee
-	rm -rf $(BUILDS_DIR)
-	@echo
-	@echo "- DONE: $@"
-
-clean-all: clean-cache
 	@echo
 ifeq ("$(wildcard /.dockerenv)","")
 	# not in a docker container
@@ -299,6 +301,7 @@ test pytest: clean-cache check-tools
 ifeq ("$(DONT_RUN_PYVENV)", "true")
 	@echo "--- Starting pytest for unit tests ..."
 	@echo
+	PYTHONPATH=. \
 	AWS_DEFAULT_REGION=$(AWS_DEFAULT_REGION) \
 	pytest -c setup.cfg -m "not functest" $(PYTEST_ARGS)
 

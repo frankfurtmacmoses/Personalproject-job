@@ -15,7 +15,7 @@ from mock import Mock, MagicMock, patch
 
 class TestS3(unittest.TestCase):
     """
-    TestS3 includes all unit tests for hancock.utils.s3 module
+    TestS3 includes all unit tests for watchmen.utils.s3 module
     """
 
     def get_keys_from_prefixes(self, prefixes):
@@ -199,7 +199,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_check_empty_folder(self, mock_boto3):
         """
-        test hancock.utils.s3.check_empty_folder
+        test watchmen.utils.s3.check_empty_folder
         """
         mock_boto3.Session.return_value = self.mock_session
         ctx = [
@@ -227,7 +227,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.get_key')
     def test_check_key(self, mock_get_key):
         """
-        test hancock.utils.s3.check_key
+        test watchmen.utils.s3.check_key
         """
         s3.check_key('abc', 'xyz')
         mock_get_key.assert_called_with('abc', 'xyz')
@@ -235,7 +235,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_check_prefix(self, mock_boto3):
         """
-        test hancock.utils.s3.check_prefix
+        test watchmen.utils.s3.check_prefix
         """
         mock_boto3.Session.return_value = self.mock_session
         s3.check_prefix('prefix-abc', 'bucket-xyz')
@@ -245,7 +245,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_check_size(self, mock_boto3):
         """
-        test hancock.utils.s3.check_size
+        test watchmen.utils.s3.check_size
         """
         mock_boto3.Session.return_value = self.mock_session
         for size in [-1, 0, 1, 99, 65535]:
@@ -258,7 +258,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_check_size_exception(self, mock_boto3):
         """
-        test hancock.utils.s3.check_size on exception
+        test watchmen.utils.s3.check_size on exception
         """
         mock_boto3.Session.return_value = self.mock_session
         self.mock_client.get_object.side_effect = self.mock_client_err
@@ -269,7 +269,7 @@ class TestS3(unittest.TestCase):
 
     def test_clean_json(self):
         """
-        test hancock.utils.s3.clean_json
+        test watchmen.utils.s3.clean_json
         """
         tests = [
             {
@@ -289,7 +289,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.get_key')
     def test_copy_contents_to_bucket(self, mock_get_key, mock_boto3):
         """
-        test hancock.utils.s3.copy_contents_to_bucket
+        test watchmen.utils.s3.copy_contents_to_bucket
         """
         mock_boto3.Session.return_value = self.mock_session
         contents, key_name, bucket = "contents", "some/s3/key", self.bucket
@@ -349,7 +349,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_create_key(self, mock_boto3):
         """
-        test hancock.utils.s3.create_key
+        test watchmen.utils.s3.create_key
         """
         mock_boto3.Session.return_value = self.mock_session
         contents, key_name, bucket = "contents", "some/s3/key", self.bucket
@@ -366,7 +366,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_delete_empty_folder(self, mock_boto3):
         """
-        test hancock.utils.s3.delete_empty_folder
+        test watchmen.utils.s3.delete_empty_folder
         """
         mock_boto3.Session.return_value = self.mock_session
         tests = [
@@ -388,7 +388,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_delete_key(self, mock_boto3):
         """
-        test hancock.utils.s3.delete_key
+        test watchmen.utils.s3.delete_key
         """
         mock_boto3.Session.return_value = self.mock_session
         key_name, bucket = "some/s3/key", self.bucket
@@ -403,7 +403,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_get_client(self, mock_boto3):
         """
-        test hancock.utils.s3.get_client
+        test watchmen.utils.s3.get_client
         """
         mock_boto3.Session.return_value = self.mock_session
         result = s3.get_client()
@@ -413,7 +413,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_get_resource(self, mock_boto3):
         """
-        test hancock.utils.s3.get_resource
+        test watchmen.utils.s3.get_resource
         """
         mock_boto3.Session.return_value = self.mock_session
         result = s3.get_resource()
@@ -423,7 +423,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_get_content(self, mock_boto3):
         """
-        test hancock.utils.s3.get_content to get content from s3 file
+        test watchmen.utils.s3.get_content to get content from s3 file
         """
         key_name, bucket = "some/s3/keyname", "s3_bucket"
         contents_tests = [u'{"key": "value"}', "contents", ""]
@@ -441,7 +441,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_get_content_exception(self, mock_boto3):
         """
-        test hancock.utils.s3.get_content on exception
+        test watchmen.utils.s3.get_content on exception
         """
         key_name, bucket = "some/s3/keyname", "s3_bucket"
         mock_boto3.Session.return_value = self.mock_session
@@ -452,7 +452,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.get_content')
     def test_get_json_data(self, mock_get_content):
         """
-        test hancock.utils.s3.get_json_data
+        test watchmen.utils.s3.get_json_data
         """
         key_name, bucket = "part-", "b"
         contents = '''[
@@ -469,7 +469,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.get_content')
     def test_get_json_data_exception(self, mock_get_content):
         """
-        test hancock.utils.s3.get_json_data on exception
+        test watchmen.utils.s3.get_json_data on exception
         """
         key_name, bucket, contents = "k", "b", "contents"
         mock_get_content.return_value = contents
@@ -480,7 +480,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.check_bucket')
     def test_get_json_files(self, mock_check, mock_boto3):
         """
-        test hancock.utils.s3.get_json_file for 'test/*.json' keys
+        test watchmen.utils.s3.get_json_file for 'test/*.json' keys
         """
         self.mock_iterator.search.return_value = self.mock_prefix_test_json
         mock_check.return_value = self.mock_check_true
@@ -498,7 +498,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_get_key(self, mock_boto3):
         """
-        test hancock.utils.s3.get_key
+        test watchmen.utils.s3.get_key
         """
         key_name = 'some/key'
         mock_boto3.Session.return_value = self.mock_session
@@ -512,7 +512,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_get_key_none(self, mock_boto3):
         """
-        test hancock.utils.s3.get_key
+        test watchmen.utils.s3.get_key
         """
         key_name = 'some/key'
         mock_boto3.Session.return_value = self.mock_session
@@ -524,7 +524,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.check_bucket')
     def test_get_keys(self, mock_check, mock_boto3):
         """
-        test hancock.utils.s3.get_keys for 'test/*.json' keys
+        test watchmen.utils.s3.get_keys for 'test/*.json' keys
         """
         self.mock_iterator.search.return_value = self.mock_prefix_test_json
         mock_check.return_value = self.mock_check_true
@@ -542,7 +542,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.get_content')
     def test_get_parquet_data(self, mock_get_content):
         """
-        test hancock.utils.s3.get_json_data
+        test watchmen.utils.s3.get_json_data
         """
         key_name, bucket = "part-", "b"
         contents = '''
@@ -574,7 +574,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_mv(self, mock_boto3):
         """
-        test hancock.utils.s3.mv to move files in s3 bucket
+        test watchmen.utils.s3.mv to move files in s3 bucket
         """
         mock_boto3.Session.return_value = self.mock_session
         oldkey = self.mock_old_path + "/" + self.mock_filename
@@ -596,7 +596,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_mv_exception(self, mock_boto3):
         """
-        test hancock.utils.s3.mv on exception
+        test watchmen.utils.s3.mv on exception
         """
         self.mock_client.copy_object.side_effect = self.mock_exception
         mock_boto3.Session.return_value = self.mock_session
@@ -606,7 +606,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_mv_key(self, mock_boto3):
         """
-        test hancock.utils.s3.mv_key to move key in s3 bucket
+        test watchmen.utils.s3.mv_key to move key in s3 bucket
         """
         mock_boto3.Session.return_value = self.mock_session
         oldkey = self.mock_old_path + "/" + self.mock_filename
@@ -623,7 +623,7 @@ class TestS3(unittest.TestCase):
     @patch('watchmen.utils.s3.boto3_session')
     def test_mv_key_exception(self, mock_boto3):
         """
-        test hancock.utils.s3.mv_key on exception
+        test watchmen.utils.s3.mv_key on exception
         """
         self.mock_s3.Object.side_effect = self.mock_exception
         mock_boto3.Session.return_value = self.mock_session
@@ -632,7 +632,7 @@ class TestS3(unittest.TestCase):
 
     def test_process_func(self):
         """
-        test hancock.utils.s3.process_func
+        test watchmen.utils.s3.process_func
         """
         s3.process_func("key-name", **{'kwargs': {}})
 
