@@ -27,8 +27,8 @@ class CommonApiTester(unittest.TestCase):
         """tearing down at the end of the test"""
         pass
 
-    @patch('watchmen.common.api.urllib')
-    def test_get_api_data(self, mock_urllib):
+    @patch('watchmen.common.api.requests')
+    def test_get_api_data(self, mock_requests):
         _html = '<html><body></body></html>'
         tests = [{
             'status': 200, 'content': '{"a": 1, "x": 3.14}', 'type': 'application/json',
@@ -53,9 +53,10 @@ class CommonApiTester(unittest.TestCase):
 
             mock_data = MagicMock()
             mock_headers = {'content-type': test.get('type', 'text/html')}
-            mock_res = MagicMock(status=test_status, headers=mock_headers)
+            mock_res = MagicMock(
+                headers=mock_headers, status_code=test_status, text=mock_data)
             mock_res.read.return_value = mock_data
-            mock_urllib.request.urlopen.return_value.__enter__.return_value = mock_res if test_status else None  # noqa
+            mock_requests.get.return_value = mock_res if test_status else None
             mock_data.decode.return_value = test_content
             msg = ('test #%02d: status={}, content={}' % num).format(
                 test_status, test_content)
@@ -69,7 +70,8 @@ class CommonApiTester(unittest.TestCase):
                 pass
             else:
                 result, status = get_api_data(self.api_url, self.headers)
-                self.assertEqual(result, test_expected, msg)
+                log = '{} <==> status: {}, result: {}'.format(msg, status, result)
+                self.assertEqual(result, test_expected, log)
                 self.assertEqual(status, test_status)
             num += 1
         pass
