@@ -1,0 +1,3 @@
+aws:
+  s3:
+    bucket: cyber-intel-test
