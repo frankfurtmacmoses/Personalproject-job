@@ -1,28 +1,34 @@
 [
 	{
-
 		"name": "sockeye",
 		"contact": "sec-engineer",
 		"path": "http://sng-test.r11.com/",
-		"routes": 
-		[
-			{
+		"format": "html",
+		"routes": [{
 				"name": "api",
-				"path": "v1/info",
+				"path": "v1/info/",
 				"format": "json",
-				"keys_check": ["dbinfo"]
-			},
-			{
+				"keys_check": ["dbInfo"]
+			}, {
 				"name": "data",
-				"path": "v1/data/info",
+				"path": "v1/data/info/",
 				"format": "json",
-				"keys_check": ["dbinfo"]
+				"keys_check": ["dbInfo"],
+				"routes":
+				[
+					{
+						"name": "fake",
+						"path": "this/is/fake/",
+						"format": "json",
+						"keys_check": ["dbInfo"]
+					}
+				]
 			},
 			{
 				"name": "hancock",
-				"path": "v1/hancock/info",
+				"path": "v1/hancock/info/",
 				"format": "json",
-				"keys_check": ["dbinfo"]
+				"keys_check": ["dbInfo"]
 			}
 		]
 	}
