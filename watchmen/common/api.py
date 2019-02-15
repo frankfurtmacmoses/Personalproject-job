@@ -12,6 +12,8 @@ import traceback
 from watchmen.config import get_uint
 from watchmen.utils.logger import get_logger
 
+# pylint: disable=no-member
+requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 DEBUG_LEVEL = DEBUG_LEVEL = get_uint('debug.level', logging.INFO)
 LOGGER = get_logger(__name__, level=DEBUG_LEVEL)
 
