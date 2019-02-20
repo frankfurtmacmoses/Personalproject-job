@@ -9,6 +9,7 @@ If data is not found in the database or the endpoint does work correctly, an SNS
 """
 from logging import getLogger, basicConfig, INFO
 from utils.sns_alerts import raise_alarm
+
 from common.svc_checker import ServiceChecker
 import json, types
 
@@ -60,6 +61,7 @@ def load_endpoints(endpoint_file):
         LOGGER.info(message)
         raise_alarm(SNS_TOPIC_ARN, message, ERROR_MESSAGE + "\n\n" + str(ex))
         return message
+
 
 
 # pylint: disable=unused-argument
