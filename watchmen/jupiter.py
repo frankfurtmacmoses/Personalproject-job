@@ -11,7 +11,8 @@ from logging import getLogger, basicConfig, INFO
 from utils.sns_alerts import raise_alarm
 
 from common.svc_checker import ServiceChecker
-import json, types
+import json
+import types
 
 LOGGER = getLogger("Jupiter")
 basicConfig(level=INFO)
@@ -30,6 +31,12 @@ SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:SockeyeTest"
 
 
 def notify(results, endpoint_file):
+    """
+    Send notifications to Sockeye topic if failed endpoints exist or no results exist at all
+    :param results: dict to be checked for failed endpoints
+    :param endpoint_file: file name for notifications to know possible orirgn of some errors
+    :return: the notification message
+    """
     # Checking failure list and announcing errors
     if results['failure']:
         message = ""
@@ -51,6 +58,13 @@ def notify(results, endpoint_file):
 
 
 def load_endpoints(endpoint_file):
+    """
+    Loads json file of endpoints.
+    If an exception is thrown (meaning an error with opening and/or loading),
+    an sns will be sent to the Sockeye Topic
+    :param endpoint_file: the file to be opened
+    :return: the endpoints or an exception
+    """
     try:
         with open(endpoint_file) as data_file:
             points = json.load(data_file)
@@ -63,7 +77,6 @@ def load_endpoints(endpoint_file):
         return message
 
 
-
 # pylint: disable=unused-argument
 def main(event, context):
     """
@@ -73,13 +86,13 @@ def main(event, context):
     local_endpoint_file = "endpoints.json"
     message = SUCCESS_MESSAGE
     # If a list is not returned, return the message string
-    e = load_endpoints(local_endpoint_file)
-    if not isinstance(e, types.ListType):
-        return e
+    endpoints = load_endpoints(local_endpoint_file)
+    if not isinstance(endpoints, types.ListType):
+        return endpoints
 
     # Check Endpoints
-    ep = ServiceChecker(e)
-    results = ep.start()
+    checked_points = ServiceChecker(endpoints)
+    results = checked_points.start()
 
     # Checking endpoint results
     ep_message = notify(results, local_endpoint_file)

@@ -1,6 +1,7 @@
-import unittest, json
-from mock import patch, mock_open
-from watchmen.jupiter import main, notify, load_endpoints, CHECK_LOGS, NO_RESULTS_MESSAGE
+import unittest
+from mock import patch
+from watchmen.jupiter import main, notify, load_endpoints, CHECK_LOGS, NO_RESULTS_MESSAGE, OPEN_FILE_ERROR, \
+    SUCCESS_MESSAGE
 
 
 class TestJupiter(unittest.TestCase):
@@ -8,9 +9,12 @@ class TestJupiter(unittest.TestCase):
     def setUp(self):
         self.example_exception_message = "Something failed"
         self.example_success_result = {'failure': [], 'success': [{'name': 'passed'}]}
-        self.example_failure_result = {'failure': [{'name': 'failed', '_err': 'did not work'}], 'success': []}
+        self.example_failure_result = {'failure': [{'name': 'failed', '_err': 'did not work'},
+                                                   {'name': 'big failure', '_err': 'broken!'}], 'success': []}
         self.example_empty_result = {'failure': [], 'success': []}
         self.example_filename = "points.json"
+        self.example_list = ["i", "am", 4, ['list']]
+        self.example_bad_notify = "something went wrong"
 
     @patch('watchmen.jupiter.raise_alarm')
     def test_notify(self, mock_alarm):
@@ -22,7 +26,8 @@ class TestJupiter(unittest.TestCase):
         # Failures exist
         message = ""
         for fail in self.example_failure_result['failure']:
-            message += "'{}' failed because of error '{}'. Check for empty file or dict.".format(fail['name'], fail['_err']) + '\n'
+            message += "'{}' failed because of error '{}'. Check for empty file or dict.".format(fail['name'],
+                                                                                                 fail['_err']) + '\n'
         expected_result = message + CHECK_LOGS
         returned_result = notify(self.example_failure_result, self.example_filename)
         self.assertEqual(expected_result, returned_result)
@@ -34,7 +39,8 @@ class TestJupiter(unittest.TestCase):
 
     @patch('watchmen.jupiter.raise_alarm')
     @patch('json.load')
-    def test_load_endpoints(self, mock_json_load, mock_alarm):
+    @patch('__builtin__.open')
+    def test_load_endpoints(self, m_open, mock_json_load, mock_alarm):
         good_data = """
         [{
             "name": "happy data",
@@ -43,36 +49,44 @@ class TestJupiter(unittest.TestCase):
             }]
         }]
         """
+
         # File not empty and can be opened
-        with patch('builtins.open', mock_open(read_data=good_data)) as mock_file:
-            print "I still do not understand how to mock json.load properly"
+        m_open.return_value = True
+        mock_json_load.return_value.load.return_value = good_data
+        mock_good_data = mock_json_load.return_value.load.return_value
 
+        expected_result = good_data
+        returned_result = mock_good_data
+        self.assertEqual(expected_result, returned_result)
 
+        # File empty and/or cannot be opened
+        m_open.side_effect = Exception(self.example_exception_message)
+        expected_result = "ERROR: '{}'{}'{}'".format(self.example_filename, OPEN_FILE_ERROR, self.example_filename)
+        returned_result = load_endpoints(self.example_filename)
+        self.assertEqual(expected_result, returned_result)
+
+    @patch('watchmen.jupiter.notify')
+    @patch('watchmen.jupiter.ServiceChecker.start')
     @patch('watchmen.jupiter.load_endpoints')
-    def test_main(self, mock_load_ep):
-        
+    def test_main(self, mock_load_eps, mock_checker, mock_notify):
 
+        # Exception or error occured while loading endpoints file
+        mock_load_eps.return_value = self.example_exception_message
+        expected_result = self.example_exception_message
+        returned_result = main(None, None)
+        self.assertEqual(expected_result, returned_result)
 
+        # Endpoints are returned
+        mock_load_eps.return_value = self.example_list
 
+        # There is a notification message
+        mock_notify.return_value = self.example_bad_notify
+        expected_result = self.example_bad_notify
+        returned_result = main(None, None)
+        self.assertEqual(expected_result, returned_result)
 
-    # @patch('watchmen.jupiter.raise_alarm')
-    # @patch('json.loads')
-    # def test_main(self, mock_load, mock_alarm):
-    #     data = ""
-    #     with patch('builtins.open', mock_open(read_data=data)) as mock_file:
-    #         mock_load = mock_file.return_value
-            # mock_load.assert_called_with(mock_file)
-
-        # m.side_effect = Exception(self.example_exception_message)
-        # # Failure to open file
-        # expected_result = "ERROR: '{}'{}'{}'".format(ENDPOINT_FILE, OPEN_FILE_ERROR, ENDPOINT_FILE)
-        # returned_result = main(None, None)
-        # self.assertEqual(expected_result, returned_result)
-
-
-
-
-
-
-
-
+        # Everything worked
+        mock_notify.return_value = ""
+        expected_result = SUCCESS_MESSAGE
+        returned_result = main(None, None)
+        self.assertEqual(expected_result, returned_result)
