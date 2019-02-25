@@ -100,7 +100,3 @@ def main(event, context):
         return ep_message
 
     return message
-
-
-if __name__ == '__main__':
-    main(None, None)
