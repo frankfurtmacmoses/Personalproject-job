@@ -27,7 +27,7 @@ OPEN_FILE_ERROR = " could not be opened and caused an exception. There might be 
                   " it may be empty. Please check the logs and "
 SUCCESS_MESSAGE = "Sockeye endpoints are looking good!"
 
-SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:SockeyeTest"
+SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:Sockeye"
 
 
 def notify(results, endpoint_file):

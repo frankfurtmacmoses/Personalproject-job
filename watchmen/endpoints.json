@@ -1,7 +1,7 @@
 [{
 	"name": "Sockeye NG",
 	"desc": "Sockeye NG about page",
-	"path": "http://sng-test.r11.com/",
+	"path": "http://sng.r11.com/",
 	"format": "html",
 	"routes": [{
 		"name": "api",
@@ -19,6 +19,12 @@
 		"name": "hancock",
 		"desc": "Sockeye Domains Service API",
 		"path": "v1/hancock/info",
+		"format": "json",
+		"keys_check": ["dbInfo"]
+	},{
+		"name": "truth",
+		"desc": "ThreatView application and REST API",
+		"path": "v1/truth/info",
 		"format": "json",
 		"keys_check": ["dbInfo"]
 	}]
