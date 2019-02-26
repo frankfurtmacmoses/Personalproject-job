@@ -1,5 +1,5 @@
 import unittest
-from mock import patch
+from mock import patch, mock_open, mock, MagicMock
 from watchmen.jupiter import main, notify, load_endpoints, CHECK_LOGS, NO_RESULTS_MESSAGE, OPEN_FILE_ERROR, \
     SUCCESS_MESSAGE
 
@@ -15,6 +15,14 @@ class TestJupiter(unittest.TestCase):
         self.example_filename = "points.json"
         self.example_list = ["i", "am", 4, ['list']]
         self.example_bad_notify = "something went wrong"
+        self.example_good_data = """
+                [{
+                    "name": "happy data",
+                    "more": [{
+                        "name": "nested data"
+                    }]
+                }]
+                """
 
     @patch('watchmen.jupiter.raise_alarm')
     def test_notify(self, mock_alarm):
@@ -37,30 +45,24 @@ class TestJupiter(unittest.TestCase):
         returned_result = notify(self.example_empty_result, self.example_filename)
         self.assertEqual(expected_result, returned_result)
 
-    @patch('watchmen.jupiter.raise_alarm')
-    @patch('json.load')
-    @patch('__builtin__.open')
+    @patch("watchmen.jupiter.raise_alarm")
+    @patch("json.load")
+    @patch("__builtin__.open")
     def test_load_endpoints(self, m_open, mock_json_load, mock_alarm):
-        good_data = """
-        [{
-            "name": "happy data",
-            "more": [{
-                "name": "nested data"
-            }]
-        }]
-        """
-
         # File not empty and can be opened
-        m_open.return_value = True
-        mock_json_load.return_value.load.return_value = good_data
-        mock_good_data = mock_json_load.return_value.load.return_value
-
-        expected_result = good_data
-        returned_result = mock_good_data
+        mock_json_load.return_value = self.example_good_data
+        expected_result = self.example_good_data
+        returned_result = load_endpoints(self.example_filename)
         self.assertEqual(expected_result, returned_result)
 
         # File empty and/or cannot be opened
         m_open.side_effect = Exception(self.example_exception_message)
+        expected_result = "ERROR: '{}'{}'{}'".format(self.example_filename, OPEN_FILE_ERROR, self.example_filename)
+        returned_result = load_endpoints(self.example_filename)
+        self.assertEqual(expected_result, returned_result)
+
+        # File cannot load
+        mock_json_load.side_effect = Exception(self.example_exception_message)
         expected_result = "ERROR: '{}'{}'{}'".format(self.example_filename, OPEN_FILE_ERROR, self.example_filename)
         returned_result = load_endpoints(self.example_filename)
         self.assertEqual(expected_result, returned_result)
