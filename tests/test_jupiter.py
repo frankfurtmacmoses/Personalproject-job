@@ -1,5 +1,5 @@
 import unittest
-from mock import patch, mock_open, mock, MagicMock
+from mock import patch
 from watchmen.jupiter import main, notify, load_endpoints, CHECK_LOGS, NO_RESULTS_MESSAGE, OPEN_FILE_ERROR, \
     SUCCESS_MESSAGE
 
