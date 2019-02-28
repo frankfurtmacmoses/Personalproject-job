@@ -131,7 +131,7 @@ def main(event, context):
                 FEEDS_TO_CHECK_DAILY, TABLE_NAME, 1
             )
         elif event_type == WEEKLY:
-            start = end - timedelta(days=6)
+            start = end - timedelta(days=7)
             downed_feeds = watcher.process_feeds_logs(FEEDS_WEEKLY_NAMES, start, end)
             submitted_out_of_range_feeds = watcher.process_feeds_metrics(
                 FEEDS_TO_CHECK_WEEKLY, TABLE_NAME, 2
