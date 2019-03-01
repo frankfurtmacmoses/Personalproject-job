@@ -24,13 +24,15 @@ basicConfig(level=INFO)
 CHECK_LOGS = "Please check logs for more details!"
 ERROR_JUPITER = "Jupiter: Failure in runtime"
 ERROR_SUBJECT = "Jupiter: Failure in checking endpoint"
-
 MIN_ITEMS = get_uint('jupiter.min_items', 3)
 NO_RESULTS = "There are no results! Endpoint file might be empty or Service Checker may not be working correctly. " \
-             "Please check logs and endpoint file to help identify issue."
+             "Please check logs and endpoint file to help identify the issue."
+NOT_ENOUGH_EPS = "Jupiter: Too Few Endpoints"
+NOT_ENOUGH_EPS_MESSAGE = "Endpoint count is below minimum. There is no need to check or something is wrong with " \
+                         "endpoint file."
+SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:SockeyeTest")
 SUCCESS_MESSAGE = "All endpoints are good!"
 
-SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:SockeyeTest")
 
 
 def check_endpoints(endpoints):
@@ -43,11 +45,21 @@ def check_endpoints(endpoints):
             bad_list.append(item)
 
     if bad_list:
-        # raise_alam
+        subject = ERROR_SUBJECT
+        messages = []
+        for item in bad_list:
+            msg = 'There is not a path to check for: {}'.format(item.get('name', "There is not a name available"))
+            messages.append(msg)
+            LOGGER.error('Notify failure:\n%s', msg)
+        message = '\n'.join(messages)
+        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
         pass
 
+    # This will always run in current state because only checking one thing
     if len(validated) < MIN_ITEMS:
-        # raise
+        subject = NOT_ENOUGH_EPS
+        message = NOT_ENOUGH_EPS_MESSAGE
+        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
         return None
 
     return validated
@@ -60,6 +72,7 @@ def load_endpoints():
     an sns will be sent to the Sockeye Topic
     :return: the endpoints or exits upon exception
     """
+    # This will always run because there is no s3 file setup
     data_path = settings("aws.s3.prefix")
     data_file = settings("jupiter.endpoints")
 
@@ -78,7 +91,7 @@ def load_endpoints():
     except Exception as ex:
         subject = "Jupiter endpoints - load error"
         fmt = "Cannot load endpoints from bucket={}, key={}\n{}\nException:{}"
-        msg = fmt.format(fmt, bucket, data_file, data, ex)
+        msg = fmt.format(bucket, data_file, data, ex)
         LOGGER.warning(msg)
         raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=msg)
 
@@ -94,7 +107,8 @@ def main(event, context):
     :return: status of Sockeye endpoints
     """
     endpoints = load_endpoints()
-    checker = ServiceChecker(endpoints)
+    checked_endpoints = check_endpoints(endpoints)
+    checker = ServiceChecker(checked_endpoints)
     results = checker.start()
     validated_paths = checker.get_validated_paths()
     message = notify(results, endpoints, validated_paths)
@@ -130,7 +144,7 @@ def notify(results, endpoints, validated_paths):
 
         first_failure = 's' if len(failure) > 1 else ' - {}'.format(failure[0].get('name'))
         subject = '{}{}'.format(ERROR_SUBJECT, first_failure)
-        raise_alarm(SNS_TOPIC_ARN, subject=subject, message=message)
+        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
         return message
 
     # Checking if results is empty
@@ -145,12 +159,8 @@ def notify(results, endpoints, validated_paths):
         )
         LOGGER.error(message)
         message = "{}\n\n\n{}".format(message, NO_RESULTS)
-        raise_alarm(SNS_TOPIC_ARN, subject=ERROR_JUPITER, message=message)
+        raise_alarm(SNS_TOPIC_ARN, subject=ERROR_JUPITER, msg=message)
         return message
 
     # All Successes
     return SUCCESS_MESSAGE
-
-
-if __name__ == '__main__':
-    main(None, None)

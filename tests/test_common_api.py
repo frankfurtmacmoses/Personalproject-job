@@ -43,6 +43,9 @@ class CommonApiTester(unittest.TestCase):
             'status': 500, 'content': '',
             'expected': None,
         }, {
+            'status': 408, 'content': '',
+            'expected': None,
+        }, {
         }]
         result = None
         num = 0

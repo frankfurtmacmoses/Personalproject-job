@@ -189,7 +189,7 @@ class ServiceCheckerTester(unittest.TestCase):
             expected.append(data)
 
         svc.start(test_data)
-        results = svc._results # 2 results fail when all supposed to pass
+        results = svc._results
         msg = 'should not have failure: {}'.format(results)
         self.assertEqual(results['failure'], [], msg)
         self.assertItemsEqual(results['success'], expected)

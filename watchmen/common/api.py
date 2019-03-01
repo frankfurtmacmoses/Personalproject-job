@@ -36,7 +36,6 @@ def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
         res = requests.get(
             api_url, headers=api_headers, data=api_data, verify=False, timeout=timeout)
         _status = res.status_code if hasattr(res, 'status_code') else None
-        print "Encoding for this path is: " + res.encoding
         if res and _status == 200:
             data = res.text
             # LOGGER.debug('- response:\n%s', res.info())
@@ -54,7 +53,8 @@ def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
             LOGGER.debug('- response:\n%s', res.info())
             LOGGER.error('- status: %s, request: %s', _status, api_url)
     except requests.Timeout as ex:
-        # TODO [krmos]
+        message = 'unable to complete request within allotted timeout period'
+        LOGGER.error('- %s: %s', message, api_url)
         _status = httplib.REQUEST_TIMEOUT
     except Exception:
         message = 'unable to read data from request'
