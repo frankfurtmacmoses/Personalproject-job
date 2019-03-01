@@ -61,7 +61,7 @@ class Watchmen(object):
             if tasks:
                 for task in tasks:
                     time_elapsed = now - task.get('startedAt')
-                    if time_elapsed > timedelta(days=1):
+                    if time_elapsed > timedelta(hours=12):
                         stuck_tasks.append(task)
         LOGGER.info('Stuck tasks: ' + str(stuck_tasks))
         return stuck_tasks

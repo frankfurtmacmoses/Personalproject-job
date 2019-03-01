@@ -650,6 +650,8 @@
                     "cloudwatch:DescribeAlarmsForMetric",
                     "cloudwatch:PutMetricAlarm",
                     "dynamodb:Query",
+                    "ecs:ListTasks",
+                    "ecs:DescribeTasks",
                     "lambda:InvokeFunction",
                     "logs:CreateLogGroup",
                     "logs:CreateLogStream",
