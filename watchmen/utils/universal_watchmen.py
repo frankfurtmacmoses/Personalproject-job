@@ -25,8 +25,6 @@ FILE_NOT_FOUND_ERROR_MESSAGE = "FILE DOESN'T EXIST!"
 FILE_SIZE_ZERO_ERROR_MESSAGE = "FILE SIZE IS ZERO!"
 EMPTY_METRIC_ERROR = "No metric found for: "
 
-LAST_EVENT_TIME = 'LastEventTime'
-
 
 class Watchmen(object):
     """
@@ -127,27 +125,28 @@ class Watchmen(object):
         response = None
         feed_name_set = set()
         downed_feeds = []
-        current_check_time = start + 1
-        while start < current_check_time < end:
+        while start < end:
             if not response:
                 response = self.log_client.describe_log_streams(
                     logGroupName=self.log_group_name,
-                    orderBy=LAST_EVENT_TIME,
+                    orderBy='LastEventTime',
                     descending=True,
                     limit=50
                 )
             else:
                 response = self.log_client.describe_log_streams(
                     logGroupName=self.log_group_name,
-                    orderBy=LAST_EVENT_TIME,
+                    orderBy='LastEventTime',
                     descending=True,
                     nextToken=response.get('nextToken'),
                     limit=50
                 )
             for log_stream in response.get('logStreams'):
-                feed_name_set.add(log_stream.get('logStreamName').split('/')[0])
-                current_check_time = log_stream.get('creationTime')
-
+                log_time = datetime.fromtimestamp(log_stream.get('lastEventTimestamp') / 1000, pytz.utc)
+                feed_name = log_stream.get('logStreamName').split('/')[0]
+                if start < log_time < end:
+                    feed_name_set.add(feed_name)
+                end = log_time
         for feed in feed_names:
             if feed not in feed_name_set:
                 downed_feeds.append(feed)

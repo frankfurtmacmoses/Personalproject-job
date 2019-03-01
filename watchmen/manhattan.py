@@ -8,9 +8,10 @@ This script is designed to monitor daily, hourly, and weekly feeds and ensure pr
 
 """
 # Python imports
+from datetime import datetime, timedelta
+import pytz
+# Watchmen imports
 from logging import getLogger, basicConfig, INFO
-from time import time
-# Cyberint imports
 from utils.universal_watchmen import Watchmen
 from utils.sns_alerts import raise_alarm
 
@@ -20,10 +21,6 @@ basicConfig(level=INFO)
 DAILY = "Daily"
 HOURLY = "Hourly"
 WEEKLY = "Weekly"
-
-HOUR_IN_MILI = 360000
-DAY_IN_MILI = 86400000
-SIX_DAYS_IN_MILI = 518400000
 
 SUCCESS_MESSAGE = "feeds are up and running normally!"
 FAILURE_MESSAGE = "One or more feeds are down or submitting abnormal amounts of domains!"
@@ -120,21 +117,21 @@ def main(event, context):
     submitted_out_of_range_feeds = []
     event_type = event.get('type')
     try:
-        end = int(time() * 1000)
+        end = datetime.now(tz=pytz.utc)
         if event_type == HOURLY:
-            start = end - HOUR_IN_MILI
+            start = end - timedelta(hours=1)
             downed_feeds = watcher.process_feeds_logs(FEEDS_HOURLY_NAMES, start, end)
             submitted_out_of_range_feeds = watcher.process_feeds_metrics(
                 FEEDS_TO_CHECK_HOURLY, TABLE_NAME, 0
             )
         elif event_type == DAILY:
-            start = end - DAY_IN_MILI
+            start = end - timedelta(days=1)
             downed_feeds = watcher.process_feeds_logs(FEEDS_DAILY_NAMES, start, end)
             submitted_out_of_range_feeds = watcher.process_feeds_metrics(
                 FEEDS_TO_CHECK_DAILY, TABLE_NAME, 1
             )
         elif event_type == WEEKLY:
-            start = end - SIX_DAYS_IN_MILI
+            start = end - timedelta(days=7)
             downed_feeds = watcher.process_feeds_logs(FEEDS_WEEKLY_NAMES, start, end)
             submitted_out_of_range_feeds = watcher.process_feeds_metrics(
                 FEEDS_TO_CHECK_WEEKLY, TABLE_NAME, 2

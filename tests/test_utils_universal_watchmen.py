@@ -33,13 +33,24 @@ class TestUniversalWatchman(unittest.TestCase):
         self.example_get_metric_return = {'success': 40}
         self.example_get_metric_return_low = {'success': 3}
         self.example_get_metric_return_high = {'success': 500}
-
+        # The first lastEventTimestamp set exactly between 4-5 and the second at 3:30 which succeeds.
         self.example_log_response = {
-            'logStreams': [{'logStreamName': 'test-feed/test-feed-prod/abc', 'creationTime': 25}]
+            'logStreams': [
+                {
+                    'logStreamName': 'test-feed/test-feed-prod/abc', 'lastEventTimestamp': 1546317000000
+                },
+                {
+                    'logStreamName': 'garbage/noway', 'lastEventTimestamp': 1546313400000
+                },
+            ]
         }
-
-        self.example_multiple_log_response = {
-            'logStreams': [{'logStreamName': 'temp-feed/temp-feed-prod/abc', 'creationTime': 8}]
+        # The first lastEventTimestamp set exactly at 3:30 and will cause failure checking between 4-5.
+        self.example_log_response_fail = {
+            'logStreams': [
+                {
+                    'logStreamName': 'test-feed/test-feed-prod/abc', 'lastEventTimestamp': 1546313400000
+                }
+            ]
         }
 
     @mock_s3
@@ -132,22 +143,35 @@ class TestUniversalWatchman(unittest.TestCase):
     @patch('watchmen.utils.universal_watchmen.Watchmen')
     def test_process_feed_logs(self, mock_watchmen):
         self.watcher.log_client = MagicMock()
-        self.watcher.log_client.describe_log_streams.return_value = self.example_log_response
-        # Test when feed is found!
-        expected_result = []
-        returned_result = self.watcher.process_feeds_logs(['test-feed'], 5, 10)
-        self.assertEqual(expected_result, returned_result)
-        # Test when feed is not found!
-        expected_result = ['not-found-feed']
-        returned_result = self.watcher.process_feeds_logs(['not-found-feed'], 5, 10)
-        self.assertEqual(expected_result, returned_result)
-        # Test for multiple calls to describe_log_stream
-        self.watcher.log_client.describe_log_streams.side_effect = \
-            self.example_multiple_log_response, self.example_log_response
+        tests = [
+            {
+                'start':  datetime(
+                    year=2019, month=1, day=1, hour=4, minute=0, second=0, microsecond=0, tzinfo=pytz.utc
+                ),
+                'end': datetime(
+                    year=2019, month=1, day=1, hour=5, minute=0, second=0, microsecond=0, tzinfo=pytz.utc
+                ),
+                'expected': [],
+                'log_response': self.example_log_response,
+                'feeds': ['test-feed'],
+            },
+            {
+                'start': datetime(
+                    year=2019, month=1, day=1, hour=4, minute=0, second=0, microsecond=0, tzinfo=pytz.utc
+                ),
+                'end': datetime(
+                    year=2019, month=1, day=1, hour=5, minute=0, second=0, microsecond=0, tzinfo=pytz.utc
+                ),
+                'expected': ['test-feed'],
+                'log_response': self.example_log_response_fail,
+                'feeds': ['test-feed'],
+            }
 
-        expected_result = []
-        returned_result = self.watcher.process_feeds_logs(['temp-feed', 'test-feed'], 5, 10)
-        self.assertEqual(expected_result, returned_result)
+        ]
+        for test in tests:
+            self.watcher.log_client.describe_log_streams.return_value = test.get('log_response')
+            result = self.watcher.process_feeds_logs(test.get('feeds'), test.get('start'), test.get('end'))
+            self.assertEqual(test.get('expected'), result)
 
     @patch('watchmen.utils.universal_watchmen.Watchmen.get_feed_metrics')
     @patch('watchmen.utils.universal_watchmen.Watchmen.select_dynamo_time_string')

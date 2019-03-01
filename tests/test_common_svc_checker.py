@@ -3,7 +3,6 @@ test_common_svc_checker.py
 """
 import json
 import os
-import pytest
 import unittest
 
 from mock import patch
@@ -167,39 +166,4 @@ class ServiceCheckerTester(unittest.TestCase):
                     self.assertItemsEqual(
                         results[key], expected[key], _msg)
             num += 1
-        pass
-
-    @pytest.mark.functest
-    def test_start_functest(self):
-        """
-        functional testing watchmen.common.svc_checker :: ServiceChecker :: start
-        """
-        test_data = []
-        test_file = os.path.join(self.data_path, 'functest_endpoints.json')
-        if os.path.isfile(test_file):
-            with open(test_file, 'rt') as fh:
-                content = fh.read()
-                # LOGGER.debug('\n- Loaded endpoints:\n%s', content)
-                test_data = json.loads(content)
-
-        svc = ServiceChecker(test_data)
-        expected = []
-        for endpoint in test_data:
-            data = svc._copy_endpoint(endpoint)
-            expected.append(data)
-
-        svc.start(test_data)
-        results = svc._results
-        msg = 'should not have failure: {}'.format(results)
-        self.assertEqual(results['failure'], [], msg)
-        self.assertItemsEqual(results['success'], expected)
-        e1 = svc._elapsed
-
-        svc.start(test_data, multi_threads=True)
-        results = svc._results
-        msg = 'should not have failure: {}'.format(results)
-        self.assertEqual(results['failure'], [], msg)
-        self.assertItemsEqual(results['success'], expected)
-        e2 = svc._elapsed
-        self.assertLess(e2, e1, 'should take less time')
         pass
