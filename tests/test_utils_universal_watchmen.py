@@ -2,7 +2,7 @@ import unittest
 import pytz
 from datetime import datetime
 from mock import patch, MagicMock
-from moto import mock_s3, mock_dynamodb, mock_cloudwatch
+from moto import mock_s3, mock_dynamodb, mock_cloudwatch, mock_ecs
 from watchmen.utils.universal_watchmen import Watchmen
 from botocore.exceptions import ClientError
 
@@ -52,6 +52,68 @@ class TestUniversalWatchman(unittest.TestCase):
                 }
             ]
         }
+
+    @mock_ecs
+    @patch('boto3.client')
+    def test_get_stuck_ecs_tasks(self, mock_dt):
+        self.watcher.ecs_client = MagicMock()
+        mock_dt.now.return_value = datetime(
+            year=2019, month=5, day=5, hour=5, minute=5, second=5, tzinfo=pytz.utc
+        )
+        tests = [
+            {
+                'describe_tasks': {},
+                'tasks_arns': {},
+                'expected': []
+            },
+            {
+                'describe_tasks': {'tasks': []},
+                'tasks_arns': {
+                    'taskArns': 'item'
+                },
+                'expected': []
+            },
+            {
+                'describe_tasks': {
+                    'tasks': [
+                        {
+                            'startedAt': datetime(
+                                year=2019, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
+                            ),
+                            'name': 'the_feed_of_all_feeds'
+                        }
+                    ]
+                },
+                'tasks_arns': {'taskArns': 'item'},
+                'expected': []
+            },
+            {
+                'describe_tasks': {
+                    'tasks': [
+                        {
+                            'startedAt': datetime(
+                                year=2018, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
+                            ),
+                            'task': 'greatest_feed_ever'
+                        }
+                    ]
+                },
+                'tasks_arns': {'taskArns': 'item'},
+                'expected': [
+                    {
+                        'startedAt': datetime(
+                            year=2018, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
+                        ),
+                        'task': 'greatest_feed_ever'
+                    }
+                ]
+            },
+        ]
+        for test in tests:
+            self.watcher.ecs_client.list_tasks.return_value = test.get('tasks_arns')
+            self.watcher.ecs_client.describe_tasks.return_value = test.get('describe_tasks')
+            result = self.watcher.get_stuck_ecs_tasks('cluster')
+            self.assertEqual(test.get('expected'), result)
 
     @mock_s3
     def test_validate_file_on_s3(self):

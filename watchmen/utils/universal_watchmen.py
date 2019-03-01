@@ -34,9 +34,37 @@ class Watchmen(object):
         basicConfig(level=INFO)
         self.s3_client = boto3.resource('s3')
         self.dynamo_client = boto3.resource('dynamodb')
+        self.ecs_client = boto3.client('ecs')
         self.log_client = boto3.client('logs')
         self.bucket_name = bucket_name
         self.log_group_name = log_group_name
+
+    def get_stuck_ecs_tasks(self, cluster_name):
+        """
+        Check if an ECS tasks is "stuck" (running longer than a day)
+        :return: list of stuck tasks
+        """
+        stuck_tasks = []
+        list_tasks = self.ecs_client.list_tasks(
+            cluster=cluster_name,
+            desiredStatus='RUNNING'
+        )
+        tasks_arns = list_tasks.get('taskArns')
+        if tasks_arns:
+            described_tasks = self.ecs_client.describe_tasks(
+                cluster=cluster_name,
+                tasks=tasks_arns
+            )
+            tasks = described_tasks.get('tasks')
+            print tasks
+            now = datetime.now(tz=pytz.utc)
+            if tasks:
+                for task in tasks:
+                    time_elapsed = now - task.get('startedAt')
+                    if time_elapsed > timedelta(days=1):
+                        stuck_tasks.append(task)
+        LOGGER.info('Stuck tasks: ' + str(stuck_tasks))
+        return stuck_tasks
 
     def validate_file_on_s3(self, key):
         """

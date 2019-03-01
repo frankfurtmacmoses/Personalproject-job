@@ -1,3 +1,10 @@
 aws:
   s3:
     bucket: cyber-intel-test
+
+sns:
+  pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
+ecs:
+  feeds:
+    cluster: cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8
+    url: https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services
