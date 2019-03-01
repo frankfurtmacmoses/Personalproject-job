@@ -15,6 +15,11 @@
   "format": "html",
   "regx": "7 HTTP methods every web developer should know and how to test them"
 }, {
+  "name": "example.com",
+  "desc": "example.com should time out on port 81",
+  "path": "https://example.com:81",
+  "keys": "nokey"
+}, {
   "name": "github",
   "desc": "github repository",
   "path": "https://github.com/dockerian/pyml",

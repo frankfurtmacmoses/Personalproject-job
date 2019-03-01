@@ -1,10 +1,20 @@
+api:
+  timeout: 7
+
 aws:
   s3:
     bucket: cyber-intel-test
+    prefix: watchmen
 
-sns:
-  pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
+jupiter:
+  endpoints: jupiter/endpoints.json
+  sns_topic: arn:aws:sns:us-east-1:405093580753:SockeyeTest
+  min_items: 3
+
 ecs:
   feeds:
     cluster: cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8
     url: https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services
+
+sns:
+  pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
