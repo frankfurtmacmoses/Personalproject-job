@@ -16,97 +16,103 @@ class TestManhattan(unittest.TestCase):
 
     @mock_sns
     @patch('watchmen.manhattan.raise_alarm')
+    @patch('watchmen.manhattan.Watchmen.get_stuck_ecs_tasks')
     @patch('watchmen.manhattan.Watchmen.process_feeds_metrics')
     @patch('watchmen.manhattan.Watchmen.process_feeds_logs')
-    def test_main(self, mock_process_logs, mock_process_feed, mock_alarm):
-        # # Test when hourly succeeds with no issues
-        mock_process_feed.return_value = []
-        mock_process_logs.return_value = []
-        expected_result = SUCCESS_MESSAGE
-        returned_result = main(self.example_event_hourly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when hourly has downed feeds
-        mock_process_feed.return_value = [self.example_feed_name]
-        mock_process_logs.return_value = []
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_hourly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when hourly has abnormal submission rate from feeds
-        mock_process_feed.return_value = []
-        mock_process_logs.return_value = [self.example_feed_name]
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_hourly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when hourly has both abnormal and downed feeds
-        mock_process_feed.return_value = [self.example_feed_name]
-        mock_process_logs.return_value = [self.example_feed_name]
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_hourly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when hourly has an exception thrown
-        mock_process_feed.side_effect = Exception(self.example_exception_msg)
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_hourly, None)
-        self.assertEqual(expected_result, returned_result)
+    def test_main(self, mock_process_logs, mock_process_feed, mock_get_stuck_tasks, mock_alarm):
+        tests = [
+            {
+                'stuck_tasks': [],
+                'downed_feeds': [],
+                'abnormal_feeds': [],
+                'event': self.example_event_hourly,
+                'alarm_call_count': 0,
+                'expected': SUCCESS_MESSAGE
+            },
+            {
+                'stuck_tasks': [],
+                'downed_feeds': [],
+                'abnormal_feeds': [],
+                'event': self.example_event_daily,
+                'alarm_call_count': 0,
+                'expected': SUCCESS_MESSAGE
+            },
+            {
+                'stuck_tasks': [],
+                'downed_feeds': [],
+                'abnormal_feeds': [],
+                'event': self.example_event_weekly,
+                'alarm_call_count': 0,
+                'expected': SUCCESS_MESSAGE
+            },
+            {
+                'stuck_tasks': ['task_got_stuck'],
+                'downed_feeds': [],
+                'abnormal_feeds': [],
+                'event': self.example_event_hourly,
+                'alarm_call_count': 2,
+                'expected': FAILURE_MESSAGE
+            },
+            {
+                'stuck_tasks': [],
+                'downed_feeds': ['downed_feed'],
+                'abnormal_feeds': [],
+                'event': self.example_event_hourly,
+                'alarm_call_count': 1,
+                'expected': FAILURE_MESSAGE
+            },
+            {
+                'stuck_tasks': [],
+                'downed_feeds': [],
+                'abnormal_feeds': ['submitted_out_of_range_feed'],
+                'event': self.example_event_hourly,
+                'alarm_call_count': 1,
+                'expected': FAILURE_MESSAGE
+            },
+            {
+                'stuck_tasks': [],
+                'downed_feeds': ['downed_feed'],
+                'abnormal_feeds': ['submitted_out_of_range_feed'],
+                'event': self.example_event_hourly,
+                'alarm_call_count': 1,
+                'expected': FAILURE_MESSAGE
+            },
+            {
+                'stuck_tasks': ['stuck_feed'],
+                'downed_feeds': ['downed_feed'],
+                'abnormal_feeds': [],
+                'event': self.example_event_hourly,
+                'alarm_call_count': 3,
+                'expected': FAILURE_MESSAGE
+            }
+        ]
+        for test in tests:
+            mock_get_stuck_tasks.return_value = test.get('stuck_tasks')
+            mock_process_logs.return_value = test.get('downed_feeds')
+            mock_process_feed.return_value = test.get('abnormal_feeds')
+            result = main(test.get('event'), None)
+            self.assertEqual(result, test.get('expected'))
+            self.assertEqual(mock_alarm.call_count, test.get('alarm_call_count'))
+            mock_alarm.reset_mock()
 
-        # Test when daily succeeds with no issues
-        mock_process_feed.side_effect = None
-        mock_process_feed.return_value = []
-        mock_process_logs.return_value = []
-        expected_result = SUCCESS_MESSAGE
-        returned_result = main(self.example_event_daily, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when daily has downed feeds
-        mock_process_feed.return_value = [self.example_feed_name]
-        mock_process_logs.return_value = []
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_daily, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when daily has abnormal submission rate from feeds
-        mock_process_feed.return_value = []
-        mock_process_logs.return_value = [self.example_feed_name]
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_daily, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when daily has both abnormal and downed feeds
-        mock_process_feed.return_value = [self.example_feed_name]
-        mock_process_logs.return_value = [self.example_feed_name]
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_daily, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when daily has an exception thrown
-        mock_process_feed.side_effect = Exception(self.example_exception_msg)
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_daily, None)
-        self.assertEqual(expected_result, returned_result)
-
-        # Test when weekly succeeds with no issues
-        mock_process_feed.side_effect = None
-        mock_process_feed.return_value = []
-        mock_process_logs.return_value = []
-        expected_result = SUCCESS_MESSAGE
-        returned_result = main(self.example_event_weekly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when weekly has downed feeds
-        mock_process_feed.return_value = [self.example_feed_name]
-        mock_process_logs.return_value = []
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_weekly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when weekly has abnormal submission rate from feeds
-        mock_process_feed.return_value = []
-        mock_process_logs.return_value = [self.example_feed_name]
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_weekly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when weekly has both abnormal and downed feeds
-        mock_process_feed.return_value = [self.example_feed_name]
-        mock_process_logs.return_value = [self.example_feed_name]
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_weekly, None)
-        self.assertEqual(expected_result, returned_result)
-        # Test when weekly has an exception thrown
-        mock_process_feed.side_effect = Exception(self.example_exception_msg)
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event_daily, None)
-        self.assertEqual(expected_result, returned_result)
+    @mock_sns
+    @patch('watchmen.manhattan.raise_alarm')
+    @patch('watchmen.manhattan.Watchmen.get_stuck_ecs_tasks')
+    @patch('watchmen.manhattan.Watchmen.process_feeds_metrics')
+    @patch('watchmen.manhattan.Watchmen.process_feeds_logs')
+    def test_main_exception(self, mock_process_logs, mock_process_feed, mock_get_stuck_tasks, mock_alarm):
+        tests = [
+            {
+                'stuck_tasks': [],
+                'downed_feeds': [],
+                'abnormal_feeds': [],
+                'event': self.example_event_hourly,
+                'alarm_call_count': 1,
+                'expected': FAILURE_MESSAGE
+            }
+        ]
+        for test in tests:
+            mock_process_logs.side_effect = Exception('failure')
+            result = main(test.get('event'), None)
+            self.assertEqual(result, test.get('expected'))
+            mock_alarm.assert_called()

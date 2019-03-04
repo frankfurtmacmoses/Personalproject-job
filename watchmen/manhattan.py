@@ -14,7 +14,7 @@ import pytz
 from logging import getLogger, basicConfig, INFO
 from utils.universal_watchmen import Watchmen
 from utils.sns_alerts import raise_alarm
-
+from config import settings
 LOGGER = getLogger("Manhattan")
 basicConfig(level=INFO)
 
@@ -117,6 +117,19 @@ def main(event, context):
     submitted_out_of_range_feeds = []
     event_type = event.get('type')
     try:
+        cluster_name = settings('ecs.feeds.cluster')
+        stuck_tasks = watcher.get_stuck_ecs_tasks(cluster_name)
+        if stuck_tasks:
+            feed_url = settings('ecs.feeds.url')
+            pager_sns = settings('sns.pager')
+            subject = 'Feeds ECS Cluster has Hung Tasks!'
+            message = 'One or more feeds have been running longer than a day\n: ' + str(stuck_tasks) + \
+                      '\nThese feeds must be manually stopped within AWS console here: ' + feed_url
+            pager_message = 'One or more feeds have been running longer ' \
+                            'than a day! Please check your email for details!'
+            raise_alarm(pager_sns, pager_message, subject)
+            raise_alarm(SNS_TOPIC_ARN, message, subject)
+            status = FAILURE_MESSAGE
         end = datetime.now(tz=pytz.utc)
         if event_type == HOURLY:
             start = end - timedelta(hours=1)
