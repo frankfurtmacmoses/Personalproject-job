@@ -30,9 +30,10 @@ NO_RESULTS = "There are no results! Endpoint file might be empty or Service Chec
 NOT_ENOUGH_EPS = "Jupiter: Too Few Endpoints"
 NOT_ENOUGH_EPS_MESSAGE = "Endpoint count is below minimum. There is no need to check or something is wrong with " \
                          "endpoint file."
+RESULTS_DNE = "Results do not exist! There is nothing to check. Service Checker may not be working correctly. " \
+              "Please check logs and endpoint file to help identify the issue."
 SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:SockeyeTest")
 SUCCESS_MESSAGE = "All endpoints are good!"
-
 
 
 def check_endpoints(endpoints):
@@ -56,11 +57,13 @@ def check_endpoints(endpoints):
         pass
 
     # This will always run in current state because only checking one thing
-    if len(validated) < MIN_ITEMS:
-        subject = NOT_ENOUGH_EPS
-        message = NOT_ENOUGH_EPS_MESSAGE
-        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
-        return None
+    # Do not think we need to include it yet
+    # if len(validated) < MIN_ITEMS:
+    #     subject = NOT_ENOUGH_EPS
+    #     message = NOT_ENOUGH_EPS_MESSAGE
+    #     LOGGER.warning(NOT_ENOUGH_EPS_MESSAGE)
+    #     raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
+    #     return None
 
     return validated
 
@@ -125,8 +128,9 @@ def notify(results, endpoints, validated_paths):
     @return: the notification message
     """
     if not results or not isinstance(results, dict):
-        # raise_alarm
-        return
+        message = RESULTS_DNE
+        raise_alarm(SNS_TOPIC_ARN, subject=ERROR_JUPITER, msg=message)
+        return message
 
     failure = results.get('failure', [])
     success = results.get('success', [])
