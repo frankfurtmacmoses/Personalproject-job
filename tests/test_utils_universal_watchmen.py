@@ -77,7 +77,7 @@ class TestUniversalWatchman(unittest.TestCase):
                 'describe_tasks': {
                     'tasks': [
                         {
-                            'startedAt': datetime(
+                            'createdAt': datetime(
                                 year=2019, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
                             ),
                             'name': 'the_feed_of_all_feeds'
@@ -91,7 +91,7 @@ class TestUniversalWatchman(unittest.TestCase):
                 'describe_tasks': {
                     'tasks': [
                         {
-                            'startedAt': datetime(
+                            'createdAt': datetime(
                                 year=2018, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
                             ),
                             'task': 'greatest_feed_ever'
@@ -101,7 +101,7 @@ class TestUniversalWatchman(unittest.TestCase):
                 'tasks_arns': {'taskArns': 'item'},
                 'expected': [
                     {
-                        'startedAt': datetime(
+                        'createdAt': datetime(
                             year=2018, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
                         ),
                         'task': 'greatest_feed_ever'
