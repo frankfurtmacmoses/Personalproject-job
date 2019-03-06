@@ -24,7 +24,7 @@ basicConfig(level=INFO)
 CHECK_LOGS = "Please check logs for more details!"
 ERROR_JUPITER = "Jupiter: Failure in runtime"
 ERROR_SUBJECT = "Jupiter: Failure in checking endpoint"
-MIN_ITEMS = get_uint('jupiter.min_items', 3)
+MIN_ITEMS = get_uint('jupiter.min_items', 1)
 NO_RESULTS = "There are no results! Endpoint file might be empty or Service Checker may not be working correctly. " \
              "Please check logs and endpoint file to help identify the issue."
 NOT_ENOUGH_EPS = "Jupiter: Too Few Endpoints"
@@ -56,14 +56,12 @@ def check_endpoints(endpoints):
         raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
         pass
 
-    # This will always run in current state because only checking one thing
-    # Do not think we need to include it yet
-    # if len(validated) < MIN_ITEMS:
-    #     subject = NOT_ENOUGH_EPS
-    #     message = NOT_ENOUGH_EPS_MESSAGE
-    #     LOGGER.warning(NOT_ENOUGH_EPS_MESSAGE)
-    #     raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
-    #     return None
+    if len(validated) < MIN_ITEMS:
+        subject = NOT_ENOUGH_EPS
+        message = NOT_ENOUGH_EPS_MESSAGE
+        LOGGER.warning(NOT_ENOUGH_EPS_MESSAGE)
+        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
+        return None
 
     return validated
 
@@ -75,7 +73,7 @@ def load_endpoints():
     an sns will be sent to the Sockeye Topic
     :return: the endpoints or exits upon exception
     """
-    # This will always run because there is no s3 file setup
+    # This will always run because there is no s3 file setup yet
     data_path = settings("aws.s3.prefix")
     data_file = settings("jupiter.endpoints")
 

@@ -9,7 +9,7 @@ aws:
 jupiter:
   endpoints: jupiter/endpoints.json
   sns_topic: arn:aws:sns:us-east-1:405093580753:SockeyeTest
-  min_items: 3
+  min_items: 1
 
 ecs:
   feeds:
