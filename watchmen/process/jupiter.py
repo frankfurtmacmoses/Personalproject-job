@@ -37,6 +37,13 @@ SUCCESS_MESSAGE = "All endpoints are good!"
 
 
 def check_endpoints(endpoints):
+    """
+    Checks if first level endpoints are valid or not.
+    Non-valid endpoints are printed with error messages.
+    If too few validated endpoints exist, no need to check.
+    @param endpoints: endpoints to be checked
+    @return: list of validated endpoints
+    """
     bad_list = []
     validated = []
     for item in endpoints:

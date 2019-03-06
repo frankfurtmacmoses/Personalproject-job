@@ -27,8 +27,7 @@ class TestJupiter(unittest.TestCase):
         self.example_endpoints = [{"name": "endpoint", "path": "example"}, {"name": "Used for testing"}]
         self.example_exception_message = "Something failed"
         self.example_failed = {"failure": [{"name": "Failure", "path": "filler/fail", "_err": "something"},
-                                   {"key": "Big fail"}],
-                       "success": []}
+                                           {"key": "Big fail"}], "success": []}
         self.example_few_validated = []
         self.example_invalid_paths = [{"key": "that fails"}]
         self.example_local_endpoints = [{"name": "local", "path": "s3/failed"}]
@@ -41,8 +40,6 @@ class TestJupiter(unittest.TestCase):
         self.example_valid_paths = [{"name": "I will work", "path": "here/is/path"}]
         self.example_validated = [{"name": "endpoint", "path": "example"}]
         self.example_variety_endpoints = [{"name": "endpoint", "path": "cool/path"}, {"key": "bad endpoint"}]
-
-
 
     @patch('watchmen.process.jupiter.raise_alarm')
     def test_check_endpoints(self, mock_alarm):
@@ -174,6 +171,3 @@ class TestJupiter(unittest.TestCase):
         expected_result = message
         returned_result = notify(self.example_empty, self.example_endpoints, self.example_validated)
         self.assertEqual(expected_result, returned_result)
-
-
-

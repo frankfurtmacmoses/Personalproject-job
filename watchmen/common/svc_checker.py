@@ -284,6 +284,10 @@ class ServiceChecker(object):
         return data
 
     def get_validated_paths(self):
+        """
+        Return the validated paths
+        @return: list of validated paths
+        """
         return self._all_paths
 
     def start(self, endpoints=[], multi_threads=False):
