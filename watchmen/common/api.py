@@ -38,14 +38,14 @@ def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
         _status = res.status_code if hasattr(res, 'status_code') else None
         if res and _status == 200:
             data = res.content
-            # LOGGER.debug("Data type is {}".format(type(data)))
+            # LOGGER.debug("Response content [%s]: %s", type(data), data)
             # LOGGER.debug('- response:\n%s', res.info())
             headers = res.headers
             content_type = headers.get('content-type', '').split(';')[0]
             decoded_data = data.decode('utf-8', errors='ignore')
             LOGGER.info('- decoded data: %s', decoded_data)
             if 'application/json' in content_type:
-                # LOGGER.debug("The data type is {}".format(type(decoded_data)))
+                # LOGGER.debug("Decoded data [%s]: %s", type(decoded_data), decoded_data)
                 api_obj = json.loads(decoded_data)
             else:
                 api_obj = {'data': decoded_data}
