@@ -13,7 +13,7 @@ from logging import getLogger, basicConfig, INFO
 from watchmen.config import get_uint
 from watchmen.config import settings
 from watchmen.common.svc_checker import ServiceChecker
-from watchmen.process.endpoints import data as endpoints_data
+from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import get_content
 
@@ -103,7 +103,7 @@ def load_endpoints():
         LOGGER.warning(msg)
         raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=msg)
 
-    endpoints = endpoints_data
+    endpoints = ENDPOINTS_DATA
 
     return endpoints
 

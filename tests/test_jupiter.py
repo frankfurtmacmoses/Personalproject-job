@@ -70,7 +70,7 @@ class TestJupiter(unittest.TestCase):
         self.assertEqual(expected_result, returned_result)
 
     @patch("watchmen.process.jupiter.raise_alarm")
-    @patch("watchmen.process.jupiter.endpoints_data")
+    @patch("watchmen.process.jupiter.ENDPOINTS_DATA")
     @patch("watchmen.process.jupiter.check_endpoints")
     @patch("watchmen.process.jupiter.json.loads")
     @patch("watchmen.process.jupiter.get_content")

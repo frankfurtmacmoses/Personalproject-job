@@ -37,13 +37,15 @@ def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
             api_url, headers=api_headers, data=api_data, verify=False, timeout=timeout)
         _status = res.status_code if hasattr(res, 'status_code') else None
         if res and _status == 200:
-            data = res.text
+            data = res.content
+            # LOGGER.debug("Data type is {}".format(type(data)))
             # LOGGER.debug('- response:\n%s', res.info())
             headers = res.headers
             content_type = headers.get('content-type', '').split(';')[0]
             decoded_data = data.decode('utf-8', errors='ignore')
             LOGGER.info('- decoded data: %s', decoded_data)
             if 'application/json' in content_type:
+                # LOGGER.debug("The data type is {}".format(type(decoded_data)))
                 api_obj = json.loads(decoded_data)
             else:
                 api_obj = {'data': decoded_data}
@@ -52,7 +54,7 @@ def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
         else:
             LOGGER.debug('- response:\n%s', res.info())
             LOGGER.error('- status: %s, request: %s', _status, api_url)
-    except requests.Timeout as ex:
+    except requests.Timeout:
         message = 'unable to complete request within allotted timeout period'
         LOGGER.error('- %s: %s', message, api_url)
         _status = httplib.REQUEST_TIMEOUT

@@ -1,7 +1,7 @@
 """
 # endpoints.py
 """
-data = [{"name": "Sockeye NG",
+DATA = [{"name": "Sockeye NG",
          "desc": "Sockeye NG about page",
          "path": "http://sng.r11.com/",
          "format": "html",
