@@ -129,7 +129,8 @@ class ServiceChecker(object):
         with self._py_locker:
             LOGGER.debug('* checking endpoint: %s [%s]', _name, _path)
 
-        result, status = get_api_data(_path)
+        result, status = get_api_data(_path, timeout=7)
+        # LOGGER.debug("get_api_data [{}]: status={}, result=\n{}".format(_path, status, result))
 
         with self._py_locker:
             self._check_endpoint_result(_path, result, status, **endpoint)
@@ -264,6 +265,8 @@ class ServiceChecker(object):
         """
         self._run_level += 1
 
+        # LOGGER.debug("Endpoints are {}", endpoints)
+
         for svc in endpoints:
             self._check_service(svc, parent_path)
 
@@ -281,6 +284,13 @@ class ServiceChecker(object):
         if err:
             data['_err'] = err
         return data
+
+    def get_validated_paths(self):
+        """
+        Return the validated paths
+        @return: list of validated paths
+        """
+        return self._all_paths
 
     def start(self, endpoints=[], multi_threads=False):
         """

@@ -5,11 +5,12 @@
 # date: 2019-01-28
 """
 import json
+import httplib
 import logging
 import requests
 import traceback
 
-from watchmen.config import get_uint
+from watchmen.config import get_uint, settings
 from watchmen.utils.logger import get_logger
 
 # pylint: disable=no-member
@@ -18,27 +19,33 @@ DEBUG_LEVEL = DEBUG_LEVEL = get_uint('debug.level', logging.INFO)
 LOGGER = get_logger(__name__, level=DEBUG_LEVEL)
 
 
-def get_api_data(api_url, api_headers={}, api_data=None):
+def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
     """
     @param api_url: a string represent full api URL.
     @param api_headers: a directory of request headers.
     @param api_data: a JSON data for POST request.
+    @param timeout: max amount of time a request will attempt to connect
     @return: (<api data object>, <status>).
     """
     _status = None
     api_obj = None
+
+    if not isinstance(timeout, tuple) and not isinstance(timeout, int):
+        timeout = settings('api.timeout', 20)
     try:
         res = requests.get(
-            api_url, headers=api_headers, data=api_data, verify=False)
+            api_url, headers=api_headers, data=api_data, verify=False, timeout=timeout)
         _status = res.status_code if hasattr(res, 'status_code') else None
         if res and _status == 200:
-            data = res.text
+            data = res.content
+            # LOGGER.debug("Response content [%s]: %s", type(data), data)
             # LOGGER.debug('- response:\n%s', res.info())
             headers = res.headers
             content_type = headers.get('content-type', '').split(';')[0]
             decoded_data = data.decode('utf-8', errors='ignore')
             LOGGER.info('- decoded data: %s', decoded_data)
             if 'application/json' in content_type:
+                # LOGGER.debug("Decoded data [%s]: %s", type(decoded_data), decoded_data)
                 api_obj = json.loads(decoded_data)
             else:
                 api_obj = {'data': decoded_data}
@@ -47,6 +54,10 @@ def get_api_data(api_url, api_headers={}, api_data=None):
         else:
             LOGGER.debug('- response:\n%s', res.info())
             LOGGER.error('- status: %s, request: %s', _status, api_url)
+    except requests.Timeout:
+        message = 'unable to complete request within allotted timeout period'
+        LOGGER.error('- %s: %s', message, api_url)
+        _status = httplib.REQUEST_TIMEOUT
     except Exception:
         message = 'unable to read data from request'
         LOGGER.error('- %s: %s', message, api_url)
