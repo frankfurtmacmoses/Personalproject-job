@@ -130,7 +130,7 @@ class ServiceChecker(object):
             LOGGER.debug('* checking endpoint: %s [%s]', _name, _path)
 
         result, status = get_api_data(_path, timeout=7)
-        # LOGGER.debug("get_api_data [{}]: status={}, result=\n{}".format(_path, status, result))
+        # LOGGER.debug("get_api_data [%s]: status=%s, result=\n%S",_path, status, result)
 
         with self._py_locker:
             self._check_endpoint_result(_path, result, status, **endpoint)
@@ -265,7 +265,7 @@ class ServiceChecker(object):
         """
         self._run_level += 1
 
-        # LOGGER.debug("Endpoints are {}", endpoints)
+        # LOGGER.debug("Endpoints are %s", endpoints)
 
         for svc in endpoints:
             self._check_service(svc, parent_path)
