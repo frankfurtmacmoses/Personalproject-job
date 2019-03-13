@@ -1,3 +1,4 @@
+from datetime import date
 import unittest
 from mock import patch
 
@@ -13,6 +14,20 @@ class TestJupiter(unittest.TestCase):
 
     def setUp(self):
         self.example_today = '12/18/2019'
+
+    def test_add_holiday(self):
+        year = 2025
+        month = 12
+        day = 18
+        name = "Kayla\'s Birthday"
+
+        cal = InfobloxCalendar()
+        cal.add_holiday(year, month, day, name)
+        self.assertIn(date(year, month, day), cal.holiday_list)
+
+        cal = InfobloxCalendar()
+        cal.add_holiday(year, None, day, name)
+        self.assertRaises(Exception)
 
     def test_is_workday(self):
         dates = [{

@@ -6,18 +6,73 @@ from watchmen.utils.logger import get_logger
 LOGGER = get_logger('watchmen.' + __name__)
 
 DATE_ERROR = "Incorrect date formatting!"
+HOLIDAY_ERROR = "Holiday cannot be added!"
+
+dow = {
+    0: "Monday",
+    1: "Tuesday",
+    2: "Wednesday",
+    3: "Thursday",
+    4: "Friday",
+    5: "Saturday",
+    6: "Sunday",
+}
+
+dom = {
+    1: "January",
+    2: "February",
+    3: "March",
+    4: "April",
+    5: "May",
+    6: "June",
+    7: "July",
+    8: "August",
+    9: "September",
+    10: "October",
+    11: "November",
+    12: "December",
+}
 
 
 class InfobloxCalendar(object):
 
-    holiday_list = holidays.US()
+    def __init__(self, year=date.today().year):
+        # How do I make this retain its changes after being given new holidays and there are no instances of the object?
+        # Read a json file of holidays that need to be added and which ones to remove? Add and remove for each instance?
+        # this file would need to be updated once a year
+        self.holiday_list = holidays.US(state='WA', years=year)
 
-    def add_holiday(self):
-        pass
+    def add_holiday(self, year=None, month=None, day=None, name=None):
+        """
+        Add a custom holiday to the holiday list
+        @param year: of new holiday
+        @param month: of new holiday
+        @param day: of new holiday
+        @param name: of new holiday
+        @return: An exception if date attributes are None
+        """
+        try:
+            new_date = '{}-{}-{}'.format(year, month, day)
+            self.holiday_list.append({new_date: name})
+        except Exception as e:
+            message = "{}\nTrying to add holiday: Year-{} Month-{} Day-{}".format(HOLIDAY_ERROR, year, month, day)
+            LOGGER.error(message)
+
+    def _find_weekday(self, date_to_check):
+        if not isinstance(date_to_check, date):
+            print "Take care of case"  # and throw and error/exception
+        return dow.get(date_to_check.weekday())
+
+    def _find_written_month(self, date_to_check):
+        if not isinstance(date_to_check, date):
+            print "Take care of case"  # and throw and error/exception
+
+        return dom.get(date_to_check.month)
 
     def _is_weekend(self, day):
         """
-        Determines if given day is a weekend day
+        Determines if given day is a weekend day based on its weekday number.
+        5 and 6 represent Saturday and Sunday. 0-4 are Mon-Fri.
         @param day: to be checked
         @return: whether or not the given day is a weekend day or not
         """
@@ -42,7 +97,7 @@ class InfobloxCalendar(object):
             else:
                 date_to_check = date(year, month, day)
         except Exception as e:
-            message = "{}\n Trying to check {}-{}-{}".format(DATE_ERROR, year, month, day)
+            message = "{}\nTrying to check : Year-{} Month-{} Day-{}".format(DATE_ERROR, year, month, day)
             LOGGER.error(message)
             return None
 
@@ -50,14 +105,21 @@ class InfobloxCalendar(object):
             return False
         return True
 
+    # I don't know how to make this more beautiful
+    # Right now, great for debugging compile time errors
+    def print_holidays(self):
+        for date, name in sorted(self.holiday_list.items()):
+            day_of_week = self._find_weekday(date)
+            written_month = self._find_written_month(date)
+            print('{}, {} {} {}: {}'.format(day_of_week, written_month, date.day, date.year, name))
+
     def main(self):
         print("TEST")
-
 
     # raise alert for new infoblox holidays
 
 
 if __name__ == "__main__":
     cal = InfobloxCalendar()
-    print("Is today a workday: {}".format(cal.is_workday(None, None,None)))
-    #'1/2/20014'
+    cal.print_holidays()
+
