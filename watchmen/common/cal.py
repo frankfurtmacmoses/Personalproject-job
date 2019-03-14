@@ -5,8 +5,10 @@ from watchmen.utils.logger import get_logger
 
 LOGGER = get_logger('watchmen.' + __name__)
 
+ADD_HOLIDAY_ERROR = "Holiday cannot be added!"
 DATE_ERROR = "Incorrect date formatting!"
-HOLIDAY_ERROR = "Holiday cannot be added!"
+DATE_TYPE_ERROR = "The date entered is not of type date. Cannot generate desired information."
+REMOVE_HOLIDAY_ERROR = "Holiday cannot be removed!"
 
 dow = {
     0: "Monday",
@@ -36,13 +38,29 @@ dom = {
 
 class InfobloxCalendar(object):
 
-    def __init__(self, year=date.today().year):
+    def __init__(self, start=date.today().year, end=None):
+        """
+        Constructor for watchmen.common.cal.py
+        @param start: starting year to generate holidays
+        @param end: exclusive ending year to generate holidays
+        @note
+        There are 3 different constructors:
+            1) InfobloxCalendar()
+                - This creates a calendar of holidays for the current year
+            2) InfobloxCalendar(2020)
+                - This creates a calendar for just the given year
+            3) InfobloxCalendar(2020, 2090)
+                - This creates a calendar for the given range of years
+        """
+        if end is None:
+            end = start+1
         # How do I make this retain its changes after being given new holidays and there are no instances of the object?
         # Read a json file of holidays that need to be added and which ones to remove? Add and remove for each instance?
         # this file would need to be updated once a year
-        self.holiday_list = holidays.US(state='WA', years=year)
 
-    def add_holiday(self, year=None, month=None, day=None, name=None):
+        self.holiday_list = holidays.US(state='WA', years=list(range(start, end)))
+
+    def add_holiday(self, year=None, month=None, day=None, name='Custom Infoblox Holiday'):
         """
         Add a custom holiday to the holiday list
         @param year: of new holiday
@@ -55,17 +73,29 @@ class InfobloxCalendar(object):
             new_date = '{}-{}-{}'.format(year, month, day)
             self.holiday_list.append({new_date: name})
         except Exception as e:
-            message = "{}\nTrying to add holiday: Year-{} Month-{} Day-{}".format(HOLIDAY_ERROR, year, month, day)
+            message = "{}\nTrying to add holiday: Year-{} Month-{} Day-{}".format(ADD_HOLIDAY_ERROR, year, month, day)
             LOGGER.error(message)
 
     def _find_weekday(self, date_to_check):
+        """
+        Finds which day of the week the given date is
+        @param date_to_check:
+        @return: int value corresponding with the correct day of the week
+        """
         if not isinstance(date_to_check, date):
-            print "Take care of case"  # and throw and error/exception
+            LOGGER.error(DATE_TYPE_ERROR)
+            return None
         return dow.get(date_to_check.weekday())
 
-    def _find_written_month(self, date_to_check):
+    def _get_month(self, date_to_check):
+        """
+        Get the numeric value of the month for a given date
+        @param date_to_check:
+        @return: the numeric month
+        """
         if not isinstance(date_to_check, date):
-            print "Take care of case"  # and throw and error/exception
+            LOGGER.error(DATE_TYPE_ERROR)
+            return None
 
         return dom.get(date_to_check.month)
 
@@ -110,8 +140,23 @@ class InfobloxCalendar(object):
     def print_holidays(self):
         for date, name in sorted(self.holiday_list.items()):
             day_of_week = self._find_weekday(date)
-            written_month = self._find_written_month(date)
+            written_month = self._get_month(date)
             print('{}, {} {} {}: {}'.format(day_of_week, written_month, date.day, date.year, name))
+
+    def remove_holiday(self, year=None, month=None, day=None):
+        """
+        Remove the given date from holiday list
+        @param year: of date to be removed
+        @param month: of date to be removed
+        @param day: of date to be removed
+        """
+        try:
+            new_date = '{}-{}-{}'.format(year, month, day)
+            removed_date = self.holiday_list.pop(new_date)
+            LOGGER.info('{} has been removed'.format(removed_date))
+        except Exception as e:
+            message = "{}\nTrying to remove holiday: Year-{} Month-{} Day-{}".format(REMOVE_HOLIDAY_ERROR, year, month, day)
+            LOGGER.error(message)
 
     def main(self):
         print("TEST")
@@ -120,6 +165,6 @@ class InfobloxCalendar(object):
 
 
 if __name__ == "__main__":
-    cal = InfobloxCalendar()
+    cal = InfobloxCalendar(-2)
     cal.print_holidays()
 

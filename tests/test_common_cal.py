@@ -9,13 +9,31 @@ from watchmen.utils.logger import get_logger
 LOGGER = get_logger('watchmen.' + __name__)
 
 
-
 class TestJupiter(unittest.TestCase):
 
     def setUp(self):
         self.example_today = '12/18/2019'
 
     def test_add_holiday(self):
+        bad_holidays = [{
+            "year": None,
+            "month": 12,
+            "day": 18,
+        }, {
+            "year": 2025,
+            "month": None,
+            "day": 18,
+        }, {
+            "year": 2025,
+            "month": 12,
+            "day": None,
+        }, {
+            "year": "",
+            "month": "",
+            "day": "",
+        }, {
+        }]
+
         year = 2025
         month = 12
         day = 18
@@ -26,8 +44,9 @@ class TestJupiter(unittest.TestCase):
         self.assertIn(date(year, month, day), cal.holiday_list)
 
         cal = InfobloxCalendar()
-        cal.add_holiday(year, None, day, name)
-        self.assertRaises(Exception)
+        for holiday in bad_holidays:
+            cal.add_holiday(holiday.get('year'), holiday.get('month'), holiday.get('day'))
+            self.assertRaises(Exception)
 
     def test_is_workday(self):
         dates = [{
@@ -76,3 +95,36 @@ class TestJupiter(unittest.TestCase):
             expected = date.get('expected')
             returned = InfobloxCalendar().is_workday(year, month, day)
             self.assertEqual(expected, returned)
+
+    def test_remove_holiday(self):
+        bad_removals = [{
+            "year": None,
+            "month": 12,
+            "day": 18,
+        }, {
+            "year": 2026,
+            "month": None,
+            "day": 18,
+        }, {
+            "year": 2026,
+            "month": 12,
+            "day": None,
+        }, {
+            "year": "",
+            "month": "",
+            "day": "",
+        }, {
+        }]
+        # Remove christmas
+        year = 2027
+        month = 12
+        day = 25
+
+        cal = InfobloxCalendar()
+        cal.remove_holiday(year, month, day)
+        self.assertNotIn(date(year, month, day), cal.holiday_list)
+
+        cal = InfobloxCalendar()
+        for bad in bad_removals:
+            cal.remove_holiday(bad.get('year'), bad.get('month'), bad.get('day'))
+            self.assertRaises(Exception)
