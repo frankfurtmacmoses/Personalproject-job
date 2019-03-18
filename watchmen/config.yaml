@@ -6,6 +6,10 @@ aws:
     bucket: cyber-intel-test
     prefix: watchmen
 
+holiday:
+  good_friday: false
+  day_b4_xmas_eve: true
+
 jupiter:
   endpoints: jupiter/endpoints.json
   sns_topic: arn:aws:sns:us-east-1:405093580753:SockeyeTest

@@ -8,10 +8,12 @@ If data is not found in the database or the endpoint does work correctly, an SNS
 @email: kramos@infoblox.com
 """
 import json
+from datetime import datetime
 from logging import getLogger, basicConfig, INFO
 
 from watchmen.config import get_uint
 from watchmen.config import settings
+from watchmen.common.cal import InfobloxCalendar
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
@@ -32,6 +34,7 @@ NOT_ENOUGH_EPS_MESSAGE = "Endpoint count is below minimum. There is no need to c
                          "endpoint file."
 RESULTS_DNE = "Results do not exist! There is nothing to check. Service Checker may not be working correctly. " \
               "Please check logs and endpoint file to help identify the issue."
+SKIP_MESSAGE_FORMAT = "Notification is skipped at {}"
 SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:SockeyeTest")
 SUCCESS_MESSAGE = "All endpoints are good!"
 
@@ -73,6 +76,23 @@ def check_endpoints(endpoints):
     return validated
 
 
+def _check_skip_notification(cal):
+    """
+    If current day and hour do not fall under the desired notification times, there is not need to send a notification
+    @param cal: calendar to check against
+    @return: whether or not to send a notification
+    """
+    hour = datetime.now().hour
+    if cal.is_workday():
+        if cal.is_workhour(hour) and hour % 4 == 0:
+            return False
+
+    if hour != 0 and hour % 8 == 0:
+        return False
+
+    return True
+
+
 def load_endpoints():
     """
     Loads json file of endpoints.
@@ -108,6 +128,11 @@ def load_endpoints():
     return endpoints
 
 
+def log_result(results):
+    # save result to s3
+    pass
+
+
 # pylint: disable=unused-argument
 def main(event, context):
     """
@@ -119,14 +144,16 @@ def main(event, context):
     checker = ServiceChecker(checked_endpoints)
     results = checker.start()
     validated_paths = checker.get_validated_paths()
-    message = notify(results, endpoints, validated_paths)
+    cal = InfobloxCalendar(2019, 2099)
+    message = notify(results, endpoints, validated_paths, cal)
 
     return message
 
 
-def notify(results, endpoints, validated_paths):
+def notify(results, endpoints, validated_paths, cal):
     """
     Send notifications to Sockeye topic if failed endpoints exist or no results exist at all
+    @param cal: calendar to check if need to send notifications with
     @param results: dict to be checked for failed endpoints
     @param endpoints: loaded endpoints data
     @param validated_paths: validated endpoints
@@ -137,24 +164,10 @@ def notify(results, endpoints, validated_paths):
         raise_alarm(SNS_TOPIC_ARN, subject=ERROR_JUPITER, msg=message)
         return message
 
+    log_result(results)
+
     failure = results.get('failure', [])
     success = results.get('success', [])
-
-    # Checking failure list and announcing errors
-    if failure and isinstance(failure, list):
-        messages = []
-        for item in failure:
-            msg = '\tname: {}\n\tpath: {}\n\terror: {}'.format(
-                item.get('name'), item.get('path'), item.get('_err')
-            )
-            messages.append(msg)
-            LOGGER.error('Notify failure:\n%s', msg)
-        message = '{}\n\n\n{}'.format('\n\n'.join(messages), CHECK_LOGS)
-
-        first_failure = 's' if len(failure) > 1 else ' - {}'.format(failure[0].get('name'))
-        subject = '{}{}'.format(ERROR_SUBJECT, first_failure)
-        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
-        return message
 
     # Checking if results is empty
     if not failure and not success:
@@ -169,6 +182,25 @@ def notify(results, endpoints, validated_paths):
         LOGGER.error(message)
         message = "{}\n\n\n{}".format(message, NO_RESULTS)
         raise_alarm(SNS_TOPIC_ARN, subject=ERROR_JUPITER, msg=message)
+        return message
+
+    # Checking failure list and announcing errors
+    if failure and isinstance(failure, list):
+        if _check_skip_notification(cal):
+            return SKIP_MESSAGE_FORMAT.format(datetime.now())
+
+        messages = []
+        for item in failure:
+            msg = '\tname: {}\n\tpath: {}\n\terror: {}'.format(
+                item.get('name'), item.get('path'), item.get('_err')
+            )
+            messages.append(msg)
+            LOGGER.error('Notify failure:\n%s', msg)
+        message = '{}\n\n\n{}'.format('\n\n'.join(messages), CHECK_LOGS)
+
+        first_failure = 's' if len(failure) > 1 else ' - {}'.format(failure[0].get('name'))
+        subject = '{}{}'.format(ERROR_SUBJECT, first_failure)
+        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
         return message
 
     # All Successes

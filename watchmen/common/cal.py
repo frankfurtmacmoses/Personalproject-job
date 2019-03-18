@@ -1,6 +1,8 @@
-from datetime import date
+from datetime import date, timedelta, datetime
+from dateutil.easter import easter
 import holidays
 
+from watchmen.config import get_boolean
 from watchmen.utils.logger import get_logger
 
 LOGGER = get_logger('watchmen.' + __name__)
@@ -10,17 +12,20 @@ DATE_ERROR = "Incorrect date formatting!"
 DATE_TYPE_ERROR = "The date entered is not of type date. Cannot generate desired information."
 REMOVE_HOLIDAY_ERROR = "Holiday cannot be removed!"
 
-dow = {
-    0: "Monday",
-    1: "Tuesday",
-    2: "Wednesday",
-    3: "Thursday",
-    4: "Friday",
-    5: "Saturday",
-    6: "Sunday",
-}
+HOLIDAY_GOOD_FRIDAY = get_boolean('holiday.good_friday')
+HOLIDAY_DAY_B4_XMAS_EVE = get_boolean('holiday.day_b4_xmas_env')
 
-dom = {
+DOW = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+]
+
+NOM = {
     1: "January",
     2: "February",
     3: "March",
@@ -50,15 +55,16 @@ class InfobloxCalendar(object):
             2) InfobloxCalendar(2020)
                 - This creates a calendar for just the given year
             3) InfobloxCalendar(2020, 2090)
-                - This creates a calendar for the given range of years
+                - This creates a calendar for the given range of years (end year exclusive)
         """
         if end is None:
             end = start+1
-        # How do I make this retain its changes after being given new holidays and there are no instances of the object?
-        # Read a json file of holidays that need to be added and which ones to remove? Add and remove for each instance?
-        # this file would need to be updated once a year
 
-        self.holiday_list = holidays.US(state='WA', years=list(range(start, end)))
+        self.year_range = list(range(start, end))
+
+        self.holiday_list = holidays.US(state='WA', years=self.year_range, expand=False)
+        # Customize holiday list to reflect infoblox holidays
+        self._generate_infoblox_holidays()
 
     def add_holiday(self, year=None, month=None, day=None, name='Custom Infoblox Holiday'):
         """
@@ -68,6 +74,8 @@ class InfobloxCalendar(object):
         @param day: of new holiday
         @param name: of new holiday
         @return: An exception if date attributes are None
+        @note if the year of the holiday is outside of the range,
+        the calendar will populate all the holidays for that year.
         """
         try:
             new_date = '{}-{}-{}'.format(year, month, day)
@@ -76,6 +84,57 @@ class InfobloxCalendar(object):
             message = "{}\nTrying to add holiday: Year-{} Month-{} Day-{}".format(ADD_HOLIDAY_ERROR, year, month, day)
             LOGGER.error(message)
 
+    def _add_holiday_xmas_eve(self):
+        """
+        Add Christmas Eve to holiday list
+        """
+        for key, value in dict(self.holiday_list).items():
+            if value == "Christmas Day":
+                eve = key - timedelta(days=1)
+                self.add_holiday(eve.year, eve.month, eve.day, "Christmas Eve")
+
+    def _add_holiday_day_b4_xmas_eve(self):
+        """
+        Add the Day before Christmas Eve to the holiday list
+        """
+        for key, value in dict(self.holiday_list).items():
+            if value == "Christmas Eve":
+                if value.weekday() == 6:
+                    day_before = value - timedelta(days=2)
+                else:
+                    day_before = value - timedelta(days=1)
+                self.add_holiday(day_before.year, day_before.month, day_before.day, "Day Before Christmas Eve")
+
+    def _add_holiday_day_after_thanksgiving(self):
+        """
+        Add the day after Thanksgiving to the holiday list
+        """
+        for key, value in dict(self.holiday_list).items():
+            if value == "Thanksgiving":
+                next_day = key + timedelta(days=1)
+                self.add_holiday(next_day.year, next_day.month, next_day.day, "Day After Thanksgiving (Black Friday)")
+
+    def _add_holiday_good_friday(self):
+        """
+        Add Good Friday to the holiday list
+        @return:
+        """
+        for year in self.year_range:
+            good_friday = easter(year) - timedelta(days=2)
+            self.add_holiday(good_friday.year, good_friday.month, good_friday.day, "Good Friday")
+
+    def _add_holiday_slowdown(self):
+        """
+        Add the Holiday Slowdown to the holiday list.
+        Holiday Slowdown are the following dates: Dec. 26th-31st
+        """
+        for year in self.year_range:
+            d = 26
+            while d <= 31:
+                self.add_holiday(year, 12, d, "Holiday Slowdown")
+                d = d+1
+
+    @staticmethod
     def _find_weekday(self, date_to_check):
         """
         Finds which day of the week the given date is
@@ -85,7 +144,30 @@ class InfobloxCalendar(object):
         if not isinstance(date_to_check, date):
             LOGGER.error(DATE_TYPE_ERROR)
             return None
-        return dow.get(date_to_check.weekday())
+        return DOW[date_to_check.weekday()]
+
+    def _generate_infoblox_holidays(self):
+        """
+        Populates holiday list with Infoblox specific holidays and removes holidays that are not days off
+        ADD: Day after Thanksgiving, Christmas Eve,and Holiday Slowdown (week of Christmas)
+        REMOVE: MLK Day and Veteran's Day
+        DEPENDENT: Good Friday and the Day before Christmas Eve
+        @param year_range: years to add/remove holidays
+        @note Some years, Good Friday is not an Infoblox holiday
+        """
+        not_holidays = ["Martin Luther King, Jr. Day", "Veterans Day"]
+
+        # remove holidays that are still work days
+        self.remove_holiday(names=not_holidays)
+
+        # add infoblox specific holidays
+        if HOLIDAY_GOOD_FRIDAY:
+            self._add_holiday_good_friday()
+        self._add_holiday_day_after_thanksgiving()
+        self._add_holiday_slowdown()
+        self._add_holiday_xmas_eve()
+        if HOLIDAY_DAY_B4_XMAS_EVE:
+            self._add_holiday_day_b4_xmas_eve()
 
     def _get_month(self, date_to_check):
         """
@@ -97,7 +179,7 @@ class InfobloxCalendar(object):
             LOGGER.error(DATE_TYPE_ERROR)
             return None
 
-        return dom.get(date_to_check.month)
+        return NOM.get(date_to_check.month)
 
     def _is_weekend(self, day):
         """
@@ -135,21 +217,69 @@ class InfobloxCalendar(object):
             return False
         return True
 
-    # I don't know how to make this more beautiful
-    # Right now, great for debugging compile time errors
-    def print_holidays(self):
-        for date, name in sorted(self.holiday_list.items()):
-            day_of_week = self._find_weekday(date)
-            written_month = self._get_month(date)
-            print('{}, {} {} {}: {}'.format(day_of_week, written_month, date.day, date.year, name))
-
-    def remove_holiday(self, year=None, month=None, day=None):
+    @staticmethod
+    def is_workhour(hour=datetime.now().hour):
         """
-        Remove the given date from holiday list
+        Determines if given hour is between 6am and 6pm; considered work hours
+        @param hour: to be checked
+        @return: Whether or not the hour falls between 6am and 6pm
+        """
+        if 6 <= hour < 18:
+            return True
+        return False
+
+    def print_holidays(self):
+        """
+        Print all the holidays in the list.
+
+        Should print in the order:
+            ```
+            ***********Current Year***********
+            Day of the Week, Month Day Year: Name of Holiday
+            ```
+
+        Example:
+            ```
+            --------2020--------
+            Wednesday, January 1 2020: New Year's Day
+            Monday, February 17 2020: Washington's Birthday
+            Friday, April 10 2020: Good Friday
+            Monday, May 25 2020: Memorial Day
+            ...
+            ```
+        """
+        year = None
+        for date, name in sorted(self.holiday_list.items()):
+            day_of_week = InfobloxCalendar._find_weekday(self, date)
+            month_name = self._get_month(date)
+            if year != date.year:
+                year = date.year
+                print('\n--------{}--------'.format(date.year))
+
+            print('{}, {} {} {}: {}'.format(day_of_week, month_name, date.day, date.year, name))
+
+    def remove_holiday(self, year=None, month=None, day=None, names=None):
+        """
+        Remove the given date from holiday list or all holidays with the given name(s) from the holiday list
         @param year: of date to be removed
         @param month: of date to be removed
         @param day: of date to be removed
+        @param names: single holiday name or list of holiday names that are to be deleted
         """
+        if isinstance(names, list):
+            for key, value in dict(self.holiday_list).items():
+                if value in names:
+                    del self.holiday_list[key]
+                    LOGGER.info('{} has been removed'.format(value))
+            return
+
+        if isinstance(names, str):
+            for key, value in dict(self.holiday_list).items():
+                if value == names:
+                    del self.holiday_list[key]
+            LOGGER.info('{} has been removed'.format(names))
+            return
+
         try:
             new_date = '{}-{}-{}'.format(year, month, day)
             removed_date = self.holiday_list.pop(new_date)
@@ -161,10 +291,8 @@ class InfobloxCalendar(object):
     def main(self):
         print("TEST")
 
-    # raise alert for new infoblox holidays
 
 
 if __name__ == "__main__":
-    cal = InfobloxCalendar(-2)
-    cal.print_holidays()
-
+    cal = InfobloxCalendar(2017, 2026)
+    print HOLIDAY_DAY_B4_XMAS_EVE

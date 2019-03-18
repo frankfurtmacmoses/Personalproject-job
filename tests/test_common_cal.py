@@ -1,9 +1,7 @@
 from datetime import date
 import unittest
-from mock import patch
 
 from watchmen.common.cal import InfobloxCalendar
-
 from watchmen.utils.logger import get_logger
 
 LOGGER = get_logger('watchmen.' + __name__)
@@ -93,8 +91,35 @@ class TestJupiter(unittest.TestCase):
             month = date.get('month')
             day = date.get('day')
             expected = date.get('expected')
-            returned = InfobloxCalendar().is_workday(year, month, day)
+            returned = InfobloxCalendar(2019, 2030).is_workday(year, month, day)
             self.assertEqual(expected, returned)
+
+    def test_is_workhour(self):
+        hours = [{
+            "hour": 0,
+            "expected": False,
+        }, {
+            "hour": 2,
+            "expected": False,
+        }, {
+            "hour": 6,
+            "expected": True,
+        }, {
+            "hour": 12,
+            "expected": True,
+        }, {
+            "hour": 17,
+            "expected": True,
+        }, {
+            "hour": 18,
+            "expected": False,
+        }, {
+            "hour": 23,
+            "expected": False,
+        }]
+
+        for hour in hours:
+            self.assertEqual(InfobloxCalendar.is_workhour(hour.get('hour')), hour.get('expected'))
 
     def test_remove_holiday(self):
         bad_removals = [{
@@ -120,6 +145,17 @@ class TestJupiter(unittest.TestCase):
         month = 12
         day = 25
 
+        single_remove = "Memorial Day"
+        multiple_remove = ["Thanksgiving", "Labor Day", "Veterans Day"]
+
+        cal = InfobloxCalendar()
+        cal.remove_holiday(names=single_remove)
+        for key, value in dict(cal.holiday_list).items():
+            self.assertIsNot(value, single_remove)
+
+        cal.remove_holiday(names=multiple_remove)
+        for key, value in dict(cal.holiday_list).items():
+            self.assertNotIn(value, multiple_remove)
         cal = InfobloxCalendar()
         cal.remove_holiday(year, month, day)
         self.assertNotIn(date(year, month, day), cal.holiday_list)
