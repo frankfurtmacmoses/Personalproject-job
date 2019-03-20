@@ -144,13 +144,12 @@ def main(event, context):
     checker = ServiceChecker(checked_endpoints)
     results = checker.start()
     validated_paths = checker.get_validated_paths()
-    cal = InfobloxCalendar(2019, 2099)
-    message = notify(results, endpoints, validated_paths, cal)
+    message = notify(results, endpoints, validated_paths)
 
     return message
 
 
-def notify(results, endpoints, validated_paths, cal):
+def notify(results, endpoints, validated_paths):
     """
     Send notifications to Sockeye topic if failed endpoints exist or no results exist at all
     @param cal: calendar to check if need to send notifications with
@@ -186,6 +185,7 @@ def notify(results, endpoints, validated_paths, cal):
 
     # Checking failure list and announcing errors
     if failure and isinstance(failure, list):
+        cal = InfobloxCalendar(2019, 2099)
         if _check_skip_notification(cal):
             return SKIP_MESSAGE_FORMAT.format(datetime.now())
 

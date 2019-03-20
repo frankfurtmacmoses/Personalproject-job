@@ -13,7 +13,7 @@ DATE_TYPE_ERROR = "The date entered is not of type date. Cannot generate desired
 REMOVE_HOLIDAY_ERROR = "Holiday cannot be removed!"
 
 HOLIDAY_GOOD_FRIDAY = get_boolean('holiday.good_friday')
-HOLIDAY_DAY_B4_XMAS_EVE = get_boolean('holiday.day_b4_xmas_env')
+HOLIDAY_DAY_B4_XMAS_EVE = get_boolean('holiday.day_b4_xmas_eve')
 
 DOW = [
     "Monday",
@@ -99,10 +99,10 @@ class InfobloxCalendar(object):
         """
         for key, value in dict(self.holiday_list).items():
             if value == "Christmas Eve":
-                if value.weekday() == 6:
-                    day_before = value - timedelta(days=2)
+                if key.weekday == 6:
+                    day_before = key - timedelta(days=2)
                 else:
-                    day_before = value - timedelta(days=1)
+                    day_before = key - timedelta(days=1)
                 self.add_holiday(day_before.year, day_before.month, day_before.day, "Day Before Christmas Eve")
 
     def _add_holiday_day_after_thanksgiving(self):
@@ -270,14 +270,14 @@ class InfobloxCalendar(object):
             for key, value in dict(self.holiday_list).items():
                 if value in names:
                     del self.holiday_list[key]
-                    LOGGER.info('{} has been removed'.format(value))
+                    LOGGER.info('{} has been removed for {}'.format(value, key.year))
             return
 
         if isinstance(names, str):
             for key, value in dict(self.holiday_list).items():
                 if value == names:
                     del self.holiday_list[key]
-            LOGGER.info('{} has been removed'.format(names))
+            LOGGER.info('{} has been removed for {}'.format(names, key.year))
             return
 
         try:
@@ -287,12 +287,3 @@ class InfobloxCalendar(object):
         except Exception as e:
             message = "{}\nTrying to remove holiday: Year-{} Month-{} Day-{}".format(REMOVE_HOLIDAY_ERROR, year, month, day)
             LOGGER.error(message)
-
-    def main(self):
-        print("TEST")
-
-
-
-if __name__ == "__main__":
-    cal = InfobloxCalendar(2017, 2026)
-    print HOLIDAY_DAY_B4_XMAS_EVE

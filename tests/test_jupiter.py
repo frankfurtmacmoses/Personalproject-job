@@ -4,7 +4,7 @@ from mock import patch
 
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.process.jupiter import notify, load_endpoints, check_endpoints, main, RESULTS_DNE, SUCCESS_MESSAGE, \
-    CHECK_LOGS, NO_RESULTS
+    CHECK_LOGS, NO_RESULTS, SKIP_MESSAGE_FORMAT
 
 
 class TestJupiter(unittest.TestCase):
@@ -133,7 +133,8 @@ class TestJupiter(unittest.TestCase):
         self.assertEqual(expected_result, returned_result)
 
     @patch('watchmen.process.jupiter.raise_alarm')
-    def test_notify(self, mock_alarm):
+    @patch('watchmen.process.jupiter._check_skip_notification')
+    def test_notify(self, mock_skip, mock_alarm):
         # No results
         expected_result = RESULTS_DNE
         returned_result = notify(None, None, None)
@@ -148,6 +149,15 @@ class TestJupiter(unittest.TestCase):
         failed = self.example_failed.get('failure')
         self.assertIsInstance(failed, list)
         messages = []
+
+        # Skip the notification
+        mock_skip.return_value = True
+        returned_result = notify(self.example_failed, self.example_endpoints, self.example_validated)
+        contained = "Notification is skipped" in returned_result
+        self.assertEqual(True, contained)
+
+        # Do not skip
+        mock_skip.return_value = False
         for item in failed:
             msg = '\tname: {}\n\tpath: {}\n\terror: {}'.format(
                 item.get('name'), item.get('path'), item.get('_err')
