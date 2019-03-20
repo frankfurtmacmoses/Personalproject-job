@@ -4,7 +4,7 @@ from mock import patch
 
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.process.jupiter import notify, load_endpoints, check_endpoints, main, RESULTS_DNE, SUCCESS_MESSAGE, \
-    CHECK_LOGS, NO_RESULTS, SKIP_MESSAGE_FORMAT
+    CHECK_LOGS, NO_RESULTS
 
 
 class TestJupiter(unittest.TestCase):

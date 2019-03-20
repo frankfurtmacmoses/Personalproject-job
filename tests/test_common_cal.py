@@ -86,11 +86,11 @@ class TestJupiter(unittest.TestCase):
             'expected': None,
         }]
 
-        for date in dates:
-            year = date.get('year')
-            month = date.get('month')
-            day = date.get('day')
-            expected = date.get('expected')
+        for d in dates:
+            year = d.get('year')
+            month = d.get('month')
+            day = d.get('day')
+            expected = d.get('expected')
             returned = InfobloxCalendar(2019, 2030).is_workday(year, month, day)
             self.assertEqual(expected, returned)
 

@@ -1,3 +1,6 @@
+"""
+common/cal.py
+"""
 from datetime import date, timedelta, datetime
 from dateutil.easter import easter
 import holidays
@@ -42,6 +45,10 @@ NOM = {
 
 
 class InfobloxCalendar(object):
+    """
+    Calendar class containing a list of all Infoblox holidays and ways to query the list.
+    NOTE: Holidays need to be updated once a year
+    """
 
     def __init__(self, start=date.today().year, end=None):
         """
@@ -80,7 +87,7 @@ class InfobloxCalendar(object):
         try:
             new_date = '{}-{}-{}'.format(year, month, day)
             self.holiday_list.append({new_date: name})
-        except Exception as e:
+        except Exception:
             message = "{}\nTrying to add holiday: Year-{} Month-{} Day-{}".format(ADD_HOLIDAY_ERROR, year, month, day)
             LOGGER.error(message)
 
@@ -129,13 +136,13 @@ class InfobloxCalendar(object):
         Holiday Slowdown are the following dates: Dec. 26th-31st
         """
         for year in self.year_range:
-            d = 26
-            while d <= 31:
-                self.add_holiday(year, 12, d, "Holiday Slowdown")
-                d = d+1
+            day_num = 26
+            while day_num <= 31:
+                self.add_holiday(year, 12, day_num, "Holiday Slowdown")
+                day_num = day_num+1
 
     @staticmethod
-    def _find_weekday(self, date_to_check):
+    def _find_weekday(date_to_check):
         """
         Finds which day of the week the given date is
         @param date_to_check:
@@ -208,7 +215,7 @@ class InfobloxCalendar(object):
                 date_to_check = date.today()
             else:
                 date_to_check = date(year, month, day)
-        except Exception as e:
+        except Exception:
             message = "{}\nTrying to check : Year-{} Month-{} Day-{}".format(DATE_ERROR, year, month, day)
             LOGGER.error(message)
             return None
@@ -249,14 +256,14 @@ class InfobloxCalendar(object):
             ```
         """
         year = None
-        for date, name in sorted(self.holiday_list.items()):
-            day_of_week = InfobloxCalendar._find_weekday(self, date)
-            month_name = self._get_month(date)
-            if year != date.year:
-                year = date.year
-                print('\n--------{}--------'.format(date.year))
+        for hol, name in sorted(self.holiday_list.items()):
+            day_of_week = InfobloxCalendar._find_weekday(self, hol)
+            month_name = self._get_month(hol)
+            if year != hol.year:
+                year = hol.year
+                print('\n--------{}--------'.format(hol.year))
 
-            print('{}, {} {} {}: {}'.format(day_of_week, month_name, date.day, date.year, name))
+            print('{}, {} {} {}: {}'.format(day_of_week, month_name, hol.day, hol.year, name))
 
     def remove_holiday(self, year=None, month=None, day=None, names=None):
         """
@@ -284,6 +291,7 @@ class InfobloxCalendar(object):
             new_date = '{}-{}-{}'.format(year, month, day)
             removed_date = self.holiday_list.pop(new_date)
             LOGGER.info('{} has been removed'.format(removed_date))
-        except Exception as e:
-            message = "{}\nTrying to remove holiday: Year-{} Month-{} Day-{}".format(REMOVE_HOLIDAY_ERROR, year, month, day)
+        except Exception:
+            message = "{}\nTrying to remove holiday: Year-{} Month-{} Day-{}".\
+                        format(REMOVE_HOLIDAY_ERROR, year, month, day)
             LOGGER.error(message)

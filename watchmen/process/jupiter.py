@@ -35,7 +35,7 @@ NOT_ENOUGH_EPS_MESSAGE = "Endpoint count is below minimum. There is no need to c
 RESULTS_DNE = "Results do not exist! There is nothing to check. Service Checker may not be working correctly. " \
               "Please check logs and endpoint file to help identify the issue."
 SKIP_MESSAGE_FORMAT = "Notification is skipped at {}"
-SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:SockeyeTest")
+SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:Sockeye")
 SUCCESS_MESSAGE = "All endpoints are good!"
 
 
@@ -129,6 +129,12 @@ def load_endpoints():
 
 
 def log_result(results):
+    """
+    Log results to s3
+    @param results: to be logged
+    @return:
+    """
+    LOGGER.info("The results are:\n{}".format(results))
     # save result to s3
     pass
 
