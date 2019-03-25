@@ -76,21 +76,24 @@ def check_endpoints(endpoints):
     return validated
 
 
-def _check_skip_notification(cal):
+def _check_skip_notification():
     """
     If current day and hour do not fall under the desired notification times, there is not need to send a notification
-    @param cal: calendar to check against
     @return: whether or not to send a notification
     """
-    hour = datetime.now().hour
-    if cal.is_workday():
-        if cal.is_workhour(hour) and hour % 4 == 0:
-            return False
+    now = datetime.now()
+    hour = now.hour
+    year = now.year
+    # Create a calendar for last yera, current year, and next year
+    cal = InfobloxCalendar(year - 1, year, year + 1)
+    to_skip = False
 
-    if hour != 0 and hour % 8 == 0:
-        return False
+    if not cal.is_workday():
+        to_skip = hour % 8 != 0
+    elif not cal.is_workhour(hour):
+        to_skip = hour % 4 != 0
 
-    return True
+    return to_skip
 
 
 def load_endpoints():
@@ -157,8 +160,12 @@ def main(event, context):
 
 def notify(results, endpoints, validated_paths):
     """
-    Send notifications to Sockeye topic if failed endpoints exist or no results exist at all
-    @param cal: calendar to check if need to send notifications with
+    Send notifications to Sockeye topic if failed endpoints exist or no results exist at all.
+    Notifications vary depending on the time and day.
+    If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
+    If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
+    Otherwise, all notifications will be skipped.
+    Although a notification may not be sent, results will be logged at all times.
     @param results: dict to be checked for failed endpoints
     @param endpoints: loaded endpoints data
     @param validated_paths: validated endpoints
@@ -191,8 +198,7 @@ def notify(results, endpoints, validated_paths):
 
     # Checking failure list and announcing errors
     if failure and isinstance(failure, list):
-        cal = InfobloxCalendar(2019, 2099)
-        if _check_skip_notification(cal):
+        if _check_skip_notification():
             return SKIP_MESSAGE_FORMAT.format(datetime.now())
 
         messages = []

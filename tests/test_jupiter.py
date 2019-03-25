@@ -154,7 +154,7 @@ class TestJupiter(unittest.TestCase):
         mock_skip.return_value = True
         returned_result = notify(self.example_failed, self.example_endpoints, self.example_validated)
         contained = "Notification is skipped" in returned_result
-        self.assertEqual(True, contained)
+        self.assertTrue(contained)
 
         # Do not skip
         mock_skip.return_value = False

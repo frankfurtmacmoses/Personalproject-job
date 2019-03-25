@@ -65,7 +65,7 @@ class InfobloxCalendar(object):
                 - This creates a calendar for the given range of years (end year exclusive)
         """
         if end is None:
-            end = start+1
+            end = start + 1
 
         self.year_range = list(range(start, end))
 
@@ -73,7 +73,7 @@ class InfobloxCalendar(object):
         # Customize holiday list to reflect infoblox holidays
         self._generate_infoblox_holidays()
 
-    def add_holiday(self, year=None, month=None, day=None, name='Custom Infoblox Holiday'):
+    def add_holiday(self, year, month, day, name='Custom Infoblox Holiday'):
         """
         Add a custom holiday to the holiday list
         @param year: of new holiday
@@ -99,6 +99,7 @@ class InfobloxCalendar(object):
             if value == "Christmas Day":
                 eve = key - timedelta(days=1)
                 self.add_holiday(eve.year, eve.month, eve.day, "Christmas Eve")
+                return eve
 
     def _add_holiday_day_b4_xmas_eve(self):
         """
@@ -111,6 +112,7 @@ class InfobloxCalendar(object):
                 else:
                     day_before = key - timedelta(days=1)
                 self.add_holiday(day_before.year, day_before.month, day_before.day, "Day Before Christmas Eve")
+                return day_before
 
     def _add_holiday_day_after_thanksgiving(self):
         """
@@ -120,6 +122,7 @@ class InfobloxCalendar(object):
             if value == "Thanksgiving":
                 next_day = key + timedelta(days=1)
                 self.add_holiday(next_day.year, next_day.month, next_day.day, "Day After Thanksgiving (Black Friday)")
+                return next_day
 
     def _add_holiday_good_friday(self):
         """
@@ -139,7 +142,7 @@ class InfobloxCalendar(object):
             day_num = 26
             while day_num <= 31:
                 self.add_holiday(year, 12, day_num, "Holiday Slowdown")
-                day_num = day_num+1
+                day_num += 1
 
     @staticmethod
     def _find_weekday(date_to_check):
@@ -150,7 +153,7 @@ class InfobloxCalendar(object):
         """
         if not isinstance(date_to_check, date):
             LOGGER.error(DATE_TYPE_ERROR)
-            return None
+            return
         return DOW[date_to_check.weekday()]
 
     def _generate_infoblox_holidays(self):
@@ -195,10 +198,7 @@ class InfobloxCalendar(object):
         @param day: to be checked
         @return: whether or not the given day is a weekend day or not
         """
-        week_num = day.weekday()
-        if week_num < 5:
-            return False
-        return True
+        return day.weekday() < 5
 
     def is_workday(self, year=date.today().year, month=date.today().month, day=date.today().day):
         """
@@ -211,18 +211,18 @@ class InfobloxCalendar(object):
         # has to be input with year-month-day style
         # if not holiday or weekend, return true
         try:
-            if year is None or month is None or day is None:
+            if year is None and month is None and day is None:
                 date_to_check = date.today()
             else:
                 date_to_check = date(year, month, day)
-        except Exception:
+        except Exception as e:
             message = "{}\nTrying to check : Year-{} Month-{} Day-{}".format(DATE_ERROR, year, month, day)
             LOGGER.error(message)
             return None
 
-        if self._is_weekend(date_to_check) or (date_to_check in self.holiday_list):
-            return False
-        return True
+        not_weekend = not self._is_weekend(date_to_check)
+        not_holiday = date_to_check not in self.holiday_list
+        return not_weekend and not_holiday
 
     @staticmethod
     def is_workhour(hour=datetime.now().hour):
@@ -231,9 +231,7 @@ class InfobloxCalendar(object):
         @param hour: to be checked
         @return: Whether or not the hour falls between 6am and 6pm
         """
-        if 6 <= hour < 18:
-            return True
-        return False
+        return 6 <= hour < 18
 
     def print_holidays(self):
         """
@@ -241,7 +239,7 @@ class InfobloxCalendar(object):
 
         Should print in the order:
             ```
-            ***********Current Year***********
+            --------Current Year--------
             Day of the Week, Month Day Year: Name of Holiday
             ```
 
@@ -257,7 +255,7 @@ class InfobloxCalendar(object):
         """
         year = None
         for hol, name in sorted(self.holiday_list.items()):
-            day_of_week = InfobloxCalendar._find_weekday(self, hol)
+            day_of_week = InfobloxCalendar._find_weekday(hol)
             month_name = self._get_month(hol)
             if year != hol.year:
                 year = hol.year

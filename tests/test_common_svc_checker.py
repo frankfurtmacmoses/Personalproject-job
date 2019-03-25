@@ -33,19 +33,16 @@ class ServiceCheckerTester(unittest.TestCase):
         if os.path.isfile(self.data_file):
             with open(self.data_file, 'rt') as fh:
                 content = fh.read()
-                # LOGGER.debug('\n- Loaded endpoints:\n%s', content)
                 self.test_data = json.loads(content)
         self.test_data_success = {}
         if os.path.isfile(self.data_file_success):
             with open(self.data_file_success, 'rt') as fh:
                 content = fh.read()
-                # LOGGER.debug('\n- Loaded success test data:\n%s', content)
                 self.test_data_success = json.loads(content)
         self.test_data_failure = {}
         if os.path.isfile(self.data_file_failure):
             with open(self.data_file_failure, 'rt') as fh:
                 content = fh.read()
-                # LOGGER.debug('\n- Loaded failure test data:\n%s', content)
                 self.test_data_failure = json.loads(content)
         pass
 
@@ -179,7 +176,6 @@ class ServiceCheckerTester(unittest.TestCase):
         if os.path.isfile(test_file):
             with open(test_file, 'rt') as fh:
                 content = fh.read()
-                # LOGGER.debug('\n- Loaded endpoints:\n%s', content)
                 test_data = json.loads(content)
 
         svc = ServiceChecker(test_data)

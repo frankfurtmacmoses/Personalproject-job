@@ -14,21 +14,29 @@ class TestJupiter(unittest.TestCase):
 
     def test_add_holiday(self):
         bad_holidays = [{
-            "year": None,
-            "month": 12,
-            "day": 18,
+            "year": "2025", "month": 12, "day": 18,
         }, {
-            "year": 2025,
-            "month": None,
-            "day": 18,
+            "year": 2025, "month": "12", "day": 18,
         }, {
-            "year": 2025,
-            "month": 12,
-            "day": None,
+            "year": 2025, "month": 12, "day": "18",
         }, {
-            "year": "",
-            "month": "",
-            "day": "",
+            "year": 2025, "month": 4.45, "day": 18,
+        }, {
+            "year": 2025, "month": 12, "day": None,
+        }, {
+            "year": 2025, "month": None, "day": 18,
+        }, {
+            "year": 0, "month": 12, "day": 18,
+        }, {
+            "year": 2025, "month": 14, "day": 18,
+        }, {
+            "year": 2025, "month": 12, "day": 32,
+        }, {
+            "year": None, "month": 12, "day": 18,
+        }, {
+            "year": None, "month": None, "day": None,
+        }, {
+            "year": "", "month": "", "day": "",
         }, {
         }]
 
@@ -38,13 +46,24 @@ class TestJupiter(unittest.TestCase):
         name = "Kayla\'s Birthday"
 
         cal = InfobloxCalendar()
+
+        # This holiday should have the default name
+        cal.add_holiday(year, month, day)
+        self.assertIn("Custom Infoblox Holiday", cal.holiday_list.values())
+
+        # This is a second insertion of the above holiday but with a different name
         cal.add_holiday(year, month, day, name)
-        self.assertIn(date(year, month, day), cal.holiday_list)
+        self.assertIn("{}, Custom Infoblox Holiday".format(name), cal.holiday_list.values())
+
+        # This is the second insertion of the above holiday exactly
+        # No error because a list does not contain duplicates
+        cal.add_holiday(year, month, day, name)
 
         cal = InfobloxCalendar()
         for holiday in bad_holidays:
             cal.add_holiday(holiday.get('year'), holiday.get('month'), holiday.get('day'))
             self.assertRaises(Exception)
+
 
     def test_is_workday(self):
         dates = [{
