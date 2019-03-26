@@ -3,7 +3,7 @@ import json
 from mock import patch
 
 from watchmen.common.svc_checker import ServiceChecker
-from watchmen.process.jupiter import notify, load_endpoints, check_endpoints, main, RESULTS_DNE, SUCCESS_MESSAGE, \
+from watchmen.process.jupiter import notify, load_endpoints, check_endpoints, log_result, main, RESULTS_DNE, SUCCESS_MESSAGE, \
     CHECK_LOGS, NO_RESULTS
 
 
@@ -102,6 +102,25 @@ class TestJupiter(unittest.TestCase):
         expected_result = mock_endpoints.return_value
         returned_result = (load_endpoints()).return_value
         self.assertEqual(expected_result, returned_result)
+
+    @patch('watchmen.process.jupiter.copy_contents_to_bucket')
+    @patch('watchmen.process.jupiter.json.dumps')
+    def test_log_result(self, mock_dumps, mock_content):
+        mock_dumps.return_value = self.example_results_mix
+        results = mock_dumps.return_value
+
+        # Failed to get contents to s3
+        mock_content.side_effect = Exception(self.example_exception_message)
+        expected = None
+        returned = log_result(results)
+        self.assertEqual(expected, returned)
+
+        # Failed to dump contents
+        mock_dumps.side_effect = Exception(self.example_exception_message)
+        expected = None
+        returned = log_result(results)
+        self.assertEqual(expected, returned)
+
 
     @patch('watchmen.process.jupiter.notify')
     @patch('watchmen.process.jupiter.ServiceChecker.get_validated_paths')

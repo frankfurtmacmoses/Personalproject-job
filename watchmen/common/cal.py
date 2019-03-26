@@ -14,6 +14,7 @@ ADD_HOLIDAY_ERROR = "Holiday cannot be added!"
 DATE_ERROR = "Incorrect date formatting!"
 DATE_TYPE_ERROR = "The date entered is not of type date. Cannot generate desired information."
 REMOVE_HOLIDAY_ERROR = "Holiday cannot be removed!"
+WORK_HOUR_TYPE_ERROR = "Work hour must be type int!"
 
 HOLIDAY_GOOD_FRIDAY = get_boolean('holiday.good_friday')
 HOLIDAY_DAY_B4_XMAS_EVE = get_boolean('holiday.day_b4_xmas_eve')
@@ -198,7 +199,7 @@ class InfobloxCalendar(object):
         @param day: to be checked
         @return: whether or not the given day is a weekend day or not
         """
-        return day.weekday() < 5
+        return not day.weekday() < 5
 
     def is_workday(self, year=date.today().year, month=date.today().month, day=date.today().day):
         """
@@ -222,6 +223,7 @@ class InfobloxCalendar(object):
 
         not_weekend = not self._is_weekend(date_to_check)
         not_holiday = date_to_check not in self.holiday_list
+
         return not_weekend and not_holiday
 
     @staticmethod
@@ -231,6 +233,9 @@ class InfobloxCalendar(object):
         @param hour: to be checked
         @return: Whether or not the hour falls between 6am and 6pm
         """
+        if not isinstance(hour, int):
+            LOGGER.error(WORK_HOUR_TYPE_ERROR)
+            return False
         return 6 <= hour < 18
 
     def print_holidays(self):

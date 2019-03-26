@@ -13,7 +13,10 @@ holiday:
 jupiter:
   endpoints: jupiter/endpoints.json
   sns_topic: arn:aws:sns:us-east-1:405093580753:Sockeye
+  s3_prefix: jupiter
   min_items: 1
+  hr_start_pdt: 6
+  hr_end_pdt: 18
 
 ecs:
   feeds:
