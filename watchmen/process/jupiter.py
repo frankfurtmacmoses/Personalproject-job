@@ -172,6 +172,13 @@ def log_result(results):
 
 
 def log_state(sanitized_result):
+    """
+    Logs whether the current state of Jupiter contains failed endpoints or all are successes.
+    If there are failures, they will be written to the LATEST file on s3.
+    An empty LATEST file indicates that there are no failures.
+    Each time this method is run, it will overwrite the contents of LATEST.
+    @param sanitized_result: dictionary containing results of the sanitization of the successful and failed endpoints.
+    """
     try:
         success = sanitized_result.get('success')
         content = '' if success else json.dumps(sanitized_result, indent=4, sort_keys=True)
@@ -185,7 +192,7 @@ def log_state(sanitized_result):
 def main(event, context):
     """
     main function
-    :return: status of Sockeye endpoints
+    :return: results from checking Sockeye endpoints
     """
     endpoints = load_endpoints()
     checked_endpoints = check_endpoints(endpoints)
@@ -201,6 +208,16 @@ def main(event, context):
 
 
 def notify(sanitized_result):
+    """
+    Send notifications to Sockeye topic if failed endpoints exist or no results exist at all.
+    Notifications vary depending on the time and day.
+    If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
+    If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
+    Otherwise, all notifications will be skipped.
+    Although a notification may not be sent, results will be logged at all times.
+    @param sanitized_result: dictionary containing notification information
+    @return: a message upon success or if skipping notification.
+    """
     message = sanitized_result.get('message')
     subject = sanitized_result.get('subject')
     success = sanitized_result.get('success')
@@ -208,8 +225,8 @@ def notify(sanitized_result):
     if success:
         return SUCCESS_MESSAGE
 
-    # it is failed right now; should not skip if this is the first failure detection.
-    is_skipping = _check_last_failure() and _check_skip_notification()
+    # Skip if last check in state file is not a failure and it is not time to send a notification
+    is_skipping = not _check_last_failure() and _check_skip_notification()
     if is_skipping:
         return SKIP_MESSAGE_FORMAT.format(CHECK_TIME_UTC)
 
@@ -219,12 +236,8 @@ def notify(sanitized_result):
 
 def sanitize(results, endpoints, validated_paths):
     """
-    Send notifications to Sockeye topic if failed endpoints exist or no results exist at all.
-    Notifications vary depending on the time and day.
-    If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
-    If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
-    Otherwise, all notifications will be skipped.
-    Although a notification may not be sent, results will be logged at all times.
+    Creates a dictionary based on endpoints results.
+    This dictionary will be given to notify to create alarm messages and logs.
     @param results: dict to be checked for failed endpoints
     @param endpoints: loaded endpoints data
     @param validated_paths: validated endpoints
