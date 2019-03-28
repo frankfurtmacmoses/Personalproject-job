@@ -3,8 +3,8 @@ import json
 from mock import patch
 
 from watchmen.common.svc_checker import ServiceChecker
-from watchmen.process.jupiter import notify, load_endpoints, check_endpoints,sanitize, log_result, main, ERROR_SUBJECT,\
-    RESULTS_DNE, SUCCESS_MESSAGE, CHECK_LOGS, NO_RESULTS, ERROR_JUPITER
+from watchmen.process.jupiter import notify, load_endpoints, check_endpoints, sanitize, log_result, main, \
+    ERROR_SUBJECT, RESULTS_DNE, SUCCESS_MESSAGE, CHECK_LOGS, NO_RESULTS, ERROR_JUPITER
 
 
 class TestJupiter(unittest.TestCase):
@@ -239,6 +239,7 @@ class TestJupiter(unittest.TestCase):
             self.assertEqual(expected, returned)
 
         # Raise alarm
+        self.assertFalse(failure.get('success'))
         mock_alarm()
         mock_alarm.assert_called_with()
 
@@ -292,7 +293,7 @@ class TestJupiter(unittest.TestCase):
 
         # Results DNE
         results = None
-        expected= {
+        expected = {
                 "message": RESULTS_DNE, "subject": ERROR_JUPITER, "success": False,
             }
         returned = sanitize(results, None, None)

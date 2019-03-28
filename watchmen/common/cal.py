@@ -216,7 +216,7 @@ class InfobloxCalendar(object):
                 date_to_check = date.today()
             else:
                 date_to_check = date(year, month, day)
-        except Exception as e:
+        except Exception:
             message = "{}\nTrying to check : Year-{} Month-{} Day-{}".format(DATE_ERROR, year, month, day)
             LOGGER.error(message)
             return None
