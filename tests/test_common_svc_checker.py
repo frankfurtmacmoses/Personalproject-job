@@ -33,6 +33,7 @@ class ServiceCheckerTester(unittest.TestCase):
         if os.path.isfile(self.data_file):
             with open(self.data_file, 'rt') as fh:
                 content = fh.read()
+                # LOGGER.debug('\n- Loaded endpoints:\n%s', content)
                 self.test_data = json.loads(content)
         self.test_data_success = {}
         if os.path.isfile(self.data_file_success):

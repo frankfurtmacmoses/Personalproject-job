@@ -3,8 +3,8 @@ import json
 from mock import patch
 
 from watchmen.common.svc_checker import ServiceChecker
-from watchmen.process.jupiter import notify, load_endpoints, check_endpoints, sanitize, log_result, main, \
-    ERROR_SUBJECT, RESULTS_DNE, SUCCESS_MESSAGE, CHECK_LOGS, NO_RESULTS, ERROR_JUPITER
+from watchmen.process.jupiter import check_endpoints, load_endpoints, log_result, main, notify, sanitize
+from watchmen.process.jupiter import CHECK_LOGS, ERROR_JUPITER, ERROR_SUBJECT, NO_RESULTS, RESULTS_DNE, SUCCESS_MESSAGE
 
 
 class TestJupiter(unittest.TestCase):

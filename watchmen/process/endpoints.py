@@ -31,4 +31,32 @@ DATA = [{
         "format": "json",
         "keys_check": ["dbInfo"],
     }]
+}, {
+    "name": "ThreatView (prod)",
+    "path": "http://35.168.224.86/threatview",
+    "format": "html",
+    "routes": [{
+        "name": "ThreatView API (prod)",
+        "path": "/rest/info",
+    }, {
+        "name": " ThreatView API spec (test/ci-tac)",
+        "path": "/rest/info",
+        "format": "text",
+        "regx": "ThreatView REST API",
+    }]
+}, {
+    "name": "ThreatView (test/ci-tac)",
+    "path": "http://172.18.103.121/threatview",
+    "format": "html",
+    "routes": [{
+        "name": "ThreatView API (test/ci-tac),",
+        "path": "/rest/info",
+        "format": "json",
+        "keys_check": ["dbInfo"],
+    }, {
+        "name": "ThreatView API spec (test/ci-tac)",
+        "path": "/rest/info",
+        "format": "text",
+        "regx": "ThreatView REST API",
+    }]
 }]
