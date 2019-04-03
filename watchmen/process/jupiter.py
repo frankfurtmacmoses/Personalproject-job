@@ -13,6 +13,7 @@ import pytz
 from datetime import datetime
 from logging import getLogger, basicConfig, INFO
 
+from watchmen.config import get_boolean
 from watchmen.config import get_uint
 from watchmen.config import settings
 from watchmen.common.cal import InfobloxCalendar
@@ -21,6 +22,7 @@ from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import copy_contents_to_bucket
 from watchmen.utils.s3 import get_content
+from watchmen.utils.s3 import mv_key
 
 LOGGER = getLogger("Jupiter")
 basicConfig(level=INFO)
@@ -29,7 +31,7 @@ CHECK_TIME_UTC = datetime.utcnow()
 CHECK_TIME_PDT = pytz.utc.localize(CHECK_TIME_UTC).astimezone(pytz.timezone('US/Pacific'))
 DATETIME_FORMAT = '%Y%m%d_%H%M%S'
 MIN_ITEMS = get_uint('jupiter.min_items', 1)
-SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:Sockeye")
+SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:SockeyeTest")
 
 # S3
 S3_BUCKET = settings('aws.s3.bucket')
@@ -162,28 +164,31 @@ def log_result(results):
     """
     try:
         prefix_datetime = CHECK_TIME_UTC.strftime(DATETIME_FORMAT)
-        prefix_result = '{}/{}/{}/{}.json'.format(S3_PREFIX, S3_PREFIX_JUPITER, CHECK_TIME_UTC.year, prefix_datetime)
+        prefix_result = '{}/{}/{}/{}'.format(S3_PREFIX, S3_PREFIX_JUPITER, CHECK_TIME_UTC.year, prefix_datetime)
         LOGGER.info("Jupiter Watchmen results:\n{}".format(results))
         # save result to s3
         content = json.dumps(results, indent=4, sort_keys=True)
         copy_contents_to_bucket(content, prefix_result, S3_BUCKET)
     except Exception as ex:
         LOGGER.error(ex)
+    return prefix_result
 
 
-def log_state(sanitized_result):
+def log_state(summarized_result, prefix):
     """
     Logs whether the current state of Jupiter contains failed endpoints or all are successes.
     If there are failures, they will be written to the LATEST file on s3.
     An empty LATEST file indicates that there are no failures.
     Each time this method is run, it will overwrite the contents of LATEST.
-    @param sanitized_result: dictionary containing results of the sanitization of the successful and failed endpoints.
+    @param summarized_result: dictionary containing results of the sanitization of the successful and failed endpoints.
     """
     try:
-        success = sanitized_result.get('success')
-        content = '' if success else json.dumps(sanitized_result, indent=4, sort_keys=True)
+        success = summarized_result.get('success')
+        content = '' if success else json.dumps(summarized_result, indent=4, sort_keys=True)
         prefix_state = '{}/{}/LATEST'.format(S3_PREFIX, S3_PREFIX_JUPITER)
         copy_contents_to_bucket(content, prefix_state, S3_BUCKET)
+        state = 'SUCCESS' if success else 'FAILURE'
+        mv_key(prefix, '{}_{}.json'.format(prefix, state), bucket=S3_BUCKET)
     except Exception as ex:
         LOGGER.error(ex)
 
@@ -198,16 +203,16 @@ def main(event, context):
     checked_endpoints = check_endpoints(endpoints)
     checker = ServiceChecker(checked_endpoints)
     results = checker.start()
-    log_result(results)
+    prefix = log_result(results)
     validated_paths = checker.get_validated_paths()
-    sanitized_result = sanitize(results, endpoints, validated_paths)
-    log_state(sanitized_result)
-    notify(sanitized_result)
+    summarized_result = summarize(results, endpoints, validated_paths)
+    log_state(summarized_result, prefix)
+    notify(summarized_result)
 
-    return sanitized_result
+    return summarized_result
 
 
-def notify(sanitized_result):
+def notify(summarized_result):
     """
     Send notifications to Sockeye topic if failed endpoints exist or no results exist at all.
     Notifications vary depending on the time and day.
@@ -215,18 +220,19 @@ def notify(sanitized_result):
     If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
     Otherwise, all notifications will be skipped.
     Although a notification may not be sent, results will be logged at all times.
-    @param sanitized_result: dictionary containing notification information
+    @param summarized_result: dictionary containing notification information
     @return: a message upon success or if skipping notification.
     """
-    message = sanitized_result.get('message')
-    subject = sanitized_result.get('subject')
-    success = sanitized_result.get('success')
+    message = summarized_result.get('message')
+    subject = summarized_result.get('subject')
+    success = summarized_result.get('success')
 
     if success:
         return SUCCESS_MESSAGE
 
+    enable_calendar = get_boolean('jupiter.enable_calendar')
     # Skip if last check in state file is not a failure and it is not time to send a notification
-    is_skipping = not _check_last_failure() and _check_skip_notification()
+    is_skipping = enable_calendar and not _check_last_failure() and _check_skip_notification()
     if is_skipping:
         return SKIP_MESSAGE_FORMAT.format(CHECK_TIME_UTC)
 
@@ -234,7 +240,7 @@ def notify(sanitized_result):
     pass
 
 
-def sanitize(results, endpoints, validated_paths):
+def summarize(results, endpoints, validated_paths):
     """
     Creates a dictionary based on endpoints results.
     This dictionary will be given to notify to create alarm messages and logs.

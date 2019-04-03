@@ -138,6 +138,12 @@ class TestJupiter(unittest.TestCase):
             msg = '{} should not be a work hour.'.format(input)
             self.assertEqual(expected, returned, msg)
 
+    def test_print_holidays(self):
+        cal = InfobloxCalendar(2020)
+        expected = None
+        returned = cal.print_holidays()
+        self.assertEqual(expected, returned)
+
     def test_remove_holiday(self):
         bad_removals = [{
             "year": None, "month": 12, "day": 18,

@@ -3,8 +3,9 @@ import json
 from mock import patch
 
 from watchmen.common.svc_checker import ServiceChecker
-from watchmen.process.jupiter import check_endpoints, load_endpoints, log_result, main, notify, sanitize
-from watchmen.process.jupiter import CHECK_LOGS, ERROR_JUPITER, ERROR_SUBJECT, NO_RESULTS, RESULTS_DNE, SUCCESS_MESSAGE
+from watchmen.process.jupiter import check_endpoints, load_endpoints, log_result, log_state, main, notify, summarize
+from watchmen.process.jupiter import CHECK_LOGS, CHECK_TIME_UTC, ERROR_JUPITER, ERROR_SUBJECT, NO_RESULTS, RESULTS_DNE,\
+                                     SUCCESS_MESSAGE
 
 
 class TestJupiter(unittest.TestCase):
@@ -23,6 +24,7 @@ class TestJupiter(unittest.TestCase):
                                     "name": "missing data"
                                 }]
                                 """
+        self.example_date_format = '%Y%m%d'
         self.example_empty = {"failure": [], "success": []}
         self.example_endpoints = [{"name": "endpoint", "path": "example"}, {"name": "Used for testing"}]
         self.example_exception_message = "Something failed"
@@ -35,9 +37,10 @@ class TestJupiter(unittest.TestCase):
         self.example_no_failures = {"failure": [], "success": [{"name": "succeeded"}]}
         self.example_notification = "Endpoints have been checked"
         self.example_passed_endpoints = [{"name": "good endpoint", "path": "good/path"}]
+        self.example_prefix = "watchmen/jupiter/{}/{}".format("2019", CHECK_TIME_UTC.strftime(self.example_date_format))
         self.example_results_mix = {'failure': [{'name': 'failed'}], 'success': [{'name': 'passed'}]}
         self.example_results_passed = {'failure': [{'name': 'failed'}], 'success': [{'name': 'passed'}]}
-        self.example_santized_results = {
+        self.example_summarized_results = {
             "message": "This is your in-depth result",
             "subject": "Good subject line",
             "success": False,
@@ -113,25 +116,27 @@ class TestJupiter(unittest.TestCase):
     def test_log_result(self, mock_dumps, mock_content):
         mock_dumps.return_value = self.example_results_mix
         results = mock_dumps.return_value
-        mock_content.return_value = True
-        self.assertTrue(mock_content.return_value)
+        expected = self.example_prefix
+        returned = log_result(results)
+        self.assertIn(expected, returned)
 
         # Failed to get contents to s3
         mock_content.side_effect = Exception(self.example_exception_message)
-        expected = None
+        expected = self.example_prefix
         returned = log_result(results)
-        self.assertEqual(expected, returned)
+        self.assertIn(expected, returned)
 
         # Failed to dump contents
         mock_dumps.side_effect = Exception(self.example_exception_message)
-        expected = None
+        expected = self.example_prefix
         returned = log_result(results)
-        self.assertEqual(expected, returned)
+        self.assertIn(expected, returned)
 
+    @patch('watchmen.process.jupiter.mv_key')
     @patch('watchmen.process.jupiter.copy_contents_to_bucket')
     @patch('watchmen.process.jupiter.json.dumps')
-    def test_log_state(self, mock_dumps, mock_content):
-        mock_dumps.return_value = self.example_santized_results
+    def test_log_state(self, mock_dumps, mock_content, mock_mv_key):
+        mock_dumps.return_value = self.example_summarized_results
         results = mock_dumps.return_value
         mock_content.return_value = True
         self.assertTrue(mock_content.return_value)
@@ -139,25 +144,25 @@ class TestJupiter(unittest.TestCase):
         # Failed to get contents to s3
         mock_content.side_effect = Exception(self.example_exception_message)
         expected = None
-        returned = log_result(results)
+        returned = log_state(results, self.example_prefix)
         self.assertEqual(expected, returned)
 
         # Failed to dump contents
         mock_dumps.side_effect = Exception(self.example_exception_message)
         expected = None
-        returned = log_result(results)
+        returned = log_state(results, self.example_prefix)
         self.assertEqual(expected, returned)
 
     @patch('watchmen.process.jupiter.notify')
     @patch('watchmen.process.jupiter.log_state')
-    @patch('watchmen.process.jupiter.sanitize')
+    @patch('watchmen.process.jupiter.summarize')
     @patch('watchmen.process.jupiter.ServiceChecker.get_validated_paths')
     @patch('watchmen.process.jupiter.log_result')
     @patch('watchmen.process.jupiter.ServiceChecker.start')
     @patch('watchmen.process.jupiter.check_endpoints')
     @patch('watchmen.process.jupiter.load_endpoints')
-    def test_main(self, mock_load_endpoints, mock_check_endpoints, mock_start, mock_logr, mock_validate, mock_sanitize,
-                  mock_logs, mock_notify):
+    def test_main(self, mock_load_endpoints, mock_check_endpoints, mock_start, mock_log_result, mock_validate,
+                  mock_summarize, mock_logs, mock_notify):
         # set endpoints
         mock_load_endpoints.return_value = self.example_variety_endpoints
         mock_check_endpoints.return_value = self.example_passed_endpoints
@@ -171,8 +176,10 @@ class TestJupiter(unittest.TestCase):
         test_checker.start.assert_called_with()
 
         # Log results
-        mock_logr()
-        mock_logr.assert_called_with()
+        mock_log_result.return_value = self.example_prefix
+        prefix = mock_log_result()
+        self.assertIsNotNone(prefix)
+        mock_log_result.assert_called_with()
 
         # Get validated results
         test_checker.get_validated_paths.return_value = self.example_results_passed
@@ -180,11 +187,11 @@ class TestJupiter(unittest.TestCase):
         self.assertIsNotNone(passed_results)
         test_checker.get_validated_paths.assert_called_with()
 
-        # Sanitize results
-        mock_sanitize.return_value = self.example_santized_results
-        sanitized_results = mock_sanitize()
-        self.assertIsNotNone(sanitized_results)
-        mock_sanitize.assert_called_with()
+        # Summarize results
+        mock_summarize.return_value = self.example_summarized_results
+        summarized_results = mock_summarize()
+        self.assertIsNotNone(summarized_results)
+        mock_summarize.assert_called_with()
 
         #  Log state
         mock_logs()
@@ -195,7 +202,7 @@ class TestJupiter(unittest.TestCase):
         mock_notify.assert_called_with()
 
         # Verify return of  santized results
-        expected_result = sanitized_results
+        expected_result = summarized_results
         returned_result = main(None, None)
         self.assertEqual(expected_result, returned_result)
 
@@ -230,22 +237,33 @@ class TestJupiter(unittest.TestCase):
         returned = notify(success)
         self.assertEqual(expected, returned)
 
-        # To skip or not to skip notification
+        # To skip or not to skip notification logic
         for test in skip_tests:
-            last_check_failed = test.get('last_fail')
-            time_to_skip = test.get('skip_time')
+            mock_last_fail.return_value = test.get('last_fail')
+            mock_skip.return_value = test.get('skip_time')
             expected = test.get('expected')
-            returned = not last_check_failed and time_to_skip
+            returned = not mock_last_fail.return_value and mock_skip.return_value
             self.assertEqual(expected, returned)
 
+        # To skip return check
+        mock_last_fail.return_value = False
+        mock_skip.return_value = True
+        self.assertIn("Notification is skipped at", notify(self.example_summarized_results))
+
         # Raise alarm
+        mock_last_fail.return_value = True
+        mock_skip.return_value = True
         self.assertFalse(failure.get('success'))
         mock_alarm()
         mock_alarm.assert_called_with()
 
+        expected = None
+        returned = notify(self.example_summarized_results)
+        self.assertEqual(expected, returned)
+
     @patch('watchmen.process.jupiter.raise_alarm')
     @patch('watchmen.process.jupiter._check_skip_notification')
-    def test_sanitize(self, mock_skip, mock_alarm):
+    def test_summarize(self, mock_skip, mock_alarm):
         # Failure setup
         failures = self.example_failed.get('failure')
 
@@ -288,7 +306,7 @@ class TestJupiter(unittest.TestCase):
         for test in test_results:
             results = test.get('results')
             expected = test.get('expected')
-            returned = sanitize(results, self.example_endpoints, self.example_validated)
+            returned = summarize(results, self.example_endpoints, self.example_validated)
             self.assertEqual(expected, returned)
 
         # Results DNE
@@ -296,5 +314,5 @@ class TestJupiter(unittest.TestCase):
         expected = {
                 "message": RESULTS_DNE, "subject": ERROR_JUPITER, "success": False,
             }
-        returned = sanitize(results, None, None)
+        returned = summarize(results, None, None)
         self.assertEqual(expected, returned)
