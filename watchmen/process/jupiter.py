@@ -31,7 +31,7 @@ CHECK_TIME_UTC = datetime.utcnow()
 CHECK_TIME_PDT = pytz.utc.localize(CHECK_TIME_UTC).astimezone(pytz.timezone('US/Pacific'))
 DATETIME_FORMAT = '%Y%m%d_%H%M%S'
 MIN_ITEMS = get_uint('jupiter.min_items', 1)
-SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:SockeyeTest")
+SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:Sockeye")
 
 # S3
 S3_BUCKET = settings('aws.s3.bucket')
@@ -232,7 +232,8 @@ def notify(summarized_result):
 
     enable_calendar = get_boolean('jupiter.enable_calendar')
     # Skip if last check in state file is not a failure and it is not time to send a notification
-    is_skipping = enable_calendar and not _check_last_failure() and _check_skip_notification()
+    last_failed = summarized_result.get('last_failed')
+    is_skipping = enable_calendar and last_failed and _check_skip_notification()
     if is_skipping:
         return SKIP_MESSAGE_FORMAT.format(CHECK_TIME_UTC)
 
@@ -249,9 +250,12 @@ def summarize(results, endpoints, validated_paths):
     @param validated_paths: validated endpoints
     @return: the notification message
     """
+    last_failed = _check_last_failure()
+
     if not results or not isinstance(results, dict):
         message = RESULTS_DNE
         return {
+            "last_failed": last_failed,
             "message": message,
             "subject": ERROR_JUPITER,
             "success": False,
@@ -273,6 +277,7 @@ def summarize(results, endpoints, validated_paths):
         LOGGER.error(message)
         message = "{}\n\n\n{}".format(message, NO_RESULTS)
         return {
+            "last_failed": last_failed,
             "message": message,
             "subject": ERROR_JUPITER,
             "success": False,
@@ -292,6 +297,7 @@ def summarize(results, endpoints, validated_paths):
         first_failure = 's' if len(failure) > 1 else ' - {}'.format(failure[0].get('name'))
         subject = '{}{}'.format(ERROR_SUBJECT, first_failure)
         return {
+            "last_failed": last_failed,
             "message": message,
             "subject": subject,
             "success": False,

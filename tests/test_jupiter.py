@@ -41,6 +41,7 @@ class TestJupiter(unittest.TestCase):
         self.example_results_mix = {'failure': [{'name': 'failed'}], 'success': [{'name': 'passed'}]}
         self.example_results_passed = {'failure': [{'name': 'failed'}], 'success': [{'name': 'passed'}]}
         self.example_summarized_results = {
+            "last_failed": True,
             "message": "This is your in-depth result",
             "subject": "Good subject line",
             "success": False,
@@ -206,11 +207,13 @@ class TestJupiter(unittest.TestCase):
         returned_result = main(None, None)
         self.assertEqual(expected_result, returned_result)
 
+    @patch('watchmen.process.jupiter.get_boolean')
     @patch('watchmen.process.jupiter.raise_alarm')
     @patch('watchmen.process.jupiter._check_last_failure')
     @patch('watchmen.process.jupiter._check_skip_notification')
-    def test_notify(self, mock_skip, mock_last_fail, mock_alarm):
+    def test_notify(self, mock_skip, mock_last_fail, mock_alarm, mock_boolean):
         success = {
+            "last_failed": False,
             "message": "Everything passed",
             "subject": "Happy subject line",
             "success": True,
@@ -223,13 +226,11 @@ class TestJupiter(unittest.TestCase):
         }
 
         skip_tests = [{
-            "last_fail": False, "skip_time": True, "expected": True,
+            "use_cal": False, "last_failed": True, "skip": False, "expected": None,
         }, {
-            "last_fail": True, "skip_time": True, "expected": False,
+            "use_cal": True, "last_failed": False, "skip": False, "expected": None,
         }, {
-            "last_fail": False, "skip_time": False, "expected": False,
-        }, {
-            "last_fail": True, "skip_time": False, "expected": False,
+            "use_cal": True, "last_failed": True, "skip": False, "expected": None,
         }]
 
         # Success is true
@@ -237,33 +238,25 @@ class TestJupiter(unittest.TestCase):
         returned = notify(success)
         self.assertEqual(expected, returned)
 
-        # To skip or not to skip notification logic
+        # Cases where alarm is triggered
         for test in skip_tests:
-            mock_last_fail.return_value = test.get('last_fail')
-            mock_skip.return_value = test.get('skip_time')
-            expected = test.get('expected')
-            returned = not mock_last_fail.return_value and mock_skip.return_value
+            mock_boolean.return_value = test.get("use_cal")
+            mock_last_fail.return_value = test.get("last_failed")
+            mock_skip.return_value = test.get("skip")
+            expected = test.get("expected")
+            returned = notify(failure)
             self.assertEqual(expected, returned)
 
-        # To skip return check
-        mock_last_fail.return_value = False
-        mock_skip.return_value = True
-        self.assertIn("Notification is skipped at", notify(self.example_summarized_results))
-
-        # Raise alarm
+        # Skip the notify
+        mock_boolean.return_value = True
         mock_last_fail.return_value = True
         mock_skip.return_value = True
-        self.assertFalse(failure.get('success'))
-        mock_alarm()
-        mock_alarm.assert_called_with()
+        # Cannot mock datetime and return result contains exact time to the second
+        self.assertIn("Notification is skipped at", notify(self.example_summarized_results))
 
-        expected = None
-        returned = notify(self.example_summarized_results)
-        self.assertEqual(expected, returned)
-
+    @patch('watchmen.process.jupiter._check_last_failure')
     @patch('watchmen.process.jupiter.raise_alarm')
-    @patch('watchmen.process.jupiter._check_skip_notification')
-    def test_summarize(self, mock_skip, mock_alarm):
+    def test_summarize(self, mock_alarm, mock_fail):
         # Failure setup
         failures = self.example_failed.get('failure')
 
@@ -290,20 +283,21 @@ class TestJupiter(unittest.TestCase):
         empty_message = "{}\n\n\n{}".format(empty_message, NO_RESULTS)
 
         test_results = [{
-            "results": self.example_no_failures, "expected": {
+            "results": self.example_no_failures, "last_failed": False, "expected": {
                 "message": SUCCESS_MESSAGE, "success": True,
             }
         }, {
-            "results": self.example_failed, "expected": {
-                "message": failed_message, "subject": failed_subject, "success": False,
+            "results": self.example_failed, "last_failed": True, "expected": {
+                "last_failed": True, "message": failed_message, "subject": failed_subject, "success": False,
             }
         }, {
-            "results": self.example_empty, "expected": {
-                "message": empty_message, "subject": ERROR_JUPITER, "success": False,
+            "results": self.example_empty, "last_failed": False, "expected": {
+                 "last_failed": False, "message": empty_message, "subject": ERROR_JUPITER, "success": False,
             }
         }]
 
         for test in test_results:
+            mock_fail.return_value = test.get('last_failed')
             results = test.get('results')
             expected = test.get('expected')
             returned = summarize(results, self.example_endpoints, self.example_validated)
@@ -312,7 +306,8 @@ class TestJupiter(unittest.TestCase):
         # Results DNE
         results = None
         expected = {
-                "message": RESULTS_DNE, "subject": ERROR_JUPITER, "success": False,
+            "last_failed": True, "message": RESULTS_DNE, "subject": ERROR_JUPITER, "success": False,
             }
+        mock_fail.return_value = True
         returned = summarize(results, None, None)
         self.assertEqual(expected, returned)
