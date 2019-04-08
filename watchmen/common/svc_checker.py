@@ -130,7 +130,7 @@ class ServiceChecker(object):
             LOGGER.debug('* checking endpoint: %s [%s]', _name, _path)
 
         result, status = get_api_data(_path, timeout=7)
-        # LOGGER.debug("get_api_data [%s]: status=%s, result=\n%S",_path, status, result)
+        # LOGGER.debug("get_api_data [%s]: status=%s, result=\n%s", _path, status, result)
 
         with self._py_locker:
             self._check_endpoint_result(_path, result, status, **endpoint)

@@ -65,7 +65,10 @@ class InfobloxCalendar(object):
             3) InfobloxCalendar(2020, 2090)
                 - This creates a calendar for the given range of years (end year exclusive)
         """
-        if end is None:
+        if not isinstance(start, int) or start < 2000 or start > 2100:
+            start = date.today().year
+
+        if not isinstance(end, int) or end < start or end > 2100:
             end = start + 1
 
         self.year_range = list(range(start, end))

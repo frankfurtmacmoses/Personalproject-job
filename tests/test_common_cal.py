@@ -200,3 +200,21 @@ class TestJupiter(unittest.TestCase):
         for bad in bad_removals:
             cal.remove_holiday(bad.get('year'), bad.get('month'), bad.get('day'))
             self.assertRaises(Exception)
+
+    def test_init_(self):
+        test_years = [{"start": 1880, "end": None},
+                      {"start": 3000, "end": None},
+                      {"start": "1996", "end": None},
+                      {"start": 14.66, "end": None},
+                      {"start": [2002], "end": None},
+                      {"start": date.today().year, "end": 1752},
+                      {"start": date.today().year, "end": 3000},
+                      {"start": date.today().year, "end": "2012"},
+                      {"start": date.today().year, "end": 20.02}]
+
+        for test in test_years:
+            start = test.get("start")
+            end = test.get("end")
+            cal = InfobloxCalendar(start, end)
+            years = [date.today().year]
+            self.assertEqual(years, cal.year_range)

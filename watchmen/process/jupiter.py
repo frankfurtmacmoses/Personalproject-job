@@ -99,7 +99,7 @@ def _check_last_failure():
     @return: True if last check failed; otherwise, False.
     """
     data = get_content(S3_PREFIX_STATE, bucket=S3_BUCKET)
-    return data != ''
+    return data != '' and data is not None
 
 
 def _check_skip_notification():
@@ -111,13 +111,14 @@ def _check_skip_notification():
     hour = now.hour
     year = now.year
     # Create a calendar for last year, current year, and next year
-    cal = InfobloxCalendar(year - 1, year, year + 1)
+    cal = InfobloxCalendar(year - 1, year + 1)
     to_skip = False
-
     if not cal.is_workday():
         to_skip = hour % 8 != 0
     elif not cal.is_workhour(hour):
         to_skip = hour % 4 != 0
+
+    LOGGER.debug("The current hour is %s and to_skip = %s", hour, to_skip)
 
     return to_skip
 
