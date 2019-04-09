@@ -1,7 +1,4 @@
-"""
-# endpoints.py
-"""
-DATA = [{
+[{
     "name": "Sockeye NG",
     "desc": "Sockeye NG about page",
     "path": "http://sng.r11.com/",
@@ -11,25 +8,25 @@ DATA = [{
         "desc": "Sockeye NG API Gateway",
         "path": "v1/info",
         "format": "json",
-        "keys": ["dbInfo"],
+        "keys": ["dbInfo"]
     }, {
         "name": "data",
         "desc": "Sockeye Data Service API",
         "path": "v1/data/info",
         "format": "json",
-        "keys_check": ["dbInfo"],
+        "keys_check": ["dbInfo"]
     }, {
         "name": "hancock",
         "desc": "Sockeye Domains Service API",
         "path": "v1/hancock/info",
         "format": "json",
-        "keys_check": ["dbInfo"],
+        "keys_check": ["dbInfo"]
     }, {
         "name": "truth",
         "desc": "ThreatView application and REST API",
         "path": "v1/truth/info",
         "format": "json",
-        "keys_check": ["dbInfo"],
+        "keys_check": ["dbInfo"]
     }]
 }, {
     "name": "ThreatView (prod)",
@@ -37,12 +34,12 @@ DATA = [{
     "format": "html",
     "routes": [{
         "name": "ThreatView API (prod)",
-        "path": "/rest/info",
+        "path": "/rest/info"
     }, {
         "name": " ThreatView API spec (test/ci-tac)",
         "path": "/rest/info",
         "format": "text",
-        "regx": "ThreatView REST API",
+        "regx": "ThreatView REST API"
     }]
 }, {
     "name": "ThreatView (test/ci-tac)",
@@ -52,11 +49,11 @@ DATA = [{
         "name": "ThreatView API (test/ci-tac),",
         "path": "/rest/info",
         "format": "json",
-        "keys_check": ["dbInfo"],
+        "keys_check": ["dbInfo"]
     }, {
         "name": "ThreatView API spec (test/ci-tac)",
         "path": "/rest/info",
         "format": "text",
-        "regx": "ThreatView REST API",
+        "regx": "ThreatView REST API"
     }]
 }]

@@ -77,7 +77,7 @@ class CommonApiTester(unittest.TestCase):
             else:
                 result, status = get_api_data(self.api_url, self.headers)
                 log = '{} <==> status: {}, result: {}'.format(msg, status, result)
-                # LOGGER.debug("Result is {} and expected is {}".format(result, test_expected))
+                # LOGGER.debug("Result is %s and expected is %s", result, test_expected)
                 self.assertEqual(result, test_expected, log)
             #     self.assertEqual(status, test_status)
             num += 1
