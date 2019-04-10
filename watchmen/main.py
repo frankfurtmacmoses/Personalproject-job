@@ -41,6 +41,15 @@
 }
 """
 from watchmen import spectre, moloch, silhouette, manhattan, ozymandias, rorschach
+from watchmen.process import jupiter
+
+
+def start_jupiter_watcher(event, context):
+    """
+        Start the Jupiter watcher for the Sockeye endpoints.
+        :return: The context that the code is being run in.
+        """
+    return jupiter.main(event, context)
 
 
 def start_spectre_watcher(event, context):
