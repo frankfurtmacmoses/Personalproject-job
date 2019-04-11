@@ -12,7 +12,7 @@ import re
 import threading
 import time
 
-from queue import Queue
+from Queue import Queue
 
 from urlparse import urlparse
 
