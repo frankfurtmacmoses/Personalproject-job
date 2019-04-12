@@ -40,8 +40,7 @@
   }]
 }
 """
-from watchmen import spectre, moloch, silhouette, manhattan, ozymandias, rorschach
-from watchmen.process import jupiter
+from watchmen.process import jupiter, manhattan, moloch, ozymandias, rorschach, silhouette, spectre
 
 
 def start_jupiter_watcher(event, context):
@@ -52,12 +51,12 @@ def start_jupiter_watcher(event, context):
     return jupiter.main(event, context)
 
 
-def start_spectre_watcher(event, context):
+def start_manhattan_watcher(event, context):
     """
-    Start the spectre watcher for Georgia Tech Feed.
+    Start manhattan watcher to monitor hourly, daily and weekly Reaper feeds.
     :return: The context that the code is being run in.
     """
-    return spectre.main(event, context)
+    return manhattan.main(event, context)
 
 
 def start_moloch_watcher(event, context):
@@ -66,22 +65,6 @@ def start_moloch_watcher(event, context):
     :return: The context that the code is being run in.
     """
     return moloch.main(event, context)
-
-
-def start_silhouette_watcher(event, context):
-    """
-    Start the silhouette watcher for lookalike feed.
-    :return: The context that the code is being run in.
-    """
-    return silhouette.main(event, context)
-
-
-def start_manhattan_watcher(event, context):
-    """
-    Start manhattan watcher to monitor hourly, daily and weekly Reaper feeds.
-    :return: The context that the code is being run in.
-    """
-    return manhattan.main(event, context)
 
 
 def start_ozymandias_watcher(event, context):
@@ -98,3 +81,19 @@ def start_rorschach_watcher(event, context):
     :return: The context that the code is being run in.
     """
     return rorschach.main(event, context)
+
+
+def start_silhouette_watcher(event, context):
+    """
+    Start the silhouette watcher for lookalike feed.
+    :return: The context that the code is being run in.
+    """
+    return silhouette.main(event, context)
+
+
+def start_spectre_watcher(event, context):
+    """
+    Start the spectre watcher for Georgia Tech Feed.
+    :return: The context that the code is being run in.
+    """
+    return spectre.main(event, context)

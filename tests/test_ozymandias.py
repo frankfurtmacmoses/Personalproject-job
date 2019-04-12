@@ -1,14 +1,14 @@
 import unittest
 from moto import mock_sns
 from mock import patch
-from watchmen.ozymandias import main, SUCCESS_MESSAGE, FAILURE_MESSAGE
+from watchmen.process.ozymandias import main, SUCCESS_MESSAGE, FAILURE_MESSAGE
 
 
 class TestOzymandias(unittest.TestCase):
 
     @mock_sns
-    @patch('watchmen.ozymandias.Watchmen.validate_file_on_s3')
-    @patch('watchmen.ozymandias.raise_alarm')
+    @patch('watchmen.process.ozymandias.Watchmen.validate_file_on_s3')
+    @patch('watchmen.process.ozymandias.raise_alarm')
     def test_main(self, mock_alarm, mock_validate_on_s3):
         mock_validate_on_s3.return_value = True
         expected_result = SUCCESS_MESSAGE

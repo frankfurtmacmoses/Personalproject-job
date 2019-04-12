@@ -2,7 +2,7 @@ from mock import patch
 from moto import mock_sns
 import unittest
 
-from watchmen.manhattan import main, SUCCESS_MESSAGE, FAILURE_MESSAGE
+from watchmen.process.manhattan import main, SUCCESS_MESSAGE, FAILURE_MESSAGE
 
 
 class TestManhattan(unittest.TestCase):
@@ -15,10 +15,10 @@ class TestManhattan(unittest.TestCase):
         self.example_exception_msg = "Thingy stopped working"
 
     @mock_sns
-    @patch('watchmen.manhattan.raise_alarm')
-    @patch('watchmen.manhattan.Watchmen.get_stuck_ecs_tasks')
-    @patch('watchmen.manhattan.Watchmen.process_feeds_metrics')
-    @patch('watchmen.manhattan.Watchmen.process_feeds_logs')
+    @patch('watchmen.process.manhattan.raise_alarm')
+    @patch('watchmen.process.manhattan.Watchmen.get_stuck_ecs_tasks')
+    @patch('watchmen.process.manhattan.Watchmen.process_feeds_metrics')
+    @patch('watchmen.process.manhattan.Watchmen.process_feeds_logs')
     def test_main(self, mock_process_logs, mock_process_feed, mock_get_stuck_tasks, mock_alarm):
         tests = [
             {
@@ -96,10 +96,10 @@ class TestManhattan(unittest.TestCase):
             mock_alarm.reset_mock()
 
     @mock_sns
-    @patch('watchmen.manhattan.raise_alarm')
-    @patch('watchmen.manhattan.Watchmen.get_stuck_ecs_tasks')
-    @patch('watchmen.manhattan.Watchmen.process_feeds_metrics')
-    @patch('watchmen.manhattan.Watchmen.process_feeds_logs')
+    @patch('watchmen.process.manhattan.raise_alarm')
+    @patch('watchmen.process.manhattan.Watchmen.get_stuck_ecs_tasks')
+    @patch('watchmen.process.manhattan.Watchmen.process_feeds_metrics')
+    @patch('watchmen.process.manhattan.Watchmen.process_feeds_logs')
     def test_main_exception(self, mock_process_logs, mock_process_feed, mock_get_stuck_tasks, mock_alarm):
         tests = [
             {

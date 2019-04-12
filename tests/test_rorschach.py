@@ -8,7 +8,7 @@ import pytz
 import os
 from mock import patch
 from mock import MagicMock
-import watchmen.rorschach as rorschach
+import watchmen.process.rorschach as rorschach
 
 
 class TestRorschach(unittest.TestCase):
@@ -143,8 +143,8 @@ class TestRorschach(unittest.TestCase):
             self.assertEqual(b[1], watcher.everything_zero_size, msg)
             self.assertEqual(b[2], watcher.nothing_parquet, msg)
 
-    @patch('watchmen.rorschach.RorschachWatcher.process_all_files')
-    @patch('watchmen.rorschach.RorschachWatcher.raise_alarm')
+    @patch('watchmen.process.rorschach.RorschachWatcher.process_all_files')
+    @patch('watchmen.process.rorschach.RorschachWatcher.raise_alarm')
     @patch('watchmen.utils.s3.check_empty_folder')
     def test_check_parquet_stream(self, mock_check_empty_folder, mock_raise_alarm, mock_process_all_files):
         # Test with Empty Response!
@@ -183,7 +183,7 @@ class TestRorschach(unittest.TestCase):
         self.assertEqual(expected_result, return_result)
         self.assertFalse(mock_raise_alarm.called)
 
-    @patch('watchmen.rorschach.RorschachWatcher.get_sns_client')
+    @patch('watchmen.process.rorschach.RorschachWatcher.get_sns_client')
     def test_raise_alarm(self, mock_get_sns_client):
 
         expected_response = {'ResponseMetadata': {'HTTPStatusCode': 200}}
@@ -223,7 +223,7 @@ class TestRorschach(unittest.TestCase):
                                                         Message=self.example_message,
                                                         Subject=self.example_subject)
 
-    @patch('watchmen.rorschach._boto3_session')
+    @patch('watchmen.process.rorschach._boto3_session')
     def test_get_sns_client(self, mock_boto3_session):
         expected_result = "I'm a client!"
         mock_session = MagicMock()
@@ -233,7 +233,7 @@ class TestRorschach(unittest.TestCase):
         self.assertEqual(expected_result, returned_result)
         mock_session.client.assert_called_once_with('sns')
 
-    @patch('watchmen.rorschach.RorschachWatcher')
+    @patch('watchmen.process.rorschach.RorschachWatcher')
     def test_main(self, mock_rorschach_watcher):
 
         # Test with Pass Result

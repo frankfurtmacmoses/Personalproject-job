@@ -1,6 +1,6 @@
 import unittest
 from mock import patch
-from watchmen.silhouette import main, process_status, SUCCESS_MESSAGE, FAILURE_MESSAGE
+from watchmen.process.silhouette import main, process_status, SUCCESS_MESSAGE, FAILURE_MESSAGE
 
 
 class TestSilhouette(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestSilhouette(unittest.TestCase):
         self.example_context = {}
 
     @patch('json.loads')
-    @patch('watchmen.silhouette.Watchmen')
+    @patch('watchmen.process.silhouette.Watchmen')
     def test_process_status(self, mock_watchmen, mock_json_loads):
         # Test when process produced completed result
         mock_json_loads.return_value = self.example_success_json
@@ -31,8 +31,8 @@ class TestSilhouette(unittest.TestCase):
         returned_result = process_status()
         self.assertEqual(expected_result, returned_result)
 
-    @patch('watchmen.silhouette.raise_alarm')
-    @patch('watchmen.silhouette.process_status')
+    @patch('watchmen.process.silhouette.raise_alarm')
+    @patch('watchmen.process.silhouette.process_status')
     def test_main(self, mock_process_status, mock_raise_alarm):
         # Test when lookalike is up
         mock_process_status.return_value = True
