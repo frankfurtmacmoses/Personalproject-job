@@ -12,9 +12,9 @@ from datetime import datetime, timedelta
 import pytz
 # Watchmen imports
 from logging import getLogger, basicConfig, INFO
-from watchmen.utils.universal_watchmen import Watchmen
-from watchmen.utils.sns_alerts import raise_alarm
-from watchmen.config import settings
+from utils.universal_watchmen import Watchmen
+from utils.sns_alerts import raise_alarm
+from config import settings
 LOGGER = getLogger("Manhattan")
 basicConfig(level=INFO)
 

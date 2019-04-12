@@ -19,7 +19,7 @@ import timeit as _timeit
 import traceback as _traceback
 # External Libraries
 import boto3.session as _boto3_session
-import watchmen.utils.s3 as _s3
+import utils.s3 as _s3
 
 # Private Global Constants
 _FATALERROR = 1

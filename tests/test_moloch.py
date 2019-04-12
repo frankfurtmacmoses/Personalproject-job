@@ -1,5 +1,5 @@
 import unittest
-from watchmen.process.moloch import main, check_for_existing_files, SUCCESS_MESSAGE, \
+from watchmen.moloch import main, check_for_existing_files, SUCCESS_MESSAGE, \
                             FAILURE_DOMAIN, FAILURE_BOTH, FAILURE_HOSTNAME
 from mock import patch
 from moto import mock_s3
@@ -24,7 +24,7 @@ class TestMoloch(unittest.TestCase):
         self.example_context = {}
 
     @mock_s3
-    @patch('watchmen.process.moloch.Watchmen.validate_file_on_s3')
+    @patch('watchmen.moloch.Watchmen.validate_file_on_s3')
     def test_check_for_existing_files(self, mock_watcher):
         mock_watcher.return_value = False
         # Test when no file found on S3
@@ -42,8 +42,8 @@ class TestMoloch(unittest.TestCase):
         returned_result = check_for_existing_files(self.example_file_path, self.example_now)
         self.assertEqual(expected_result, returned_result)
 
-    @patch('watchmen.process.moloch.raise_alarm')
-    @patch('watchmen.process.moloch.check_for_existing_files')
+    @patch('watchmen.moloch.raise_alarm')
+    @patch('watchmen.moloch.check_for_existing_files')
     def test_main(self, mock_check, mock_alarm):
         # Test when both feeds are up
         mock_check.side_effect = [True, True]

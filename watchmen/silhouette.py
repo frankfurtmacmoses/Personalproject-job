@@ -16,8 +16,8 @@ import pytz
 import json
 
 # Cyberint imports
-from watchmen.utils.universal_watchmen import Watchmen
-from watchmen.utils.sns_alerts import raise_alarm
+from utils.universal_watchmen import Watchmen
+from utils.sns_alerts import raise_alarm
 
 LOGGER = getLogger("Silhouette")
 basicConfig(level=INFO)
