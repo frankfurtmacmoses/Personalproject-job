@@ -10,8 +10,8 @@ to ensure proper data flow. Runs once a day looking for these files.
 
 from datetime import datetime, timedelta
 from logging import getLogger, basicConfig, INFO
-from utils.sns_alerts import raise_alarm
-from utils.universal_watchmen import Watchmen
+from watchmen.utils.sns_alerts import raise_alarm
+from watchmen.utils.universal_watchmen import Watchmen
 import pytz
 
 LOGGER = getLogger("ManhattanWeekly")

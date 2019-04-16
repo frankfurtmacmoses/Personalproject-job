@@ -9,8 +9,8 @@ If data is not found or has a value of 0, an alert is sent out.
 """
 from datetime import datetime, timedelta
 from logging import getLogger, basicConfig, INFO
-from utils.sns_alerts import raise_alarm
-from utils.universal_watchmen import Watchmen
+from watchmen.utils.sns_alerts import raise_alarm
+from watchmen.utils.universal_watchmen import Watchmen
 import pytz
 
 LOGGER = getLogger("Spectre")
