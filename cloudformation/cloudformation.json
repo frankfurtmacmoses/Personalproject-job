@@ -16,6 +16,18 @@
     "WatchmenLambdasZipFile": {
       "Description": "The zip file name of the Watchmen lambdas code.",
       "Type": "String"
+    },
+    "JupiterVPC": {
+      "Description": "Allows connection to Sockeye",
+      "Type": "String"
+    },
+    "SubnetA": {
+      "Description": "Subnet for Jupiter Watchmen",
+      "Type": "String"
+    },
+    "SubnetB": {
+      "Description": "Subnet for Jupiter Watchmen",
+      "Type": "String"
     }
   },
   "Conditions": {
@@ -67,7 +79,12 @@
               ]
             }
           }
-        ]
+        ],
+        "VpcConfig": {
+          "SecurityGroupIds": ["JupiterSecurityGroup"],
+          "SubnetIds": [{"Ref": "SubnetA"},
+                        {"Ref": "SubnetB"}]
+        }
       }
     },
     "WatchmenManhattanLambda": {
@@ -713,6 +730,7 @@
             }
           ]
         },
+        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"],
         "Policies": [
           {
             "PolicyName": {
@@ -751,6 +769,47 @@
             }
           }
         ]
+      }
+    },
+    "JupiterSecurityGroup": {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupName" : {
+          "Fn::Join":[
+            "-",
+            [
+              {"Ref":  "AWS::StackName"},
+              "JupiterSecurityGroup"
+            ]
+          ]
+        },
+        "GroupDescription" : "Security group that allows connections to cyber-intel services",
+        "SecurityGroupEgress" : [{
+
+          "IpProtocol" : "tcp",
+          "FromPort" : 80,
+          "ToPort" : 80,
+          "CidrIp" : "0.0.0.0/0"
+
+        }],
+        "Tags" : [
+          {"Key": "Owner", "Value": "CyberIntel"},
+          {"Key": "Product", "Value": "watchmen"},
+          {"Key": "Protected", "Value": "TRUE"},
+          {"Key": "Component", "Value": "lambda"},
+          {"Key": "Name", "Value": "watchmen-jupiter"},
+          {
+            "Key": "Env",
+            "Value": {
+              "Fn::If": [
+                "IsProd",
+                "cyberint-prod",
+                "cyberint-test"
+              ]
+            }
+          }
+        ],
+        "VpcId" : {"Ref":  "JupiterVPC"}
       }
     }
   }
