@@ -14,5 +14,17 @@
   {
     "ParameterKey": "WatchmenLambdasZipFile",
     "ParameterValue": "watchmen-lambdas.zip"
+  },
+  {
+    "ParameterKey": "JupiterVPC",
+    "ParameterValue": "vpc-28ee704e"
+  },
+  {
+    "ParameterKey": "SubnetA",
+    "ParameterValue": "subnet-9c16fbb0"
+  },
+  {
+    "ParameterKey": "SubnetB",
+    "ParameterValue": "subnet-870dd2cf"
   }
 ]
