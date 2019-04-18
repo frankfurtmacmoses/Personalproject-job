@@ -28,12 +28,39 @@ FAILURE_MESSAGE = "ERROR: Lookalike feed never added files from 2 days ago! " \
 FAILURE_SUBJECT = "Silhouette watchmen detected an issue with lookalike feed!"
 SNS_TOPIC_ARN = "arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3"
 
+EXCEPTION_MESSAGE = "Silhouette watchmen for the lookalike feed failed due to an exception! Please check the logs!"
 
 COMPLETED_STATUS = "COMPLETED"
 
 BUCKET_NAME = "cyber-intel"
 FILE_PATH = "analytics/lookalike/prod/results/"
 STATUS_FILE = "status.json"
+
+
+def check_process_status():
+    """
+    Checks the status of the process check
+    @return: whether or not the process succeeded; otherwise, None upon exception
+    """
+    try:
+        is_status_valid = process_status()
+        return is_status_valid
+    except Exception as ex:
+        LOGGER.error(ex)
+        return None
+
+
+# pylint: disable=unused-argument
+def main(event, context):
+    """
+    main
+    :return: status of whether lookalike feed working or not
+    """
+    is_status_valid = check_process_status()
+    status = notify(is_status_valid)
+
+    LOGGER.info(status)
+    return status
 
 
 def process_status():
@@ -54,21 +81,20 @@ def process_status():
     return is_completed
 
 
-# pylint: disable=unused-argument
-def main(event, context):
+def notify(is_status_valid):
     """
-    main
-    :return: status of whether lookalike feed working or not
+    Send a notification alert upon failure
+    @param is_status_valid: the status of the check determining the notification status
+    @return: the notification status of the check
     """
-    status = SUCCESS_MESSAGE
-    is_status_valid = False
-    try:
-        is_status_valid = process_status()
-    except Exception as ex:
-        LOGGER.error(ex)
+    if is_status_valid is None:
+        status = EXCEPTION_MESSAGE
+        raise_alarm(SNS_TOPIC_ARN, status, FAILURE_SUBJECT)
+        return status
 
     if not is_status_valid:
         status = FAILURE_MESSAGE
         raise_alarm(SNS_TOPIC_ARN, status, FAILURE_SUBJECT)
-    LOGGER.info(status)
-    return status
+        return status
+
+    return SUCCESS_MESSAGE
