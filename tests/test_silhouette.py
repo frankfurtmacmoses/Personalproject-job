@@ -1,6 +1,7 @@
 import unittest
 from mock import patch
-from watchmen.process.silhouette import main, process_status, SUCCESS_MESSAGE, FAILURE_MESSAGE
+from watchmen.process.silhouette import main, process_status, check_process_status, notify
+from watchmen.process.silhouette import SUCCESS_MESSAGE, FAILURE_MESSAGE, EXCEPTION_MESSAGE
 
 
 class TestSilhouette(unittest.TestCase):
@@ -11,6 +12,47 @@ class TestSilhouette(unittest.TestCase):
         self.example_exception_msg = "Something went wrong"
         self.example_event = {}
         self.example_context = {}
+        self.example_status = "The file was checked"
+
+    @patch('watchmen.process.silhouette.process_status')
+    def test_check_process_status(self, mock_process):
+        # Process check found file
+        mock_process.return_value = True
+        expected = True
+        returned = check_process_status()
+        self.assertEqual(expected, returned)
+
+        # check did not find file
+        mock_process.return_value = False
+        expected = False
+        returned = check_process_status()
+        self.assertEqual(expected, returned)
+
+        # Check riased an exception
+        mock_process.side_effect = Exception(self.example_exception_msg)
+        expected = None
+        returned = check_process_status()
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.silhouette.notify')
+    @patch('watchmen.process.silhouette.check_process_status')
+    def test_main(self, mock_check, mock_notify):
+        # Find the check status
+        mock_check.return_value = False
+        check_result = mock_check()
+        self.assertIsNotNone(check_result)
+        mock_check.assert_called_with()
+
+        # Notify
+        mock_notify.return_value = self.example_status
+        status = mock_notify()
+        self.assertIsNotNone(status)
+        mock_notify.assert_called_with()
+
+        # check return
+        expected = self.example_status
+        returned = main(None, None)
+        self.assertEqual(expected, returned)
 
     @patch('json.loads')
     @patch('watchmen.process.silhouette.Watchmen')
@@ -32,21 +74,13 @@ class TestSilhouette(unittest.TestCase):
         self.assertEqual(expected_result, returned_result)
 
     @patch('watchmen.process.silhouette.raise_alarm')
-    @patch('watchmen.process.silhouette.process_status')
-    def test_main(self, mock_process_status, mock_raise_alarm):
-        # Test when lookalike is up
-        mock_process_status.return_value = True
-        expected_result = SUCCESS_MESSAGE
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
-        # Test when lookalike is down
-        mock_process_status.return_value = False
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
-        self.assertEqual(expected_result, returned_result)
-        # Test when exception is thrown
-        mock_process_status.side_effect = Exception(self.example_exception_msg)
-        expected_result = FAILURE_MESSAGE
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
+    def test_notify(self, mock_alarm):
+        test_results = [{"file_exists": True, "expected": SUCCESS_MESSAGE},
+                        {"file_exists": False, "expected": FAILURE_MESSAGE},
+                        {"file_exists": None, "expected": EXCEPTION_MESSAGE}]
+
+        for result in test_results:
+            file_exists = result.get("file_exists")
+            expected = result.get("expected")
+            returned = notify(file_exists)
+            self.assertEqual(expected, returned)
