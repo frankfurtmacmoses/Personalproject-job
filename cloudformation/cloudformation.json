@@ -16,77 +16,12 @@
     "WatchmenLambdasZipFile": {
       "Description": "The zip file name of the Watchmen lambdas code.",
       "Type": "String"
-    },
-    "JupiterVPC": {
-      "Description": "Allows connection to Sockeye",
-      "Type": "String"
-    },
-    "SubnetA": {
-      "Description": "Subnet for Jupiter Watchmen",
-      "Type": "String"
-    },
-    "SubnetB": {
-      "Description": "Subnet for Jupiter Watchmen",
-      "Type": "String"
     }
   },
   "Conditions": {
     "IsProd": {"Fn::Equals": [{"Ref": "Environment"}, "prod"]}
   },
   "Resources": {
-    "WatchmenJupiterLambda": {
-      "Type": "AWS::Lambda::Function",
-      "Properties": {
-        "Runtime": "python2.7",
-        "Code": {
-          "S3Bucket": {"Ref" : "WatchmenBucket"},
-          "S3Key": {
-            "Fn::Join": [
-              "/", [
-                {
-                  "Ref": "WatchmenBuildsPrefix"
-                },
-                {
-                  "Ref": "WatchmenLambdasZipFile"
-                }
-              ]
-            ]
-          }
-        },
-        "Description": "Monitors Sockeye endpoints.",
-        "Handler": "handler.start_jupiter_watcher",
-        "MemorySize": 256,
-        "Role": {
-             "Fn::GetAtt": [
-              "WatchmenLambdaExecutionRole",
-              "Arn"
-             ]
-        },
-        "Timeout": 30,
-        "Tags": [
-          {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "watchmen"},
-          {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "lambda"},
-          {"Key": "Name", "Value": "watchmen-jupiter"},
-          {
-            "Key": "Env",
-            "Value": {
-              "Fn::If": [
-                "IsProd",
-                "cyberint-prod",
-                "cyberint-test"
-              ]
-            }
-          }
-        ],
-        "VpcConfig": {
-          "SecurityGroupIds": ["JupiterSecurityGroup"],
-          "SubnetIds": [{"Ref": "SubnetA"},
-                        {"Ref": "SubnetB"}]
-        }
-      }
-    },
     "WatchmenManhattanLambda": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
@@ -382,23 +317,6 @@
         ]
       }
     },
-    "JupiterScheduledEvent": {
-      "Type": "AWS::Events::Rule",
-      "Properties": {
-        "Description": "A hourly event that kicks off the Jupiter Watchman",
-        "ScheduleExpression": "cron(0 * * * ? *)",
-        "State": "ENABLED",
-        "Targets": [
-          {
-            "Id": "JupiterScheduler",
-            "Arn": {
-              "Fn::GetAtt": ["WatchmenJupiterLambda", "Arn"]
-            },
-            "Input": "{\"type\": \"Hourly\"}"
-          }
-        ]
-      }
-    },
     "ManhattanDailyScheduledEvent": {
       "Type": "AWS::Events::Rule",
       "Properties": {
@@ -528,25 +446,6 @@
             }
           }
         ]
-      }
-    },
-    "InvokeJupiterLambdaPermission": {
-      "Type": "AWS::Lambda::Permission",
-      "Properties": {
-        "FunctionName": {
-          "Fn::GetAtt": [
-            "WatchmenJupiterLambda",
-            "Arn"
-          ]
-        },
-        "Action": "lambda:InvokeFunction",
-        "Principal": "events.amazonaws.com",
-        "SourceArn": {
-          "Fn::GetAtt": [
-            "JupiterScheduledEvent",
-            "Arn"
-          ]
-        }
       }
     },
     "InvokeManhattanDailyLambdaPermission": {
@@ -730,7 +629,6 @@
             }
           ]
         },
-        "ManagedPolicyArns": ["arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"],
         "Policies": [
           {
             "PolicyName": {
@@ -759,9 +657,33 @@
                     "logs:CreateLogStream",
                     "logs:DescribeLogStreams",
                     "logs:PutLogEvents",
-                    "s3:Get*",
-                    "s3:List*",
                     "SNS:Publish"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:Get*",
+                    "s3:List*"
+                  ],
+                  "Resource": [
+                    "arn:aws:s3:::bitaa",
+                    "arn:aws:s3:::cyber-intel",
+                    "arn:aws:s3:::cyber-intel-test",
+                    "arn:aws:s3:::bitaa/*",
+                    "arn:aws:s3:::cyber-intel/*",
+                    "arn:aws:s3:::cyber-intel-test/*",
+                    "arn:aws:s3:::deteque-new-observable-data",
+                    "arn:aws:s3:::deteque-new-observable-data/*"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                      "s3:GetAccountPublicAccessBlock",
+                      "s3:ListAllMyBuckets",
+                      "s3:HeadBucket"
                   ],
                   "Resource": "*"
                 }
@@ -769,47 +691,6 @@
             }
           }
         ]
-      }
-    },
-    "JupiterSecurityGroup": {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupName" : {
-          "Fn::Join":[
-            "-",
-            [
-              {"Ref":  "AWS::StackName"},
-              "JupiterSecurityGroup"
-            ]
-          ]
-        },
-        "GroupDescription" : "Security group that allows connections to cyber-intel services",
-        "SecurityGroupEgress" : [{
-
-          "IpProtocol" : "tcp",
-          "FromPort" : 80,
-          "ToPort" : 80,
-          "CidrIp" : "0.0.0.0/0"
-
-        }],
-        "Tags" : [
-          {"Key": "Owner", "Value": "CyberIntel"},
-          {"Key": "Product", "Value": "watchmen"},
-          {"Key": "Protected", "Value": "TRUE"},
-          {"Key": "Component", "Value": "lambda"},
-          {"Key": "Name", "Value": "watchmen-jupiter"},
-          {
-            "Key": "Env",
-            "Value": {
-              "Fn::If": [
-                "IsProd",
-                "cyberint-prod",
-                "cyberint-test"
-              ]
-            }
-          }
-        ],
-        "VpcId" : {"Ref":  "JupiterVPC"}
       }
     }
   }
