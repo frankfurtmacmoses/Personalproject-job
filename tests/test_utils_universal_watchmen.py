@@ -54,11 +54,11 @@ class TestUniversalWatchman(unittest.TestCase):
         }
 
     @mock_ecs
-    @patch('boto3.client')
+    @patch('watchmen.utils.universal_watchmen.datetime')
     def test_get_stuck_ecs_tasks(self, mock_dt):
         self.watcher.ecs_client = MagicMock()
         mock_dt.now.return_value = datetime(
-            year=2019, month=5, day=5, hour=5, minute=5, second=5, tzinfo=pytz.utc
+            year=2019, month=5, day=6, hour=5, minute=5, second=5, tzinfo=pytz.utc
         )
         tests = [
             {
@@ -78,7 +78,7 @@ class TestUniversalWatchman(unittest.TestCase):
                     'tasks': [
                         {
                             'createdAt': datetime(
-                                year=2019, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
+                                year=2019, month=5, day=6, hour=4, minute=5, second=5, tzinfo=pytz.utc
                             ),
                             'name': 'the_feed_of_all_feeds'
                         }
@@ -92,7 +92,7 @@ class TestUniversalWatchman(unittest.TestCase):
                     'tasks': [
                         {
                             'createdAt': datetime(
-                                year=2018, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
+                                year=2019, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
                             ),
                             'task': 'greatest_feed_ever'
                         }
@@ -102,7 +102,7 @@ class TestUniversalWatchman(unittest.TestCase):
                 'expected': [
                     {
                         'createdAt': datetime(
-                            year=2018, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
+                            year=2019, month=5, day=5, hour=4, minute=5, second=5, tzinfo=pytz.utc
                         ),
                         'task': 'greatest_feed_ever'
                     }
