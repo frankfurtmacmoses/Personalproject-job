@@ -6,6 +6,11 @@ aws:
     bucket: cyber-intel-test
     prefix: watchmen
 
+ecs:
+  feeds:
+    cluster: cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8
+    url: https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services
+
 holiday:
   good_friday: false
   day_b4_xmas_eve: true
@@ -19,10 +24,11 @@ jupiter:
   hr_start_pdt: 6
   hr_end_pdt: 18
 
-ecs:
-  feeds:
-    cluster: cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8
-    url: https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services
+logging:
+  level: 10
+
+ozymandias:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
 
 sns:
   pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
