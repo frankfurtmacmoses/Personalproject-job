@@ -8,7 +8,9 @@ Test utils for S3 module
 """
 from __future__ import absolute_import
 import unittest
+
 import watchmen.utils.s3 as s3
+from watchmen.utils.s3 import CONFIG
 from botocore.exceptions import ClientError, ParamValidationError
 from mock import Mock, MagicMock, patch
 
@@ -354,7 +356,7 @@ class TestS3(unittest.TestCase):
         mock_boto3.Session.return_value = self.mock_session
         contents, key_name, bucket = "contents", "some/s3/key", self.bucket
         result = s3.create_key(contents, key_name, bucket)
-        self.mock_session.client.assert_called_with('s3')
+        self.mock_session.client.assert_called_with('s3', config=CONFIG)
         self.mock_client.put_object.assert_called_with(
             Body=contents, Bucket=bucket, Key=key_name)
         self.assertEqual(result, self.mock_s3_put_return)
@@ -407,7 +409,7 @@ class TestS3(unittest.TestCase):
         """
         mock_boto3.Session.return_value = self.mock_session
         result = s3.get_client()
-        self.mock_session.client.assert_called_with('s3')
+        self.mock_session.client.assert_called_with('s3', config=CONFIG)
         self.assertEqual(result, self.mock_client)
 
     @patch('watchmen.utils.s3.boto3_session')
@@ -417,7 +419,7 @@ class TestS3(unittest.TestCase):
         """
         mock_boto3.Session.return_value = self.mock_session
         result = s3.get_resource()
-        self.mock_session.resource.assert_called_with('s3')
+        self.mock_session.resource.assert_called_with('s3', config=CONFIG)
         self.assertEqual(result, self.mock_s3)
 
     @patch('watchmen.utils.s3.boto3_session')

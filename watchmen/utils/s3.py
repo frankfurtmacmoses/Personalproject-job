@@ -17,12 +17,17 @@ import types
 from logging import getLogger
 import boto3.session as boto3_session
 import botocore
+from botocore.client import Config
 
 LOGGER = getLogger(__name__)
 
 BUCKET_DEFAULT = 'cyber-intel'
 PREFIX_PROCESSED = 'hancock/processed-json'
 PREFIX_MINED = 'hancock/mined-json'
+# This config is used with sessions. Otherwise, it will try to reconnect until the lambda times out
+# with an exponential wait time in between each attempt. This sets a timeout time and no attempt to reconnect.
+# If a session times out, it throws a ConnectionTimeout error and moves on.
+CONFIG = Config(connect_timeout=5, retries={'max_attempts': 0})
 
 
 def check_arg_bucket(bucket):
@@ -262,7 +267,7 @@ def get_client():
     note: This function can be customized to accept configurations
     """
     session = boto3_session.Session()
-    s3_client = session.client('s3')
+    s3_client = session.client('s3', config=CONFIG)
     return s3_client
 
 
@@ -272,7 +277,7 @@ def get_resource():
     note: This function can be customized to accept configurations
     """
     session = boto3_session.Session()
-    s3_resource = session.resource('s3')
+    s3_resource = session.resource('s3', config=CONFIG)
     return s3_resource
 
 
