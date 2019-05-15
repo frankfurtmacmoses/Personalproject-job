@@ -9,8 +9,8 @@ to ensure proper data flow. Runs once a day looking for these files.
 """
 from datetime import datetime, timedelta
 from watchmen.utils.sns_alerts import raise_alarm
-from watchmen.utils.universal_watchmen import Watchmen
 from watchmen.utils.logger import get_logger
+from watchmen.utils.s3 import validate_file_on_s3
 from watchmen.config import settings
 import pytz
 import traceback
@@ -35,10 +35,8 @@ def check_file_exists():
     Checks if a file exists 2 days ago for Neustar data
     @return: whether or no that file exists
     """
-    watcher = Watchmen(bucket_name=BUCKET_NAME)
-
     try:
-        found_file = watcher.validate_file_on_s3(FILE_PATH)
+        found_file = validate_file_on_s3(BUCKET_NAME, FILE_PATH)
         return found_file
     except Exception as ex:
         LOGGER.error(ex)

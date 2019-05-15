@@ -16,10 +16,10 @@ import pytz
 import json
 
 # Cyberint imports
-from watchmen.utils.universal_watchmen import Watchmen
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.config import settings
 from watchmen.utils.logger import get_logger
+from watchmen.utils.s3 import get_file_contents_s3
 
 LOGGER = get_logger("Silhouette", settings('logging.level', 'INFO'))
 
@@ -72,11 +72,10 @@ def process_status():
     S3. Status.json has a state which determines if the process was successful or not.
     :return: whether the process finished or not
     """
-    watcher = Watchmen(BUCKET_NAME)
     is_completed = False
     check_time = (datetime.now(pytz.utc) - timedelta(days=2)).strftime("%Y %m %d").split(' ')
     key = FILE_PATH + check_time[0] + '/' + check_time[1] + '/' + check_time[2] + '/' + STATUS_FILE
-    file_contents = watcher.get_file_contents_s3(key)
+    file_contents = get_file_contents_s3(key)
     if file_contents:
         status_json = json.loads(file_contents)
         if status_json.get('STATE') == COMPLETED_STATUS:

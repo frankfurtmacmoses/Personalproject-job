@@ -1,5 +1,5 @@
 from mock import patch
-from moto import mock_sns
+from moto import mock_sns, mock_ecs
 import unittest
 
 from watchmen.process.manhattan import \
@@ -12,7 +12,7 @@ from watchmen.process.manhattan import \
     STUCK_TASKS_MESSAGE, \
     SUBJECT_MESSAGE, \
     SUCCESS_MESSAGE
-from watchmen.process.manhattan import find_bad_feeds, find_stuck_tasks, main, notify, summarize, Watchmen
+from watchmen.process.manhattan import find_bad_feeds, find_stuck_tasks, main, notify, summarize
 
 
 class TestManhattan(unittest.TestCase):
@@ -38,12 +38,11 @@ class TestManhattan(unittest.TestCase):
         self.example_traceback = "line 4: file\n  error msg\n  more errors  \nError!"
 
     @mock_sns
+    @mock_ecs
     @patch('watchmen.process.manhattan.raise_alarm')
-    @patch('watchmen.process.manhattan.Watchmen.process_feeds_metrics')
-    @patch('watchmen.process.manhattan.Watchmen.process_feeds_logs')
+    @patch('watchmen.process.manhattan.process_feeds_metrics')
+    @patch('watchmen.process.manhattan.process_feeds_logs')
     def test_find_bad_feeds(self, mock_process_logs, mock_process_metrics, mock_alarm):
-        watcher = Watchmen(self.example_watcher_group)
-
         mock_process_logs.return_value = self.example_down_feeds
         mock_process_metrics.return_value = self.example_out_of_range_feeds
 
@@ -53,37 +52,36 @@ class TestManhattan(unittest.TestCase):
 
         for event in event_types:
             expected = mock_process_logs(), mock_process_metrics()
-            returned = find_bad_feeds(event, watcher)
+            returned = find_bad_feeds(event)
             self.assertEqual(expected, returned)
 
         # Exception finding down feeds
         mock_process_logs.side_effect = Exception('failure')
         expected = None
-        returned = find_bad_feeds("Daily", watcher)
+        returned = find_bad_feeds("Daily")
         self.assertEqual(expected, returned)
 
         # Exception finding out of range feeds
         mock_process_metrics.side_effect = Exception('failure')
         expected = None
-        returned = find_bad_feeds("Daily", watcher)
+        returned = find_bad_feeds("Daily")
         self.assertEqual(expected, returned)
 
     @mock_sns
     @patch('watchmen.process.manhattan.raise_alarm')
-    @patch('watchmen.process.manhattan.Watchmen.get_stuck_ecs_tasks')
+    @patch('watchmen.process.manhattan.get_stuck_ecs_tasks')
     def test_find_stuck_tasks(self, mock_get_stuck, mock_alarm):
-        watcher = Watchmen(self.example_watcher_group)
 
         # Everything works well
         mock_get_stuck.return_value = self.example_stuck_tasks
         expected = mock_get_stuck()
-        returned = find_stuck_tasks(watcher)
+        returned = find_stuck_tasks()
         self.assertEqual(expected, returned)
 
         # Exception occurred
         mock_get_stuck.side_effect = Exception('failure')
         expected = None
-        returned = find_stuck_tasks(watcher)
+        returned = find_stuck_tasks()
         self.assertEqual(expected, returned)
 
     @patch('watchmen.process.manhattan.notify')

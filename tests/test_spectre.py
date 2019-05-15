@@ -17,7 +17,7 @@ class TestSpectre(unittest.TestCase):
         self.example_status = "The file was checked"
 
     @patch('watchmen.process.spectre.raise_alarm')
-    @patch('watchmen.process.spectre.Watchmen.validate_file_on_s3')
+    @patch('watchmen.process.spectre.validate_file_on_s3')
     def test_check_if_found_file(self, mock_validate, mock_alarm):
         # File exists
         mock_validate.return_value = True

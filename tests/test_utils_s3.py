@@ -10,9 +10,10 @@ from __future__ import absolute_import
 import unittest
 
 import watchmen.utils.s3 as s3
-from watchmen.utils.s3 import CONFIG
+from watchmen.utils.s3 import CONFIG, validate_file_on_s3, get_file_contents_s3
 from botocore.exceptions import ClientError, ParamValidationError
 from mock import Mock, MagicMock, patch
+from moto import mock_s3
 
 
 class TestS3(unittest.TestCase):
@@ -146,6 +147,11 @@ class TestS3(unittest.TestCase):
         self.mock_filename = "foo.json"
         self.mock_old_path = "dir1/original/path"
         self.mock_new_path = "dir2/new_path"
+
+        self.example_path = "some/path/here"
+        self.example_content_length_zero = {'ContentLength': 0}
+        self.example_content_length = {'ContentLength': 200}
+        self.example_s3_content = "Example content"
 
     def tearDown(self):
         print "\ndone: " + self.id()
@@ -450,6 +456,15 @@ class TestS3(unittest.TestCase):
         self.mock_client.get_object.side_effect = self.mock_client_err
         result = s3.get_content(key_name, bucket)
         self.assertEqual(result, None)
+
+    @mock_s3
+    @patch('watchmen.utils.s3.boto3.resource')
+    def test_get_file_contents_s3(self, mock_resource):
+        # Exception Occurs
+        mock_resource.return_value.Object.return_value.get.side_effect = ClientError({}, {})
+        expected = None
+        returned = get_file_contents_s3(self.bucket, self.example_path)
+        self.assertEqual(expected, returned)
 
     @patch('watchmen.utils.s3.get_content')
     def test_get_json_data(self, mock_get_content):
@@ -780,3 +795,24 @@ class TestS3(unittest.TestCase):
         self.mock_paginator.paginate.assert_called_with(
             **self.mock_params_test_dirs)
         self.mock_iterator.search.assert_called_with('Contents')
+
+    @mock_s3
+    @patch('watchmen.utils.s3.boto3.resource')
+    def test_validate_file_on_s3(self, mock_resource):
+        # When file size is zero
+        mock_resource.return_value.Object.return_value.get.return_value = self.example_content_length_zero
+        expected = False
+        returned = validate_file_on_s3(self.bucket, self.example_path)
+        self.assertEqual(expected, returned)
+
+        # When file size is non-zero
+        mock_resource.return_value.Object.return_value.get.return_value = self.example_content_length
+        expected = True
+        returned = validate_file_on_s3(self.bucket, self.example_path)
+        self.assertEqual(expected, returned)
+
+        # When a client error occurs
+        mock_resource.return_value.Object.return_value.get.side_effect = ClientError({}, {})
+        expected = False
+        returned = validate_file_on_s3(self.bucket, self.example_path)
+        self.assertEqual(expected, returned)

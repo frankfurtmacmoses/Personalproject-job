@@ -1,20 +1,18 @@
 """
 Created on July 30, 2018
-
 This script is designed to monitor daily, hourly, and weekly feeds and ensure proper data flow.
-
 @author: Daryan Hanshew
 @email: dhanshew@infoblox.com
-
 """
 # Python imports
 import traceback
 from datetime import datetime, timedelta
 import pytz
 # Watchmen imports
-from watchmen.utils.universal_watchmen import Watchmen
+from watchmen.utils.ecs import get_stuck_ecs_tasks
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.logger import get_logger
+from watchmen.utils.feeds import process_feeds_metrics, process_feeds_logs
 from watchmen.config import settings
 
 LOGGER = get_logger("Manhattan", settings('logging.level', 'INFO'))
@@ -110,11 +108,10 @@ FEEDS_WEEKLY_NAMES = [
 ]
 
 
-def find_bad_feeds(event_type, watcher):
+def find_bad_feeds(event_type):
     """
     Find all the feeds that are down and/or out of range
     @param event_type: Whether the check is Weekly, Daily, or Hourly
-    @param watcher: watchmen object
     @return: tuple of lists: list of all the down feeds and list of out of range feeds or None upon exception
     """
     downed_feeds = []
@@ -124,20 +121,20 @@ def find_bad_feeds(event_type, watcher):
         end = datetime.now(tz=pytz.utc)
         if event_type == HOURLY:
             start = end - timedelta(hours=1)
-            downed_feeds = watcher.process_feeds_logs(FEEDS_HOURLY_NAMES, start, end)
-            submitted_out_of_range_feeds = watcher.process_feeds_metrics(
+            downed_feeds = process_feeds_logs(FEEDS_HOURLY_NAMES, start, end)
+            submitted_out_of_range_feeds = process_feeds_metrics(
                 FEEDS_TO_CHECK_HOURLY, TABLE_NAME, 0
             )
         elif event_type == DAILY:
             start = end - timedelta(days=1)
-            downed_feeds = watcher.process_feeds_logs(FEEDS_DAILY_NAMES, start, end)
-            submitted_out_of_range_feeds = watcher.process_feeds_metrics(
+            downed_feeds = process_feeds_logs(FEEDS_DAILY_NAMES, start, end)
+            submitted_out_of_range_feeds = process_feeds_metrics(
                 FEEDS_TO_CHECK_DAILY, TABLE_NAME, 1
             )
         elif event_type == WEEKLY:
             start = end - timedelta(days=7)
-            downed_feeds = watcher.process_feeds_logs(FEEDS_WEEKLY_NAMES, start, end)
-            submitted_out_of_range_feeds = watcher.process_feeds_metrics(
+            downed_feeds = process_feeds_logs(FEEDS_WEEKLY_NAMES, start, end)
+            submitted_out_of_range_feeds = process_feeds_metrics(
                 FEEDS_TO_CHECK_WEEKLY, TABLE_NAME, 2
             )
         return downed_feeds, submitted_out_of_range_feeds
@@ -148,14 +145,13 @@ def find_bad_feeds(event_type, watcher):
         return None
 
 
-def find_stuck_tasks(watcher):
+def find_stuck_tasks():
     """
     Find the task that are stuck in the given cluster
-    @param watcher: watchmen object
     @return: list of all the stuck tasks or None upon exception
     """
     try:
-        stuck_tasks = watcher.get_stuck_ecs_tasks(CLUSTER_NAME)
+        stuck_tasks = get_stuck_ecs_tasks(CLUSTER_NAME)
         return stuck_tasks
     except Exception as ex:
         LOGGER.error(ex)
@@ -170,11 +166,10 @@ def main(event, context):
     main function
     :return: status of all hourly feeds
     """
-    watcher = Watchmen(log_group_name=LOG_GROUP_NAME)
     event_type = event.get('type')
 
-    stuck_tasks = find_stuck_tasks(watcher)
-    bad_feeds = find_bad_feeds(event_type, watcher)
+    stuck_tasks = find_stuck_tasks()
+    bad_feeds = find_bad_feeds(event_type)
     summarized_result = summarize(event_type, stuck_tasks, bad_feeds)
 
     LOGGER.info(summarized_result)

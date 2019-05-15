@@ -57,8 +57,8 @@ class TestSilhouette(unittest.TestCase):
         self.assertEqual(expected, returned)
 
     @patch('json.loads')
-    @patch('watchmen.process.silhouette.Watchmen')
-    def test_process_status(self, mock_watchmen, mock_json_loads):
+    @patch('watchmen.process.silhouette.get_file_contents_s3')
+    def test_process_status(self, mock_get_contents, mock_json_loads):
         # Test when process produced completed result
         mock_json_loads.return_value = self.example_success_json
         expected_result = True
@@ -70,7 +70,7 @@ class TestSilhouette(unittest.TestCase):
         returned_result = process_status()
         self.assertEqual(expected_result, returned_result)
         # Test when status.json doesn't exist
-        mock_watchmen.get_file_contents_s3.return_value = None
+        mock_get_contents.return_value = None
         expected_result = False
         returned_result = process_status()
         self.assertEqual(expected_result, returned_result)
