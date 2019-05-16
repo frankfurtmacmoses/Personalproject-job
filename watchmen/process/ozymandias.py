@@ -27,7 +27,7 @@ FAIL_SUBJECT_MESSAGE = "Ozymandias neustar data monitor detected a failure!"
 FILE_NOT_FOUND_ERROR = "File: " + FILE_NAME + \
                        " not found on S3 in cyber-intel/hancock/neustar! Neustar data is missing please view logs!"
 EXCEPTION_MESSAGE = "Ozymandias monitor for Neustar data failed due to an exception!"
-EXCEPTION_SUBJECT_MESSAGE = "Ozymandias failed due to the following:\n\n{}\n\nPlease check the logs!"
+EXCEPTION_BODY_MESSAGE = "Ozymandias failed due to the following:\n\n{}\n\nPlease check the logs!"
 
 
 def check_file_exists():
@@ -42,7 +42,9 @@ def check_file_exists():
         return found_file
     except Exception as ex:
         LOGGER.error(ex)
-        return traceback.format_exc(ex)
+        trace = traceback.format_exc(ex)
+        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_BODY_MESSAGE.format(trace), EXCEPTION_MESSAGE)
+        return None
 
 
 # pylint: disable=unused-argument
@@ -64,9 +66,8 @@ def notify(file_exists):
     @param file_exists: state of the file
     @return: message signifying the current state of the check
     """
-    if isinstance(file_exists, basestring):     # Only the exception traceback will be a String
+    if file_exists is None:
         LOGGER.info(EXCEPTION_MESSAGE)
-        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_SUBJECT_MESSAGE.format(file_exists), EXCEPTION_MESSAGE)
         return EXCEPTION_MESSAGE
 
     if not file_exists:

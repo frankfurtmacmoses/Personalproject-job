@@ -9,11 +9,10 @@ class TestOzymandias(unittest.TestCase):
     def setUp(self):
         self.example_status = "The file was checked"
         self.example_file_status = False
-        self.example_traceback = "This is a traceback"
 
-    @patch('watchmen.process.ozymandias.traceback.format_exc')
+    @patch('watchmen.process.ozymandias.raise_alarm')
     @patch('watchmen.process.ozymandias.Watchmen.validate_file_on_s3')
-    def test_check_file_exists(self, mock_validate, mock_trace):
+    def test_check_file_exists(self, mock_validate, mock_alarm):
         # File exists
         mock_validate.return_value = True
         expected = True
@@ -28,8 +27,7 @@ class TestOzymandias(unittest.TestCase):
 
         # Exception occurred
         mock_validate.side_effect = Exception('Error!')
-        mock_trace.return_value = self.example_traceback
-        expected = self.example_traceback
+        expected = None
         returned = check_file_exists()
         self.assertEqual(expected, returned)
 
@@ -59,7 +57,7 @@ class TestOzymandias(unittest.TestCase):
         test_results = [
             {"file_exists": True, "expected": SUCCESS_MESSAGE},
             {"file_exists": False, "expected": FAILURE_MESSAGE},
-            {"file_exists": self.example_traceback, "expected": EXCEPTION_MESSAGE}
+            {"file_exists": None, "expected": EXCEPTION_MESSAGE}
         ]
 
         for test in test_results:
