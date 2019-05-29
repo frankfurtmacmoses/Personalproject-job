@@ -1,10 +1,11 @@
 import unittest
-from watchmen.process.moloch import main, check_for_existing_files, SUCCESS_MESSAGE, \
-                            FAILURE_DOMAIN, FAILURE_BOTH, FAILURE_HOSTNAME
-from mock import patch
-from moto import mock_s3
 import datetime
 import pytz
+from mock import patch
+from moto import mock_s3
+
+from watchmen.process.moloch import FAILURE_DOMAIN, FAILURE_BOTH, FAILURE_HOSTNAME, EXCEPTION_SUBJECT, SUCCESS_MESSAGE
+from watchmen.process.moloch import main, check_for_existing_files, get_check_results, notify
 
 
 class TestMoloch(unittest.TestCase):
@@ -20,8 +21,8 @@ class TestMoloch(unittest.TestCase):
             hour=self.hour, minute=self.minute, tzinfo=pytz.utc)
         self.example_file_path = 'somepath/to/a/file'
         self.example_exception_msg = "Something went wrong :("
-        self.example_event = {}
-        self.example_context = {}
+        self.example_results = False, True
+        self.example_status = "The feeds were checked"
 
     @mock_s3
     @patch('watchmen.process.moloch.Watchmen.validate_file_on_s3')
@@ -44,29 +45,61 @@ class TestMoloch(unittest.TestCase):
 
     @patch('watchmen.process.moloch.raise_alarm')
     @patch('watchmen.process.moloch.check_for_existing_files')
-    def test_main(self, mock_check, mock_alarm):
-        # Test when both feeds are up
-        mock_check.side_effect = [True, True]
-        expected_result = SUCCESS_MESSAGE
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
-        # Test when both feeds are down
-        mock_check.side_effect = [False, False]
-        expected_result = FAILURE_BOTH
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
-        # Test when domain feed is down
-        mock_check.side_effect = [False, True]
-        expected_result = FAILURE_DOMAIN
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
-        # Test when hostname feed is down
-        mock_check.side_effect = [True, False]
-        expected_result = FAILURE_HOSTNAME
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
-        # Test when exception is thrown
+    def test_get_check_results(self, mock_check, mock_alarm):
+        test_results = [
+            {"domain": True, "hostname": True},
+            {"domain": False, "hostname": True},
+            {"domain": True, "hostname": False},
+            {"domain": False, "hostname": False}
+        ]
+
+        for results in test_results:
+            domain = results.get("domain")
+            hostname = results.get("hostname")
+            mock_check.side_effect = [domain, hostname]
+            expected = domain, hostname
+            returned = get_check_results()
+            self.assertEqual(expected, returned)
+
         mock_check.side_effect = Exception(self.example_exception_msg)
-        expected_result = FAILURE_BOTH
-        returned_result = main(self.example_event, self.example_context)
-        self.assertEqual(expected_result, returned_result)
+        expected = None, None
+        returned = get_check_results()
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.moloch.notify')
+    @patch('watchmen.process.moloch.get_check_results')
+    def test_main(self, mock_check, mock_notify):
+        mock_check.return_value = self.example_results
+        mock_notify.return_value = self.example_status
+        # Get the results from checking the feeds
+        results = mock_check()
+        self.assertIsNotNone(results)
+        mock_check.assert_called_with()
+        # Send them through notify
+        status = mock_notify()
+        self.assertIsNotNone(status)
+        mock_notify.assert_called_with()
+
+        # If nothing caused an exception
+        expected = self.example_status
+        returned = main(None, None)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.moloch.raise_alarm')
+    def test_notify(self, mock_alarm):
+        test_results = [
+            {"domain": True, "hostname": True, "expected": SUCCESS_MESSAGE},
+            {"domain": False, "hostname": True, "expected": FAILURE_DOMAIN},
+            {"domain": True, "hostname": False, "expected": FAILURE_HOSTNAME},
+            {"domain": False, "hostname": False, "expected": FAILURE_BOTH},
+            {"domain": None, "hostname": False, "expected": EXCEPTION_SUBJECT},
+            {"domain": False, "hostname": None, "expected": EXCEPTION_SUBJECT},
+            {"domain": None, "hostname": None, "expected": EXCEPTION_SUBJECT}
+        ]
+
+        for results in test_results:
+            domain = results.get("domain")
+            hostname = results.get("hostname")
+            expected = results.get("expected")
+            returned = notify(domain, hostname)
+            self.assertEqual(expected, returned)
