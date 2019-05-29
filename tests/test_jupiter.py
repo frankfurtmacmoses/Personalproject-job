@@ -3,15 +3,18 @@ import json
 from mock import patch
 
 from watchmen.common.svc_checker import ServiceChecker
-from watchmen.process.jupiter import \
-    check_endpoints, load_endpoints, log_result, log_state, main, notify, summarize, \
-    CHECK_LOGS, CHECK_TIME_UTC, ERROR_JUPITER, ERROR_SUBJECT, NO_RESULTS, RESULTS_DNE, SUCCESS_MESSAGE
+from watchmen.process.jupiter import CHECK_LOGS, CHECK_TIME_UTC, ERROR_JUPITER, ERROR_SUBJECT, NO_RESULTS, RESULTS_DNE,\
+    SUCCESS_MESSAGE
+from watchmen.process.jupiter import check_endpoints, load_endpoints, log_result, log_state, main, notify, summarize
 
 
 class TestJupiter(unittest.TestCase):
 
     def setUp(self):
-        self.example_bad_list = [{"name": "NoPath"}, {}]
+        self.example_bad_list = [
+            {"name": "NoPath"},
+            {}
+        ]
         self.example_bad_messages = "There is not a path to check for: HaveName\n" \
                                     "There is not a path to check for: There is not a name available"
         self.example_data = """[{
@@ -25,30 +28,75 @@ class TestJupiter(unittest.TestCase):
                                 }]
                                 """
         self.example_date_format = '%Y%m%d'
-        self.example_empty = {"failure": [], "success": []}
-        self.example_endpoints = [{"name": "endpoint", "path": "example"}, {"name": "Used for testing"}]
+        self.example_empty = {
+            "failure": [],
+            "success": []
+        }
+        self.example_endpoints = [
+            {"name": "endpoint", "path": "example"},
+            {"name": "Used for testing"}
+        ]
         self.example_exception_message = "Something failed"
-        self.example_failed = {"failure": [{"name": "Failure", "path": "filler/fail", "_err": "something"},
-                                           {"key": "Big fail"}], "success": []}
+        self.example_failed = {
+            "failure": [
+                {"name": "Failure", "path": "filler/fail", "_err": "something"},
+                {"key": "Big fail"}
+            ],
+            "success": []
+        }
         self.example_few_validated = []
-        self.example_invalid_paths = [{"key": "that fails"}]
-        self.example_local_endpoints = [{"name": "local", "path": "s3/failed"}]
-        self.example_validated_list = [{"name": "HaveName", "path": "have/path"}, {"path": "pathWith/NoName"}]
-        self.example_no_failures = {"failure": [], "success": [{"name": "succeeded"}]}
-        self.example_notification = "Endpoints have been checked"
-        self.example_passed_endpoints = [{"name": "good endpoint", "path": "good/path"}]
+        self.example_invalid_paths = [
+            {"key": "that fails"}
+        ]
+        self.example_local_endpoints = [
+            {"name": "local", "path": "s3/failed"}
+        ]
+        self.example_validated_list = [
+            {"name": "HaveName", "path": "have/path"},
+            {"path": "pathWith/NoName"}
+        ]
+        self.example_no_failures = {
+            "failure": [],
+            "success": [
+                {"name": "succeeded"}
+            ]}
+        self.example_passed_endpoints = [
+            {"name": "good endpoint", "path": "good/path"}
+        ]
         self.example_prefix = "watchmen/jupiter/{}/{}".format("2019", CHECK_TIME_UTC.strftime(self.example_date_format))
-        self.example_results_mix = {'failure': [{'name': 'failed'}], 'success': [{'name': 'passed'}]}
-        self.example_results_passed = {'failure': [{'name': 'failed'}], 'success': [{'name': 'passed'}]}
+        self.example_results_mix = {
+            'failure': [{
+                'name': 'failed'
+            }],
+            'success': [{
+                'name': 'passed'
+            }]}
+        self.example_results_passed = {
+            'failure': [{
+                'name': 'failed'
+            }],
+            'success': [{
+                'name': 'passed'
+            }]}
+        self.example_status = "Everything has been checked!"
         self.example_summarized_results = {
             "last_failed": True,
             "message": "This is your in-depth result",
             "subject": "Good subject line",
             "success": False,
         }
-        self.example_valid_paths = [{"name": "I will work", "path": "here/is/path"}]
-        self.example_validated = [{"name": "endpoint", "path": "example"}]
-        self.example_variety_endpoints = [{"name": "endpoint", "path": "cool/path"}, {"key": "bad endpoint"}]
+        self.example_valid_paths = [{
+            "name": "I will work",
+            "path": "here/is/path"
+        }]
+        self.example_validated = [{
+            "name": "endpoint",
+            "path": "example"
+        }]
+        self.example_variety_endpoints = [
+            {"name": "endpoint", "path": "cool/path"},
+            {"key": "bad endpoint"}
+        ]
 
     @patch('watchmen.process.jupiter.raise_alarm')
     def test_check_endpoints(self, mock_alarm):
@@ -199,11 +247,13 @@ class TestJupiter(unittest.TestCase):
         mock_logs.assert_called_with()
 
         # Notify results
-        mock_notify()
+        mock_notify.return_value = self.example_status
+        status = mock_notify()
+        self.assertIsNotNone(status)
         mock_notify.assert_called_with()
 
-        # Verify return of  santized results
-        expected_result = summarized_results
+        # Verify return of  sanitized results
+        expected_result = status
         returned_result = main(None, None)
         self.assertEqual(expected_result, returned_result)
 
@@ -226,11 +276,14 @@ class TestJupiter(unittest.TestCase):
         }
 
         skip_tests = [{
-            "use_cal": False, "last_failed": True, "skip": False, "expected": None,
+            "use_cal": False, "last_failed": True, "skip": False,
+            "expected": "FAILURES occurred! Check the logs for more details!",
         }, {
-            "use_cal": True, "last_failed": False, "skip": False, "expected": None,
+            "use_cal": True, "last_failed": False, "skip": False,
+            "expected": "FAILURES occurred! Check the logs for more details!",
         }, {
-            "use_cal": True, "last_failed": True, "skip": False, "expected": None,
+            "use_cal": True, "last_failed": True, "skip": False,
+            "expected": "FAILURES occurred! Check the logs for more details!",
         }]
 
         # Success is true
