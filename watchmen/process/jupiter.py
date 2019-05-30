@@ -11,27 +11,25 @@ import json
 import pytz
 
 from datetime import datetime
-from logging import getLogger, basicConfig, INFO
-
 from watchmen.config import get_boolean
 from watchmen.config import get_uint
 from watchmen.config import settings
 from watchmen.common.cal import InfobloxCalendar
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
+from watchmen.utils.logger import get_logger
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import copy_contents_to_bucket
 from watchmen.utils.s3 import get_content
 from watchmen.utils.s3 import mv_key
 
-LOGGER = getLogger("Jupiter")
-basicConfig(level=INFO)
+LOGGER = get_logger("Jupiter", settings('logging.level'))
 
 CHECK_TIME_UTC = datetime.utcnow()
 CHECK_TIME_PDT = pytz.utc.localize(CHECK_TIME_UTC).astimezone(pytz.timezone('US/Pacific'))
 DATETIME_FORMAT = '%Y%m%d_%H%M%S'
 MIN_ITEMS = get_uint('jupiter.min_items', 1)
-SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:Sockeye")
+SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 
 # S3
 S3_BUCKET = settings('aws.s3.bucket')
@@ -130,7 +128,6 @@ def load_endpoints():
     an sns will be sent to the Sockeye Topic
     :return: the endpoints or exits upon exception
     """
-    # This will always run because there is no s3 file setup yet
     data_path = settings("aws.s3.prefix")
     data_file = settings("jupiter.endpoints")
 
@@ -139,7 +136,6 @@ def load_endpoints():
 
     bucket = settings("aws.s3.bucket")
     data = get_content(data_file, bucket=bucket)
-
     try:
         endpoints = json.loads(data)
         if endpoints and isinstance(endpoints, list):
@@ -152,7 +148,6 @@ def load_endpoints():
         msg = fmt.format(bucket, data_file, data, ex)
         LOGGER.warning(msg)
         raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=msg)
-
     endpoints = ENDPOINTS_DATA
 
     return endpoints
@@ -182,6 +177,7 @@ def log_state(summarized_result, prefix):
     An empty LATEST file indicates that there are no failures.
     Each time this method is run, it will overwrite the contents of LATEST.
     @param summarized_result: dictionary containing results of the sanitization of the successful and failed endpoints.
+    @param prefix: prefix of the original file
     """
     try:
         success = summarized_result.get('success')
@@ -197,7 +193,7 @@ def log_state(summarized_result, prefix):
 # pylint: disable=unused-argument
 def main(event, context):
     """
-    main function
+    Health check all the endpoints from endpoints.json
     :return: results from checking Sockeye endpoints
     """
     endpoints = load_endpoints()
@@ -208,9 +204,9 @@ def main(event, context):
     validated_paths = checker.get_validated_paths()
     summarized_result = summarize(results, endpoints, validated_paths)
     log_state(summarized_result, prefix)
-    notify(summarized_result)
+    status = notify(summarized_result)
 
-    return summarized_result
+    return status
 
 
 def notify(summarized_result):
@@ -220,9 +216,8 @@ def notify(summarized_result):
     If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
     If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
     Otherwise, all notifications will be skipped.
-    Although a notification may not be sent, results will be logged at all times.
     @param summarized_result: dictionary containing notification information
-    @return: a message upon success or if skipping notification.
+    @return: the status of the endpoints: success, failures, or skipped
     """
     message = summarized_result.get('message')
     subject = summarized_result.get('subject')
@@ -239,7 +234,7 @@ def notify(summarized_result):
         return SKIP_MESSAGE_FORMAT.format(CHECK_TIME_UTC)
 
     raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
-    pass
+    return "FAILURES occurred! Check the logs for more details!"
 
 
 def summarize(results, endpoints, validated_paths):
