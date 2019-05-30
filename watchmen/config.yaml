@@ -27,6 +27,9 @@ jupiter:
 logging:
   level: 10
 
+manhattan:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
+
 moloch:
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
 
