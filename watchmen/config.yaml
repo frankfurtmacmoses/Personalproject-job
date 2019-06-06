@@ -36,6 +36,9 @@ moloch:
 ozymandias:
   sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
 
+rorschach:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
+
 silhouette:
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3
 
