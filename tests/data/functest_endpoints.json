@@ -15,11 +15,11 @@
   "format": "html",
   "regx": "7 HTTP methods every web developer should know and how to test them"
 }, {
-  "name": "github",
-  "desc": "github repository",
-  "path": "https://github.com/dockerian/pyml",
+  "name": "wikipedia",
+  "desc": "wiki page",
+  "path": "https://en.wikipedia.org/wiki/Docker_(software)",
   "format": "html",
-  "regx": "Python Machine Learning Practice"
+  "regx": "Docker"
 }, {
   "name": "mocky.io",
   "desc": "mocky.io hello world",
