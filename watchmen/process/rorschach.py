@@ -18,15 +18,19 @@ import pytz as _pytz
 import timeit as _timeit
 import traceback as _traceback
 # External Libraries
-import boto3.session as _boto3_session
 import watchmen.utils.s3 as _s3
+from watchmen.config import settings
+from watchmen.utils.sns_alerts import raise_alarm
+from watchmen.utils.logger import get_logger
 
 # Private Global Constants
-_FATALERROR = 1
-_SUCCESS = 0
+_EMPTY = 0
+_ERROR = -1
+_SUCCESS = 1
 _FILENAME = "rorschach_hancock_watcher"
 _PREFIX = "PREFIX"
 _BUCKET_NAME = "BUCKET_NAME"
+_SUBJECT_EXCEPTION_MESSAGE = "Rorschach failed due to an Exception!"
 _SUBJECT_MESSAGE = "Rorschach Detected: Farsight S3 Service Outage!"
 _ERROR_MESSAGE = "ERROR: "
 _NOTHING_RECENT_MESSAGE = _ERROR_MESSAGE + "No files found created recently.\n"
@@ -66,7 +70,7 @@ class RorschachWatcher(object):
     """
     RorschachWatcher class
     """
-
+    sns_topic_arn = settings("rorschach.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
     suffix_format = "year=%0Y/month=%0m/day=%0d"
     prefix = _os.getenv(_PREFIX)
     bucket = _os.getenv(_BUCKET_NAME)
@@ -79,14 +83,16 @@ class RorschachWatcher(object):
         """
         RorschachWatcher constructor
         """
+        self.logger = get_logger('Rorschach', settings('logging.level', 'INFO'))
         # Get the current Day and Time we care about
         self.nothing_recent = True
         self.nothing_parquet = True
         self.everything_zero_size = True
+        self.traceback = None
         self.now = _datetime.datetime.now(_pytz.utc)
-        print "Current Time: %s" % self.now
+        self.logger.info("Current Time: %s" % self.now)
         self.check_time = self.now - self.dt_offset
-        print "Check Time: %s" % self.check_time
+        self.logger.info("Check Time: %s" % self.check_time)
         self.suffix = self.check_time.strftime(self.suffix_format)
         assert self.prefix is not None, "ERROR: PREFIX Environment variable is not defined!"
         assert self.bucket is not None, "ERROR: BUCKET_NAME Environment variable is not defined!"
@@ -109,8 +115,8 @@ class RorschachWatcher(object):
                 most_recent = key.get('LastModified')
                 latest_file = key
             count += 1
-        print "Searched through %d files." % count
-        print "Most Recent File was: %s - the check time was %s" % (most_recent, self.check_time)
+        self.logger.info("Searched through %d files." % count)
+        self.logger.info("Most Recent File was: %s - the check time was %s" % (most_recent, self.check_time))
 
         # Determine that at least the most recent file is parquet, and not zero
         if most_recent > self.check_time:
@@ -120,19 +126,24 @@ class RorschachWatcher(object):
         if latest_file.get('Key').endswith('.parquet'):
             self.nothing_parquet = False
 
-    def check_parquet_stream(self):
+    def summarize_parquet_stream(self):
         """
         check parquet stream
+        @return: A dict containing all notification information
         """
-
         # Get the file list from S3
-        print "Checking: %s" % self.full_path
+        self.logger.info("Checking: %s" % self.full_path)
         empty, contents = _s3.check_empty_folder(self.full_path, self.bucket)
 
         if empty:
-            self.raise_alarm("The S3 bucket for today is empty or missing!  %s" % self.full_path)
-            return 1
-        print("The directory is not empty at:  %s" % self.full_path)
+            msg = "The S3 bucket for today is empty or missing!  %s" % self.full_path
+            return {
+                "success": False,
+                "subject": _SUBJECT_MESSAGE,
+                "message": msg
+            }
+
+        self.logger.info("The directory is not empty at:  %s" % self.full_path)
 
         # Ensure the most recent file is within the specified duration.
         self.process_all_files()
@@ -146,64 +157,75 @@ class RorschachWatcher(object):
         if self.everything_zero_size:
             msg += _EVERYTHING_ZERO_SIZE_MESSAGE
 
-        if msg is not "":
-            self.raise_alarm(msg + "\n\t%s\n\t%s" % (self.full_path, self.check_time))
-            return 1
-        else:
-            return 0
+        if msg is "":
+            return {
+                "success": True,
+                "message": _SUCCESS_HEADER
+            }
 
-    @staticmethod
-    def get_sns_client():
-        """
-        Get SNS client
-        note: This function can be customized to accept configurations
-        """
-        session = _boto3_session.Session()
-        sns_client = session.client('sns')
-        return sns_client
+        return {
+            "success": False,
+            "subject": _SUBJECT_MESSAGE,
+            "message": msg
+        }
 
-    @staticmethod
-    def raise_alarm(msg):
+    def get_parquet_result(self):
         """
-        raise alarm
+        Gets the result from the parquet stream check.
+        Results can either be 'success', 'empty', or a message indicating that a failure occurred.
+        @return: One the expected results or 'error' upon exception
         """
-
-        print("***Sounding the Alarm!***\n" + msg)
-        sns_client = RorschachWatcher.get_sns_client()
-        response = sns_client.publish(
-            TopicArn='arn:aws:sns:us-east-1:405093580753:Hancock',
-            Message=msg,
-            Subject=_SUBJECT_MESSAGE
-        )
         try:
-            assert response['ResponseMetadata']['HTTPStatusCode'] == 200, \
-                "ERROR Publishing to sns failed!"
-        except KeyError:
-            print _ERROR_MESSAGE + "Response did not contain HTTPStatusCode\n"
-            print response
+            my_result = self.summarize_parquet_stream()
+            self.logger.info(my_result)
+        except Exception as ex:
+            self.logger.error("ERROR Processing Data!\n")
+            self.traceback = _traceback.format_exc(ex)
+            self.logger.error(self.traceback)
+            msg = "An error occurred while checking the parquet at {} due to the following:" \
+                  "\n\n{}\n\n".format(self.check_time, self.traceback)
+            my_result = {
+                "success": False,
+                "subject": _SUBJECT_EXCEPTION_MESSAGE,
+                "message": msg + "\n\t%s\n\t%s" % (self.full_path, self.check_time)
+            }
+
+        return my_result
+
+    def notify(self, parquet_result):
+        """
+        If the parquet result is not a success, send an email alarm message.
+        @param parquet_result: the status of the check
+        @return: a header indicating success or failure
+        """
+        self.logger.info(parquet_result)
+        success = parquet_result.get('success')
+        subject = parquet_result.get('subject')
+        message = parquet_result.get('message')
+
+        if success:
+            return message
+
+        # Have to send email alarm
+        raise_alarm(topic_arn=self.sns_topic_arn, msg=message, subject=subject)
+        self.logger.info(_FAILURE_HEADER)
+        return _FAILURE_HEADER
 
 
 # pylint: disable=unused-argument
 def main(event, context):
-    """ Main Function"""
+    """
+    Ensures parquet data is flowing into the current day's s3 folder
+    @return: the status of the parquet data flow
+    """
     start = _timeit.default_timer()
 
     # Create Miner
     watcher = RorschachWatcher()
 
-    # Call the meat of the script
-    try:
-        my_result = watcher.check_parquet_stream()
-    except Exception as ex:
-        print("ERROR Processing Data!\n")
-        print(_traceback.format_exc(ex))
-        my_result = _FATALERROR
+    parquet_results = watcher.get_parquet_result()
+    status = watcher.notify(parquet_results)
 
-    # Add Headers to the Log File for quick indication of results.
-    if my_result == _SUCCESS:
-        print(_SUCCESS_HEADER)
-    else:
-        print(_FAILURE_HEADER)
     stop = _timeit.default_timer()
     print("Run time: %s" % (stop - start))
-    return my_result
+    return status

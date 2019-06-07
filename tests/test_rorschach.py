@@ -6,9 +6,18 @@ import unittest
 import datetime
 import pytz
 import os
+import watchmen.process.rorschach as rorschach
+
 from mock import patch
 from mock import MagicMock
-import watchmen.process.rorschach as rorschach
+from watchmen.process.rorschach import \
+    _EVERYTHING_ZERO_SIZE_MESSAGE, \
+    _NOTHING_PARQUET_MESSAGE, \
+    _NOTHING_RECENT_MESSAGE, \
+    _FAILURE_HEADER, \
+    _SUBJECT_EXCEPTION_MESSAGE, \
+    _SUBJECT_MESSAGE, \
+    _SUCCESS_HEADER
 
 
 class TestRorschach(unittest.TestCase):
@@ -25,6 +34,11 @@ class TestRorschach(unittest.TestCase):
         self.example_offset = 5
         self.example_dt_offset = datetime.timedelta(self.example_offset)
         self.example_check_time = self.example_now - self.example_dt_offset
+
+        self.example_parquet_result = "Failure Occurred"
+        self.example_status = "A giant header was created"
+        self.example_exception_message = "Something really bad happened!"
+        self.example_traceback = "Fake traceback"
 
         self.prefix_env = "parquet/magic_path/year=2017"
         self.bucket_env = "magic_bitaa"
@@ -144,114 +158,109 @@ class TestRorschach(unittest.TestCase):
             self.assertEqual(b[2], watcher.nothing_parquet, msg)
 
     @patch('watchmen.process.rorschach.RorschachWatcher.process_all_files')
-    @patch('watchmen.process.rorschach.RorschachWatcher.raise_alarm')
     @patch('watchmen.utils.s3.check_empty_folder')
-    def test_check_parquet_stream(self, mock_check_empty_folder, mock_raise_alarm, mock_process_all_files):
+    def test_summarize_parquet_stream(self, mock_check_empty_folder, mock_process_all_files):
         # Test with Empty Response!
-        # should raise the alarm
         mock_check_empty_folder.return_value = (True, None)
         watcher = self.createWatcher()
-        watcher.raise_alarm = mock_raise_alarm
         watcher.process_all_files = mock_process_all_files
-        return_result = watcher.check_parquet_stream()
-        expected_result = 1
+        return_result = watcher.summarize_parquet_stream()
+        expected_result = {
+            "success": False,
+            "subject": _SUBJECT_MESSAGE,
+            "message": "The S3 bucket for today is empty or missing!  %s" % self.example_full_path
+        }
         self.assertEqual(expected_result, return_result)
-        mock_raise_alarm.assert_called_once_with("The S3 bucket for today is empty or missing!  %s"
-                                                 % self.example_full_path)
 
         # Test with all three True
         mock_check_empty_folder.reset_mock()
-        mock_raise_alarm.reset_mock()
         mock_check_empty_folder.return_value = (False, [])
         watcher.nothing_recent = True
         watcher.nothing_parquet = True
         watcher.everything_zero_size = True
-        return_result = watcher.check_parquet_stream()
-        expected_result = 1
+        return_result = watcher.summarize_parquet_stream()
+        # Create message
+        msg = ''
+        msg += _NOTHING_RECENT_MESSAGE
+        msg += _NOTHING_PARQUET_MESSAGE
+        msg += _EVERYTHING_ZERO_SIZE_MESSAGE
+        expected_result = {
+            "success": False,
+            "subject": _SUBJECT_MESSAGE,
+            "message": msg
+        }
         self.assertEqual(expected_result, return_result)
-        mock_raise_alarm.assert_called_once_with(self.not_recent_not_parquet_all_zero)
 
         # Test with all three False
         mock_check_empty_folder.reset_mock()
-        mock_raise_alarm.reset_mock()
         watcher.nothing_recent = False
         watcher.nothing_parquet = False
         watcher.everything_zero_size = False
         mock_check_empty_folder.return_value = (False, [])
-        return_result = watcher.check_parquet_stream()
-        expected_result = 0
+        return_result = watcher.summarize_parquet_stream()
+        expected_result = {
+            "success": True,
+            "message": _SUCCESS_HEADER
+        }
         self.assertEqual(expected_result, return_result)
-        self.assertFalse(mock_raise_alarm.called)
 
-    @patch('watchmen.process.rorschach.RorschachWatcher.get_sns_client')
-    def test_raise_alarm(self, mock_get_sns_client):
+    @patch('watchmen.process.rorschach._traceback.format_exc')
+    @patch('watchmen.process.rorschach.RorschachWatcher.summarize_parquet_stream')
+    def test_get_parquet_result(self, mock_check, mock_trace):
+        mock_trace.return_value = self.example_traceback
+        mock_check.return_value = self.example_parquet_result
+        watcher = self.createWatcher()
+        watcher.summarize_parquet_stream = mock_check
+        expected = self.example_parquet_result
+        returned = watcher.get_parquet_result()
+        self.assertEqual(expected, returned)
 
-        expected_response = {'ResponseMetadata': {'HTTPStatusCode': 200}}
-        mock_sns_client = MagicMock()
-        mock_sns_client.publish.return_value = expected_response
-        mock_get_sns_client.return_value = mock_sns_client
-        rorschach._SUBJECT_MESSAGE = self.example_subject
-        # Test with successful publish
-        rorschach.RorschachWatcher.raise_alarm(self.example_message)
-        mock_sns_client.publish.assert_called_once_with(TopicArn=self.example_arn,
-                                                        Message=self.example_message,
-                                                        Subject=self.example_subject)
+        mock_check.side_effect = Exception(self.example_exception_message)
+        msg = "An error occurred while checking the parquet at {} due to the following:\n\n{}\n\n".format(
+            self.example_check_time, self.example_traceback)
+        expected = {
+            "success": False,
+            "subject": _SUBJECT_EXCEPTION_MESSAGE,
+            "message": msg + "\n\t%s\n\t%s" % (self.example_full_path, self.example_check_time)
+        }
+        returned = watcher.get_parquet_result()
+        self.assertEqual(expected, returned)
 
-        # Test with key error  - Need to figure out why this happens sometimes.
-        mock_sns_client.reset_mock()
-        expected_response = {"It's over 9000!": 9001}
-        mock_sns_client.publish.return_value = expected_response
-        rorschach.RorschachWatcher.raise_alarm(self.example_message)
-        mock_sns_client.publish.assert_called_once_with(TopicArn=self.example_arn,
-                                                        Message=self.example_message,
-                                                        Subject=self.example_subject)
+    @patch('watchmen.utils.sns_alerts.raise_alarm')
+    def test_notify(self, mock_alarm):
+        test_results = [
+            {
+                "result": {
+                    "success": True,
+                    "message": _SUCCESS_HEADER
+                },
+                "expected": _SUCCESS_HEADER},
+            {
+                "result": {
+                    "success": False,
+                    "subject": self.example_subject,
+                    "message": self.example_message
+                },
+                "expected": _FAILURE_HEADER
+            }
+        ]
 
-        # Test with unsuccessful publish
-        mock_sns_client.reset_mock()
-        expected_response = {'ResponseMetadata': {
-                                'RetryAttempts': 0, 'HTTPStatusCode': 400,
-                                'RequestId': '37e288bd-24bd-5cb0-98f3-d94dda3e7306',
-                                'HTTPHeaders': {
-                                  'x-amzn-requestid': '37e288bd-24bd-5cb0-98f3-d94dda3e7306',
-                                  'date': 'Tue, 25 Jul 2017 08:07:30 GMT',
-                                  'content-length': '294', 'content-type': 'text/xml'}},
-                             u'MessageId': '5706ed1d-3e52-5061-a2b5-bcedc0d10fd7'}
-        mock_sns_client.publish.return_value = expected_response
-        self.assertRaises(AssertionError, rorschach.RorschachWatcher.raise_alarm,
-                          self.example_message)
-        mock_sns_client.publish.assert_called_once_with(TopicArn=self.example_arn,
-                                                        Message=self.example_message,
-                                                        Subject=self.example_subject)
+        watcher = self.createWatcher()
 
-    @patch('watchmen.process.rorschach._boto3_session')
-    def test_get_sns_client(self, mock_boto3_session):
-        expected_result = "I'm a client!"
-        mock_session = MagicMock()
-        mock_session.client.return_value = expected_result
-        mock_boto3_session.Session.return_value = mock_session
-        returned_result = rorschach.RorschachWatcher.get_sns_client()
-        self.assertEqual(expected_result, returned_result)
-        mock_session.client.assert_called_once_with('sns')
+        for result in test_results:
+            parquet_result = result.get("result")
+            expected = result.get("expected")
+            returned = watcher.notify(parquet_result)
+            self.assertEqual(expected, returned)
 
     @patch('watchmen.process.rorschach.RorschachWatcher')
     def test_main(self, mock_rorschach_watcher):
-
-        # Test with Pass Result
-        expected_result = 0
         mock_rorschach_instance = MagicMock()
-        mock_rorschach_instance.check_parquet_stream.return_value = expected_result
+
+        mock_rorschach_instance.get_parquet_result.return_value = self.example_parquet_result
+        mock_rorschach_instance.notify.return_value = self.example_status
         mock_rorschach_watcher.return_value = mock_rorschach_instance
-        returned_result = rorschach.main(None, None)
-        self.assertEqual(expected_result, returned_result)
 
-        # Test with Fail Result
-        expected_result = 1
-        mock_rorschach_instance.check_parquet_stream.return_value = expected_result
-        returned_result = rorschach.main(None, None)
-        self.assertEqual(expected_result, returned_result)
-
-        # Test with exception thrown
-        expected_result = 1
-        mock_rorschach_instance.check_parquet_stream.side_effect = Exception('Something went wrong')
-        returned_result = rorschach.main(None, None)
-        self.assertEqual(expected_result, returned_result)
+        expected = mock_rorschach_instance.notify()
+        returned = rorschach.main(None, None)
+        self.assertEqual(expected, returned)
