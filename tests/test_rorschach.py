@@ -15,6 +15,8 @@ from watchmen.process.rorschach import \
     _NOTHING_PARQUET_MESSAGE, \
     _NOTHING_RECENT_MESSAGE, \
     _FAILURE_HEADER, \
+    _SUBJECT_EXCEPTION_MESSAGE, \
+    _SUBJECT_MESSAGE, \
     _SUCCESS_HEADER
 
 
@@ -36,6 +38,7 @@ class TestRorschach(unittest.TestCase):
         self.example_parquet_result = "Failure Occurred"
         self.example_status = "A giant header was created"
         self.example_exception_message = "Something really bad happened!"
+        self.example_traceback = "Fake traceback"
 
         self.prefix_env = "parquet/magic_path/year=2017"
         self.bucket_env = "magic_bitaa"
@@ -156,13 +159,17 @@ class TestRorschach(unittest.TestCase):
 
     @patch('watchmen.process.rorschach.RorschachWatcher.process_all_files')
     @patch('watchmen.utils.s3.check_empty_folder')
-    def test_check_parquet_stream(self, mock_check_empty_folder, mock_process_all_files):
+    def test_summarize_parquet_stream(self, mock_check_empty_folder, mock_process_all_files):
         # Test with Empty Response!
         mock_check_empty_folder.return_value = (True, None)
         watcher = self.createWatcher()
         watcher.process_all_files = mock_process_all_files
-        return_result = watcher.check_parquet_stream()
-        expected_result = 0
+        return_result = watcher.summarize_parquet_stream()
+        expected_result = {
+            "success": False,
+            "subject": _SUBJECT_MESSAGE,
+            "message": "The S3 bucket for today is empty or missing!  %s" % self.example_full_path
+        }
         self.assertEqual(expected_result, return_result)
 
         # Test with all three True
@@ -171,13 +178,17 @@ class TestRorschach(unittest.TestCase):
         watcher.nothing_recent = True
         watcher.nothing_parquet = True
         watcher.everything_zero_size = True
-        return_result = watcher.check_parquet_stream()
+        return_result = watcher.summarize_parquet_stream()
         # Create message
         msg = ''
         msg += _NOTHING_RECENT_MESSAGE
         msg += _NOTHING_PARQUET_MESSAGE
         msg += _EVERYTHING_ZERO_SIZE_MESSAGE
-        expected_result = msg
+        expected_result = {
+            "success": False,
+            "subject": _SUBJECT_MESSAGE,
+            "message": msg
+        }
         self.assertEqual(expected_result, return_result)
 
         # Test with all three False
@@ -186,32 +197,53 @@ class TestRorschach(unittest.TestCase):
         watcher.nothing_parquet = False
         watcher.everything_zero_size = False
         mock_check_empty_folder.return_value = (False, [])
-        return_result = watcher.check_parquet_stream()
-        expected_result = 1
+        return_result = watcher.summarize_parquet_stream()
+        expected_result = {
+            "success": True,
+            "message": _SUCCESS_HEADER
+        }
         self.assertEqual(expected_result, return_result)
 
-    @patch('watchmen.process.rorschach.RorschachWatcher.check_parquet_stream')
-    def test_get_parquet_result(self, mock_check):
+    @patch('watchmen.process.rorschach._traceback.format_exc')
+    @patch('watchmen.process.rorschach.RorschachWatcher.summarize_parquet_stream')
+    def test_get_parquet_result(self, mock_check, mock_trace):
+        mock_trace.return_value = self.example_traceback
         mock_check.return_value = self.example_parquet_result
         watcher = self.createWatcher()
-        watcher.check_parquet_stream = mock_check
+        watcher.summarize_parquet_stream = mock_check
         expected = self.example_parquet_result
         returned = watcher.get_parquet_result()
         self.assertEqual(expected, returned)
 
         mock_check.side_effect = Exception(self.example_exception_message)
-        expected = -1
+        msg = "An error occurred while checking the parquet at {} due to the following:\n\n{}\n\n".format(
+            self.example_check_time, self.example_traceback)
+        expected = {
+            "success": False,
+            "subject": _SUBJECT_EXCEPTION_MESSAGE,
+            "message": msg + "\n\t%s\n\t%s" % (self.example_full_path, self.example_check_time)
+        }
         returned = watcher.get_parquet_result()
         self.assertEqual(expected, returned)
 
     @patch('watchmen.utils.sns_alerts.raise_alarm')
     def test_notify(self, mock_alarm):
         test_results = [
-            {"result": 1, "expected": _SUCCESS_HEADER},
-            {"result": 0, "expected": _FAILURE_HEADER},
-            {"result": -1, "expected": _FAILURE_HEADER},
-            {"result": "This is a failure message", "expected": _FAILURE_HEADER}
-            ]
+            {
+                "result": {
+                    "success": True,
+                    "message": _SUCCESS_HEADER
+                },
+                "expected": _SUCCESS_HEADER},
+            {
+                "result": {
+                    "success": False,
+                    "subject": self.example_subject,
+                    "message": self.example_message
+                },
+                "expected": _FAILURE_HEADER
+            }
+        ]
 
         watcher = self.createWatcher()
 

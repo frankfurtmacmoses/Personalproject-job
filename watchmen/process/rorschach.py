@@ -30,6 +30,7 @@ _SUCCESS = 1
 _FILENAME = "rorschach_hancock_watcher"
 _PREFIX = "PREFIX"
 _BUCKET_NAME = "BUCKET_NAME"
+_SUBJECT_EXCEPTION_MESSAGE = "Rorschach failed due to an Exception!"
 _SUBJECT_MESSAGE = "Rorschach Detected: Farsight S3 Service Outage!"
 _ERROR_MESSAGE = "ERROR: "
 _NOTHING_RECENT_MESSAGE = _ERROR_MESSAGE + "No files found created recently.\n"
@@ -125,17 +126,23 @@ class RorschachWatcher(object):
         if latest_file.get('Key').endswith('.parquet'):
             self.nothing_parquet = False
 
-    def check_parquet_stream(self):
+    def summarize_parquet_stream(self):
         """
         check parquet stream
-        @return: Whether the stream check was empty, a success, or message indicating a failure occurred.
+        @return: A dict containing all notification information
         """
         # Get the file list from S3
         self.logger.info("Checking: %s" % self.full_path)
         empty, contents = _s3.check_empty_folder(self.full_path, self.bucket)
 
         if empty:
-            return _EMPTY
+            msg = "The S3 bucket for today is empty or missing!  %s" % self.full_path
+            return {
+                "success": False,
+                "subject": _SUBJECT_MESSAGE,
+                "message": msg
+            }
+
         self.logger.info("The directory is not empty at:  %s" % self.full_path)
 
         # Ensure the most recent file is within the specified duration.
@@ -150,11 +157,17 @@ class RorschachWatcher(object):
         if self.everything_zero_size:
             msg += _EVERYTHING_ZERO_SIZE_MESSAGE
 
-        if msg is not "":
-            # Indicates that there was a failure
-            return msg
-        else:
-            return _SUCCESS
+        if msg is "":
+            return {
+                "success": True,
+                "message": _SUCCESS_HEADER
+            }
+
+        return {
+            "success": False,
+            "subject": _SUBJECT_MESSAGE,
+            "message": msg
+        }
 
     def get_parquet_result(self):
         """
@@ -163,13 +176,19 @@ class RorschachWatcher(object):
         @return: One the expected results or 'error' upon exception
         """
         try:
-            my_result = self.check_parquet_stream()
-            print my_result
+            my_result = self.summarize_parquet_stream()
+            self.logger.info(my_result)
         except Exception as ex:
             self.logger.error("ERROR Processing Data!\n")
             self.traceback = _traceback.format_exc(ex)
             self.logger.error(self.traceback)
-            my_result = _ERROR
+            msg = "An error occurred while checking the parquet at {} due to the following:" \
+                  "\n\n{}\n\n".format(self.check_time, self.traceback)
+            my_result = {
+                "success": False,
+                "subject": _SUBJECT_EXCEPTION_MESSAGE,
+                "message": msg + "\n\t%s\n\t%s" % (self.full_path, self.check_time)
+            }
 
         return my_result
 
@@ -179,20 +198,16 @@ class RorschachWatcher(object):
         @param parquet_result: the status of the check
         @return: a header indicating success or failure
         """
-        # Add Headers to the Log File for quick indication of results.
-        if parquet_result == _SUCCESS:
-            self.logger.info(_SUCCESS_HEADER)
-            return _SUCCESS_HEADER
+        self.logger.info(parquet_result)
+        success = parquet_result.get('success')
+        subject = parquet_result.get('subject')
+        message = parquet_result.get('message')
 
-        if parquet_result == _EMPTY:
-            msg = "The S3 bucket for today is empty or missing!  %s" % self.full_path
-        elif parquet_result == _ERROR:
-            msg = "An error occurred while checking the parquet at {} due to the following:" \
-                  "\n\n{}\n\n".format(self.check_time, self.traceback)
-        else:
-            msg = parquet_result + "\n\t%s\n\t%s" % (self.full_path, self.check_time)
+        if success:
+            return message
 
-        raise_alarm(topic_arn=self.sns_topic_arn, msg=msg, subject=_SUBJECT_MESSAGE)
+        # Have to send email alarm
+        raise_alarm(topic_arn=self.sns_topic_arn, msg=message, subject=subject)
         self.logger.info(_FAILURE_HEADER)
         return _FAILURE_HEADER
 
