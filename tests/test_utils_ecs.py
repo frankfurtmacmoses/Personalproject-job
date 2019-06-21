@@ -1,8 +1,8 @@
 """
 Unit tests for watchmen/utils/ecs.py
 
-@author: Jason Zhu
-@email: jason_zhuyx@hotmail.com
+@author Daryan Hanshew
+@email dhanshew@infoblox.com
 
 Refactored on May 15, 2019
 @author: Kayla Ramos

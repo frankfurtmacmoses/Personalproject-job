@@ -26,6 +26,8 @@ def select_dynamo_time_string(feeds_to_check, feed, time_string_choice):
             0 = hourly, 1 = daily, 2 = weekly
     :return: time string for dynamo db
     """
+    # TODO:  Refactor to use a dictionary instead of if-else statements
+
     time_string = None
     if time_string_choice == 0:
         time_string = get_dynamo_hourly_time_string()

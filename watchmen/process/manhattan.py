@@ -114,6 +114,8 @@ def find_bad_feeds(event_type):
     @param event_type: Whether the check is Weekly, Daily, or Hourly
     @return: tuple of lists: list of all the down feeds and list of out of range feeds or None upon exception
     """
+    # TODO:  Refactor to use a dictionary instead of if-else statements
+
     downed_feeds = []
     submitted_out_of_range_feeds = []
 

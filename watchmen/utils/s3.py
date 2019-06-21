@@ -28,12 +28,13 @@ FILE_SIZE_ZERO_ERROR_MESSAGE = "FILE SIZE IS ZERO!"
 FILE_NOT_FOUND_ERROR_MESSAGE = "FILE DOESN'T EXIST!"
 
 BUCKET_DEFAULT = 'cyber-intel'
+MAX_ATTEMPTS = 2
 PREFIX_PROCESSED = 'hancock/processed-json'
 PREFIX_MINED = 'hancock/mined-json'
 # This config is used with sessions. Otherwise, it will try to reconnect until the lambda times out
 # with an exponential wait time in between each attempt. This sets a timeout time and no attempt to reconnect.
 # If a session times out, it throws a ConnectionTimeout error and moves on.
-CONFIG = Config(connect_timeout=5, retries={'max_attempts': 0})
+CONFIG = Config(connect_timeout=5, retries={'max_attempts': MAX_ATTEMPTS})
 
 
 def check_arg_bucket(bucket):
