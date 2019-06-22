@@ -15,14 +15,26 @@ AWS_ACCESS_KEY_ID=
 import json
 import types
 from logging import getLogger
+
+import boto3
 import boto3.session as boto3_session
 import botocore
+from botocore.client import Config
+from botocore.exceptions import ClientError
 
 LOGGER = getLogger(__name__)
 
+FILE_SIZE_ZERO_ERROR_MESSAGE = "FILE SIZE IS ZERO!"
+FILE_NOT_FOUND_ERROR_MESSAGE = "FILE DOESN'T EXIST!"
+
 BUCKET_DEFAULT = 'cyber-intel'
+MAX_ATTEMPTS = 2
 PREFIX_PROCESSED = 'hancock/processed-json'
 PREFIX_MINED = 'hancock/mined-json'
+# This config is used with sessions. Otherwise, it will try to reconnect until the lambda times out
+# with an exponential wait time in between each attempt. This sets a timeout time and no attempt to reconnect.
+# If a session times out, it throws a ConnectionTimeout error and moves on.
+CONFIG = Config(connect_timeout=5, retries={'max_attempts': MAX_ATTEMPTS})
 
 
 def check_arg_bucket(bucket):
@@ -262,7 +274,7 @@ def get_client():
     note: This function can be customized to accept configurations
     """
     session = boto3_session.Session()
-    s3_client = session.client('s3')
+    s3_client = session.client('s3', config=CONFIG)
     return s3_client
 
 
@@ -272,7 +284,7 @@ def get_resource():
     note: This function can be customized to accept configurations
     """
     session = boto3_session.Session()
-    s3_resource = session.resource('s3')
+    s3_resource = session.resource('s3', config=CONFIG)
     return s3_resource
 
 
@@ -297,6 +309,23 @@ def get_content(key_name, bucket=BUCKET_DEFAULT):
         LOGGER.debug(ex)
 
     return None
+
+
+def get_file_contents_s3(bucket_name, key):
+    """
+    Retrieves file contents for a file on S3 and streams it over.
+    :param bucket_name: bucket to get contents from
+    :param key: path to the file
+    :return: the contents of the file if they exist otherwise none
+    """
+    s3_client = boto3.resource('s3').Object(bucket_name, key)
+
+    try:
+        file_contents = s3_client.get()['Body'].read()
+    except ClientError:
+        file_contents = None
+        LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
+    return file_contents
 
 
 def get_json_data(key_name, bucket=BUCKET_DEFAULT):
@@ -587,3 +616,27 @@ def process(a_func=process_func, prefix='', suffix='/', **kwargs):
                     a_func(key, **kwargs)
                     counts += 1
     return counts
+
+
+def validate_file_on_s3(bucket_name, key):
+    """
+    Checks if a file exists on S3 and non-zero size.
+    :param bucket_name: Name of the bucket to check
+    :param key: path to the file
+    :return: true if file exists otherwise false
+    """
+    s3_client = boto3.resource('s3')
+
+    file_obj = s3_client.Object(bucket_name, key)
+    is_valid_file = True
+    try:
+        # Checks file size if it's zero
+        if file_obj.get()['ContentLength'] == 0:
+            is_valid_file = False
+            LOGGER.info(FILE_SIZE_ZERO_ERROR_MESSAGE)
+    except ClientError:
+        # Means the file doesn't exist
+        is_valid_file = False
+        LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
+
+    return is_valid_file

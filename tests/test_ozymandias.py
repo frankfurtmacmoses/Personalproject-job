@@ -11,7 +11,7 @@ class TestOzymandias(unittest.TestCase):
         self.example_file_status = False
 
     @patch('watchmen.process.ozymandias.raise_alarm')
-    @patch('watchmen.process.ozymandias.Watchmen.validate_file_on_s3')
+    @patch('watchmen.process.ozymandias.validate_file_on_s3')
     def test_check_file_exists(self, mock_validate, mock_alarm):
         # File exists
         mock_validate.return_value = True

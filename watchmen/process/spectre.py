@@ -10,8 +10,8 @@ If data is not found or has a value of 0, an alert is sent out.
 import traceback
 from datetime import datetime, timedelta
 from watchmen.utils.sns_alerts import raise_alarm
-from watchmen.utils.universal_watchmen import Watchmen
 from watchmen.utils.logger import get_logger
+from watchmen.utils.s3 import validate_file_on_s3
 from watchmen.config import settings
 import pytz
 
@@ -38,11 +38,10 @@ def check_if_found_file(filename):
     @param filename: name of the file to check
     @return: whether or not the file was found; otherwise, None upon exception
     """
-    watcher = Watchmen(bucket_name=BUCKET_NAME)
     file_path = '{}{}'.format(PATH_TO_FILES, filename)
 
     try:
-        found_file = watcher.validate_file_on_s3(file_path)
+        found_file = validate_file_on_s3(BUCKET_NAME, file_path)
         return found_file
     except Exception as ex:
         LOGGER.error(ex)

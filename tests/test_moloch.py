@@ -25,20 +25,20 @@ class TestMoloch(unittest.TestCase):
         self.example_status = "The feeds were checked"
 
     @mock_s3
-    @patch('watchmen.process.moloch.Watchmen.validate_file_on_s3')
-    def test_check_for_existing_files(self, mock_watcher):
-        mock_watcher.return_value = False
+    @patch('watchmen.process.moloch.validate_file_on_s3')
+    def test_check_for_existing_files(self, mock_validate):
+        mock_validate.return_value = False
         # Test when no file found on S3
         expected_result = False
         returned_result = check_for_existing_files(self.example_file_path, self.example_now)
         self.assertEqual(expected_result, returned_result)
         # Test when the file exists and works
-        mock_watcher.return_value = True
+        mock_validate.return_value = True
         expected_result = True
         returned_result = check_for_existing_files(self.example_file_path, self.example_now)
         self.assertEqual(expected_result, returned_result)
         # Test first 3 missing files, but finally one is found
-        mock_watcher.side_effect = [False, False, False, True]
+        mock_validate.side_effect = [False, False, False, True]
         expected_result = True
         returned_result = check_for_existing_files(self.example_file_path, self.example_now)
         self.assertEqual(expected_result, returned_result)
