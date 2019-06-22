@@ -22,6 +22,7 @@ from watchmen.utils.dynamo import select_dynamo_time_string
 
 EMPTY_METRIC_ERROR = "No metric found for: "
 LOGGER = getLogger(__name__)
+VALUE_ERROR_MESSAGE = "Start CANNOT be greater than End"
 
 
 def get_feed_metrics(table_name, feed, check_time):
@@ -62,6 +63,9 @@ def process_feeds_logs(feed_names, start, end, log_group_name=""):
     response = None
     feed_name_set = set()
     downed_feeds = []
+
+    if start > end:
+        raise ValueError(VALUE_ERROR_MESSAGE)
 
     while start < end:
         if not response:

@@ -3,7 +3,11 @@ import pytz
 from datetime import datetime
 from mock import patch
 from moto import mock_dynamodb, mock_cloudwatch
-from watchmen.utils.feeds import get_feed_metrics, process_feeds_logs, process_feeds_metrics
+from watchmen.utils.feeds import VALUE_ERROR_MESSAGE
+from watchmen.utils.feeds import \
+    get_feed_metrics, \
+    process_feeds_logs, \
+    process_feeds_metrics
 
 
 class TestFeeds(unittest.TestCase):
@@ -87,12 +91,33 @@ class TestFeeds(unittest.TestCase):
                 'log_response': self.example_log_response_fail,
                 'feeds': ['test-feed'],
             }
-
          ]
         for test in tests:
             mock_client.return_value.describe_log_streams.return_value = test.get('log_response')
             result = process_feeds_logs(test.get('feeds'), test.get('start'), test.get('end'))
             self.assertEqual(test.get('expected'), result)
+
+    @mock_cloudwatch
+    @patch('watchmen.utils.feeds.boto3.client')
+    def test_process_feed_logs_failure(self, mock_client):
+        start_greater_than_end = {
+            'start': datetime(
+                year=2019, month=1, day=2, hour=4, minute=0, second=0, microsecond=0, tzinfo=pytz.utc
+            ),
+            'end': datetime(
+                year=2019, month=1, day=1, hour=5, minute=0, second=0, microsecond=0, tzinfo=pytz.utc
+            ),
+            'expected': ['test-feed'],
+            'log_response': self.example_log_response_fail,
+            'feeds': ['test-feed'],
+        }
+
+        with self.assertRaises(ValueError) as error:
+            mock_client.return_value.describe_log_streams.return_value = start_greater_than_end.get('log_response')
+            process_feeds_logs(start_greater_than_end.get('feeds'),
+                               start_greater_than_end.get('start'),
+                               start_greater_than_end.get('end'))
+        self.assertEqual(VALUE_ERROR_MESSAGE, error.exception.message)
 
     @patch('watchmen.utils.feeds.get_feed_metrics')
     @patch('watchmen.utils.dynamo.select_dynamo_time_string')
