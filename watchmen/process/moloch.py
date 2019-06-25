@@ -91,9 +91,9 @@ def get_check_results():
         hostname_check = check_for_existing_files(HOSTNAME_PATH + file_path, check_time)
         return domain_check, hostname_check
     except Exception as ex:
-        LOGGER.error(ex)
-        trace = traceback.format_exc(ex)
-        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_MESSAGE.format(trace), EXCEPTION_SUBJECT)
+        LOGGER.exception(traceback.extract_stack())
+        LOGGER.info('*' * 80)
+        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
         return None, None
 
 

@@ -85,6 +85,8 @@ class TestJupiter(unittest.TestCase):
             'year': 2025, 'month': -10, 'day': 10, 'expected': None,
         }, {
             'year': 2025, 'month': 10, 'day': "15", 'expected': None,
+        }, {
+             'expected': True,
         }]
 
         for d in dates:

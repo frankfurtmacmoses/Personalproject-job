@@ -10,33 +10,89 @@ import logging
 import logging.config
 import yaml
 
-from watchmen.config import settings
+__80DOTS__ = ''*80
+__CONFIG__ = None  # initialized as None
+__YFNAME__ = 'logging.yaml'
 
 
-def get_logger(name, level=settings('logging.level', logging.DEBUG)):
+def get_logger(name, level=logging.DEBUG):
     """
-    Get a logger and load logging.yaml config file if exists
+    Get a logger and load logging.yaml config file if exists.
     """
+    load_logging_config()  # loading logging config if not loaded yet
+
+    if not isinstance(name, str) or not name.startswith('watchmen'):
+        name = 'watchmen.{}'.format(name)
+
+    # print('setting logger[{}] level:{}'.format(name, level))
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    return logger
+
+
+def load_logging_config():
+    """
+    Load logging configuration.
+    """
+    global __CONFIG__
+
+    if __CONFIG__:
+        # only need to call logging.config once
+        # logging.config.dictConfig(__CONFIG__)
+        return  # logging config has already been loaded
+
     # Set a basic level of logging
-    logging.basicConfig(level=logging.DEBUG)
-    logging.getLogger('boto3').setLevel('ERROR')
-    logging.getLogger('botocore').setLevel('ERROR')
-    logging.getLogger('nose').setLevel('ERROR')
+    logging.basicConfig(level=logging.INFO)
 
     # Get the path to the logging config yaml
     dir_py_file = os.path.dirname(os.path.realpath(__file__))
     dir_project = os.path.dirname(dir_py_file)
-    cfg_logging = os.path.join(dir_project, 'logging.yaml')
+    yml_logging = os.path.join(dir_project, __YFNAME__)
 
     # Load up the logger based on the configs
-    if os.path.exists(cfg_logging):
-        with open(cfg_logging, 'rt') as file_handle:
-            config = yaml.load(file_handle.read())
+    # print('checking "{}" ...'.format(yml_logging))
+    if os.path.exists(yml_logging):
+        with open(yml_logging, 'r') as file_stream:
+            config = yaml.load(file_stream.read(), Loader=yaml.FullLoader)
             logging.config.dictConfig(config)
+            print_logging_config(config)
+            __CONFIG__ = config
 
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    return logger
+
+def print_logging_config(config):
+    """
+    Print logging config.
+    """
+    print(__80DOTS__)
+    print('-- {}: {}\n'.format(__YFNAME__, config))
+    # import json
+    # print(__80DOTS__)
+    # print('-- {}:\n{}\n'.format(
+    #     __YFNAME__, json.dumps(config, sort_keys=True, indent=2)))
+    # print(__80DOTS__)
+    pass
+
+
+def print_info():
+    """
+    Print system and environment info.
+    """
+    import sys
+    print('System version:', sys.version.replace('\n', ' '))
+    print_pypath()
+
+
+def print_pypath():
+    """
+    Print out Python path.
+    """
+    import sys
+    print('System version:', sys.version.replace('\n', ' '))
+    print('\nPYTHONPATH\n{}'.format(__80DOTS__))
+    for pylib_path in sys.path:
+        print(pylib_path)
+    print(__80DOTS__)
+    pass
 
 
 def raise_ni(method_name):

@@ -5,7 +5,7 @@
 # date: 2019-01-28
 """
 import json
-import httplib
+import http
 import logging
 import requests
 import traceback
@@ -15,7 +15,7 @@ from watchmen.utils.logger import get_logger
 
 # pylint: disable=no-member
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
-DEBUG_LEVEL = DEBUG_LEVEL = get_uint('debug.level', logging.INFO)
+DEBUG_LEVEL = get_uint('debug.level', logging.INFO)
 LOGGER = get_logger(__name__, level=DEBUG_LEVEL)
 
 
@@ -52,12 +52,12 @@ def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
         elif not res:
             LOGGER.error('- unable to open api request: {}'.format(api_url))
         else:
-            LOGGER.debug('- response:\n%s', res.info())
+            LOGGER.debug('- response headers:\n%s', res.headers)
             LOGGER.error('- status: %s, request: %s', _status, api_url)
     except requests.Timeout:
         message = 'unable to complete request within allotted timeout period'
         LOGGER.error('- %s: %s', message, api_url)
-        _status = httplib.REQUEST_TIMEOUT
+        _status = http.client.REQUEST_TIMEOUT
     except Exception:
         message = 'unable to read data from request'
         LOGGER.error('- %s: %s', message, api_url)

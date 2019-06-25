@@ -2,6 +2,8 @@
 Created on May 23, 2017
 @author: daltondb
 """
+import importlib
+
 import unittest
 import datetime
 import pytz
@@ -99,7 +101,7 @@ class TestRorschach(unittest.TestCase):
         mock_datetime.now.return_value = self.example_now
         mock_timedelta.return_value = self.example_dt_offset
         mock_getenv.side_effect = [self.prefix_env, self.bucket_env]
-        reload(rorschach)
+        importlib.reload(rorschach)
         return rorschach.RorschachWatcher()
 
     @staticmethod

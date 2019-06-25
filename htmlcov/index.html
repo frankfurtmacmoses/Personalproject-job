@@ -1,0 +1,455 @@
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Coverage report</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+    
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.ba-throttle-debounce.min.js"></script>
+    <script type="text/javascript" src="jquery.tablesorter.min.js"></script>
+    <script type="text/javascript" src="jquery.hotkeys.js"></script>
+    <script type="text/javascript" src="coverage_html.js"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(coverage.index_ready);
+    </script>
+</head>
+<body class="indexfile">
+
+<div id="header">
+    <div class="content">
+        <h1>Coverage report:
+            <span class="pc_cov">98%</span>
+        </h1>
+
+        <img id="keyboard_icon" src="keybd_closed.png" alt="Show keyboard shortcuts" />
+
+        <form id="filter_container">
+            <input id="filter" type="text" value="" placeholder="filter..." />
+        </form>
+    </div>
+</div>
+
+<div class="help_panel">
+    <img id="panel_icon" src="keybd_open.png" alt="Hide keyboard shortcuts" />
+    <p class="legend">Hot-keys on this page</p>
+    <div>
+    <p class="keyhelp">
+        <span class="key">n</span>
+        <span class="key">s</span>
+        <span class="key">m</span>
+        <span class="key">x</span>
+        
+        <span class="key">c</span> &nbsp; change column sorting
+    </p>
+    </div>
+</div>
+
+<div id="index">
+    <table class="index">
+        <thead>
+            
+            <tr class="tablehead" title="Click to sort">
+                <th class="name left headerSortDown shortkey_n">Module</th>
+                <th class="shortkey_s">statements</th>
+                <th class="shortkey_m">missing</th>
+                <th class="shortkey_x">excluded</th>
+                
+                <th class="right shortkey_c">coverage</th>
+            </tr>
+        </thead>
+        
+        <tfoot>
+            <tr class="total">
+                <td class="name left">Total</td>
+                <td>2097</td>
+                <td>42</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="2055 2097">98%</td>
+            </tr>
+        </tfoot>
+        <tbody>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen___init___py.html">watchmen/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_api___init___py.html">watchmen/api/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_api___models_py.html">watchmen/api/__models.py</a></td>
+                <td>9</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="9 9">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_api___route_py.html">watchmen/api/__route.py</a></td>
+                <td>33</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="33 33">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_api_v1___init___py.html">watchmen/api/v1/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_api_v1_info_py.html">watchmen/api/v1/info.py</a></td>
+                <td>15</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="15 15">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_api_v1_py.html">watchmen/api_v1.py</a></td>
+                <td>5</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="5 5">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_app_py.html">watchmen/app.py</a></td>
+                <td>6</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="6 6">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_app_config_py.html">watchmen/app_config.py</a></td>
+                <td>25</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="25 25">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_app_connexion_py.html">watchmen/app_connexion.py</a></td>
+                <td>58</td>
+                <td>1</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="57 58">98%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_app_fastapi_py.html">watchmen/app_fastapi.py</a></td>
+                <td>11</td>
+                <td>2</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="9 11">82%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_common___init___py.html">watchmen/common/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_common_api_py.html">watchmen/common/api.py</a></td>
+                <td>40</td>
+                <td>7</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="33 40">82%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_common_cal_py.html">watchmen/common/cal.py</a></td>
+                <td>130</td>
+                <td>10</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="120 130">92%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_common_sum_result_py.html">watchmen/common/sum_result.py</a></td>
+                <td>25</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="25 25">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_common_svc_checker_py.html">watchmen/common/svc_checker.py</a></td>
+                <td>165</td>
+                <td>1</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="164 165">99%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_config_py.html">watchmen/config.py</a></td>
+                <td>93</td>
+                <td>4</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="89 93">96%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_config_gunicorn_py.html">watchmen/config_gunicorn.py</a></td>
+                <td>82</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="82 82">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_config_uvicorn_py.html">watchmen/config_uvicorn.py</a></td>
+                <td>82</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="82 82">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_main_py.html">watchmen/main.py</a></td>
+                <td>6</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="6 6">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process___init___py.html">watchmen/process/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_endpoints_py.html">watchmen/process/endpoints.py</a></td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="1 1">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_generic_watchmen_py.html">watchmen/process/generic_watchmen.py</a></td>
+                <td>26</td>
+                <td>1</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="25 26">96%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_jupiter_py.html">watchmen/process/jupiter.py</a></td>
+                <td>160</td>
+                <td>15</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="145 160">91%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_manhattan_py.html">watchmen/process/manhattan.py</a></td>
+                <td>108</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="108 108">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_moloch_py.html">watchmen/process/moloch.py</a></td>
+                <td>62</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="62 62">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_ozymandias_py.html">watchmen/process/ozymandias.py</a></td>
+                <td>41</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="41 41">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_rorschach_py.html">watchmen/process/rorschach.py</a></td>
+                <td>113</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="113 113">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_silhouette_py.html">watchmen/process/silhouette.py</a></td>
+                <td>50</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="50 50">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_process_spectre_py.html">watchmen/process/spectre.py</a></td>
+                <td>49</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="49 49">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils___init___py.html">watchmen/utils/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_dynamo_py.html">watchmen/utils/dynamo.py</a></td>
+                <td>19</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="19 19">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_ecs_py.html">watchmen/utils/ecs.py</a></td>
+                <td>22</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="22 22">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_extension_py.html">watchmen/utils/extension.py</a></td>
+                <td>149</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="149 149">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_feeds_py.html">watchmen/utils/feeds.py</a></td>
+                <td>54</td>
+                <td>1</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="53 54">98%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_logger_py.html">watchmen/utils/logger.py</a></td>
+                <td>45</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="45 45">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_logger_formatter_py.html">watchmen/utils/logger_formatter.py</a></td>
+                <td>54</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="54 54">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_s3_py.html">watchmen/utils/s3.py</a></td>
+                <td>313</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="313 313">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_s3_storage_py.html">watchmen/utils/s3_storage.py</a></td>
+                <td>30</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="30 30">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="watchmen_utils_sns_alerts_py.html">watchmen/utils/sns_alerts.py</a></td>
+                <td>16</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="16 16">100%</td>
+            </tr>
+            
+        </tbody>
+    </table>
+
+    <p id="no_rows">
+        No items found using the specified filter.
+    </p>
+</div>
+
+<div id="footer">
+    <div class="content">
+        <p>
+            <a class="nav" href="https://coverage.readthedocs.io">coverage.py v4.5.3</a>,
+            created at 2019-06-25 17:31
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

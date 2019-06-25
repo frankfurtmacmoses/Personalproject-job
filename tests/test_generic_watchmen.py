@@ -18,7 +18,7 @@ class TestUniversalWatchman(unittest.TestCase):
     def test_monitor(self):
         with self.assertRaises(NotImplementedError) as error:
             self.example_watchmen.monitor()
-        self.assertEqual(error.exception.message, NOT_IMPLEMENTED_MESSAGE)
+        self.assertEqual(str(error.exception), NOT_IMPLEMENTED_MESSAGE)
 
     @patch('watchmen.process.generic_watchmen.raise_alarm')
     def test_notify(self, mock_alarm):
@@ -54,4 +54,4 @@ class TestUniversalWatchman(unittest.TestCase):
         for test in non_dict_tests:
             with self.assertRaises(TypeError) as error:
                 self.example_watchmen.notify(test, self.example_topic)
-            self.assertEqual(error.exception.message, RESULTS_TYPE_ERROR)
+            self.assertEqual(str(error.exception), RESULTS_TYPE_ERROR)

@@ -1,10 +1,39 @@
 api:
-  timeout: 7
+  spec:
+    file: swagger.yaml
+    icon: favicon.ico
+    path: apidoc
+    version: v1
+  name: Watchmen Project
+  desc: internal monitoring systems...
+  host: 0.0.0.0
+  port: 8080
+  path: api
+  enable_ssl: false
+  cert_key: apidoc/cert.key
+  cert_pem: apidoc/cert.pem
+  timeout: 30
+  version: 1.0.0
+  debug: true
 
 aws:
+  environment: test
   s3:
     bucket: cyber-intel-test
     prefix: watchmen
+
+debug:
+  # CRITICAL/FATAL = 50, ERROR = 40, WARNING/WARN = 30, INFO = 20, DEBUG = 10
+  level: 20
+
+env: dev
+
+mysql:
+  database:
+  host:
+  port: 3306
+  username: admin
+  password:
 
 ecs:
   feeds:

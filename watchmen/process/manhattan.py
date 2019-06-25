@@ -114,36 +114,54 @@ def find_bad_feeds(event_type):
     @param event_type: Whether the check is Weekly, Daily, or Hourly
     @return: tuple of lists: list of all the down feeds and list of out of range feeds or None upon exception
     """
-    # TODO:  Refactor to use a dictionary instead of if-else statements
 
     downed_feeds = []
     submitted_out_of_range_feeds = []
 
     try:
         end = datetime.now(tz=pytz.utc)
-        if event_type == HOURLY:
-            start = end - timedelta(hours=1)
-            downed_feeds = process_feeds_logs(FEEDS_HOURLY_NAMES, start, end)
-            submitted_out_of_range_feeds = process_feeds_metrics(
-                FEEDS_TO_CHECK_HOURLY, TABLE_NAME, 0
+        event_type_content = {
+            HOURLY: {
+                "feeds_names": FEEDS_HOURLY_NAMES,
+                "start": end - timedelta(hours=1),
+                "end": end,
+                "feeds_to_check": FEEDS_TO_CHECK_HOURLY,
+                "table_name": TABLE_NAME,
+                "time_string_choice": 0,
+            },
+            DAILY: {
+                "feeds_names": FEEDS_DAILY_NAMES,
+                "start": end - timedelta(days=1),
+                "end": end,
+                "feeds_to_check": FEEDS_TO_CHECK_DAILY,
+                "table_name": TABLE_NAME,
+                "time_string_choice": 1,
+            },
+            WEEKLY: {
+                "feeds_names": FEEDS_WEEKLY_NAMES,
+                "start": end - timedelta(days=7),
+                "end": end,
+                "feeds_to_check": FEEDS_TO_CHECK_WEEKLY,
+                "table_name": TABLE_NAME,
+                "time_string_choice": 2,
+            }
+        }
+        if event_type in event_type_content:
+            downed_feeds = process_feeds_logs(
+                event_type_content.get(event_type).get("feeds_names"),
+                event_type_content.get(event_type).get("start"),
+                event_type_content.get(event_type).get("end")
             )
-        elif event_type == DAILY:
-            start = end - timedelta(days=1)
-            downed_feeds = process_feeds_logs(FEEDS_DAILY_NAMES, start, end)
             submitted_out_of_range_feeds = process_feeds_metrics(
-                FEEDS_TO_CHECK_DAILY, TABLE_NAME, 1
-            )
-        elif event_type == WEEKLY:
-            start = end - timedelta(days=7)
-            downed_feeds = process_feeds_logs(FEEDS_WEEKLY_NAMES, start, end)
-            submitted_out_of_range_feeds = process_feeds_metrics(
-                FEEDS_TO_CHECK_WEEKLY, TABLE_NAME, 2
+                event_type_content.get(event_type).get("feeds_to_check"),
+                event_type_content.get(event_type).get("table_name"),
+                event_type_content.get(event_type).get("time_string_choice")
             )
         return downed_feeds, submitted_out_of_range_feeds
     except Exception as ex:
-        LOGGER.error(ex)
-        trace = traceback.format_exc(ex)
-        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_BODY_MESSAGE.format(trace), SUBJECT_EXCEPTION_MESSAGE)
+        LOGGER.exception(traceback.extract_stack())
+        LOGGER.info('*' * 80)
+        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
         return None
 
 
@@ -156,9 +174,9 @@ def find_stuck_tasks():
         stuck_tasks = get_stuck_ecs_tasks(CLUSTER_NAME)
         return stuck_tasks
     except Exception as ex:
-        LOGGER.error(ex)
-        trace = traceback.format_exc(ex)
-        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_BODY_MESSAGE.format(trace), SUBJECT_EXCEPTION_MESSAGE)
+        LOGGER.exception(traceback.extract_stack())
+        LOGGER.info('*' * 80)
+        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
         return None
 
 
@@ -259,5 +277,5 @@ def summarize(event_type, stuck_tasks, bad_feeds):
         "subject": subject_line,
         "message": message_body,
         "success": success,
-        "pager_message": pager_message
+        "pager_message": pager_message,
     }

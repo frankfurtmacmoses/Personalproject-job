@@ -3,28 +3,34 @@
 # Build AWS Lambda Function
 #
 # Command line arguments:
-#   $1 - target feature identifier, e.g. dataUploader
-#        or using "all" (optionally omitted) to pack all code
-#
-# Dependencies:
-#   tools/deploy-watchmen.json
+#   $1 - environment, e.g. 'dev', test' (default), 'prod'
 #
 ######################################################################
-set -eo pipefail
-script_file="${BASH_SOURCE[0]##*/}"
-script_base="$( cd "$( echo "${BASH_SOURCE[0]%/*}/.." )" && pwd )"
-script_path="${script_base}/tools/${script_file}"
+set +x
+script_file="$( readlink "${BASH_SOURCE[0]}" 2>/dev/null || echo ${BASH_SOURCE[0]} )"
+script_name="${script_file##*/}"
+script_base="$( cd "$( echo "${script_file%/*}/.." )" && pwd )"
+script_path="$( cd "$( echo "${script_file%/*}" )" && pwd )"
 builds_path="${script_base}/builds"
 
 PROJECT="watchmen"
-ARG_FEAID="${1:-all}"
-CONFIGURATION="${script_base}/tools/deploy-${PROJECT}.json"
+FEATURE="${FEATURE:-cyberint-watchmen}"
+BUILD_ENV="${1:-${BUILD_ENV:-test}}"
+BUILD_PACKAGE="${FEATURE}-${BUILD_ENV}.zip"
 DEFAULT_BUILD="${PROJECT}-lambdas"
 DEFAULT_ARTIFACT="${DEFAULT_BUILD}.zip"
 SOURCE_DIR="${script_base}/${PROJECT}"
 REQUIREMENTS="${SOURCE_DIR}/requirements.txt"
 BUILDS_DIR="${BUILDS_DIR:-${builds_path}}"
 README="${BUILDS_DIR}/BUILD-INFO.txt"
+
+PYTHON_EXEC="python"
+PY_LIB_PATH="$(pip show pip | grep Location | awk '{print substr($0, index($0,$2))}')"
+DEF_VERSION="$(python  --version 2>&1 | grep 'Python' | awk '{print $2}')"
+PY2_VERSION="$(python2 --version 2>&1 | grep 'Python' | awk '{print $2}')"
+PY3_VERSION="$(python3 --version 2>&1 | grep 'Python' | awk '{print $2}')"
+USE_PYTHON3="${USE_PYTHON3:-true}"
+PIP_COMMAND="pip"
 
 
 function main() {
@@ -40,33 +46,57 @@ function main() {
   fi
   set -u
 
+  check_python
   check_depends
   check_deploy_args
 
   echo ""
-  echo "--- Building ${ALF_DEFN} ---"
+  echo "--- Building ${FEATURE} ---"
+  echo ""
   build
 
   check_git_commit
 
   echo ""
-  echo "${PROJECT} ${ARG_FEAID} package is ready: ${builds_path}/${ALF_ZIPF}"
-  echo "--------------------------------------------------------------------"
+  echo "${PROJECT} package is ready: ${builds_path}/${BUILD_PACKAGE}"
+  echo "-----------------------------------------------------------------------"
   echo ""
 }
 
 function build() {
+  local pip_args='--install-option="--prefix="'
+  local conf_yml='<default config.yaml>'
+
   cd -P "${script_base}" && pwd
-  rm -rf ${builds_path}/${ALF_DEFN}
-  rm -rf ${builds_path}/${ALF_ZIPF}
+  rm -rf ${builds_path}/${FEATURE}
+  rm -rf ${builds_path}/${BUILD_PACKAGE}
   mkdir -p ${builds_path}
-  pip install -r "${REQUIREMENTS}" -t ${builds_path}/${ALF_DEFN}
-  cp -rf ${SOURCE_DIR} ${builds_path}/${ALF_DEFN}
-  cp -rf ${SOURCE_DIR}/main.py ${builds_path}/${ALF_DEFN}/handler.py
-  rm -rf ${builds_path}/${ALF_DEFN}/${PROJECT}/logging.yaml
-  cd ${builds_path}/${ALF_DEFN} && zip -r ../${ALF_ZIPF} .
+  # cp -f "${script_base}/setup.cfg" "${script_base}/${PROJECT}/setup.cfg"
+  echo "......................................................................."
+  cat "${REQUIREMENTS}"
+  echo "......................................................................."
+  ${PIP_COMMAND} install --upgrade -r "${REQUIREMENTS}" \
+    -t ${builds_path}/${FEATURE}
+  echo "......................................................................."
+  cp -rf ${SOURCE_DIR} ${builds_path}/${FEATURE}
+  cp -rf ${SOURCE_DIR}/main.py ${builds_path}/${FEATURE}/handler.py
+  rm -rf ${builds_path}/${FEATURE}/${PROJECT}/logging.yaml
+
+  if [[ -e ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ]]; then
+    log_trace "- copying config-${BUILD_ENV}.yaml to build ..."
+    cp -rf ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ${builds_path}/${FEATURE}/config.yaml
+    conf_yml=${SOURCE_DIR}/config-${BUILD_ENV}.yaml
+    echo ""
+  fi
+  cd ${builds_path}/${FEATURE} && zip -r ../${BUILD_PACKAGE} .
   cd -P "${script_base}" && pwd
-  rm -rf ${builds_path}/${ALF_DEFN}
+
+  echo ""
+  echo "======================================================================="
+  echo "NOTE: This build is using: ${conf_yml}"
+  echo "======================================================================="
+  log_trace "- removing ${builds_path}/${FEATURE} ..."
+  rm -rf ${builds_path}/${FEATURE}
 }
 
 # check_depends(): verifies preset environment variables exist
@@ -81,44 +111,6 @@ function check_depends() {
       log_error "Cannot find command '${tool}'"
     fi
   done
-
-  if [[ ! -e "${CONFIGURATION}" ]]; then
-    log_error "Cannot find deployment config file: '${CONFIGURATION}'"
-  fi
-
-  ALF_META="$(jq -r .functions.${ARG_FEAID} ${CONFIGURATION})"
-  if [[ "${ALF_META}" == "null" ]] || [[ "${ALF_META}" == "" ]]; then
-    echo "Checking build target in: "`jq -r ".functions|keys[]" ${CONFIGURATION}`
-    echo ""
-    if [[ "${ARG_FEAID}" != "all" ]]; then
-      log_error "Cannot find a valid build target: ${ARG_FEAID}"
-    fi
-  fi
-  set -u
-}
-
-# check_deploy_args(): verifies command line arguments
-function check_deploy_args() {
-  if [[ "${ARG_FEAID}" == "all" ]]; then
-    echo "Using default build artifact: ${DEFAULT_ARTIFACT}"
-    ALF_DEFN="${DEFAULT_BUILD}"
-    ALF_ZIPF="${DEFAULT_ARTIFACT}"
-    return
-  fi
-
-  set +u
-  echo "......................................................................."
-  echo "Checking arguments for target: ${ARG_FEAID}"
-  ALF_DEFN="$(jq -r .functions.${ARG_FEAID}.name ${CONFIGURATION})"
-  ALF_DESC="$(jq -r .functions.${ARG_FEAID}.description ${CONFIGURATION})"
-  ALF_ZIPF="$(jq -r .functions.${ARG_FEAID}.zip ${CONFIGURATION})"
-
-  # check if target function description exists
-  echo "Checking function description ..."
-  if [[ "${ALF_DESC}" == "null" ]] || [[ "${ALF_DESC}" == "" ]]; then
-    log_error "Cannot find AWS Lambda Function description for target: ${ARG_FEAID}"
-  fi
-  set -u
 }
 
 # check_git_commit(): check git commit and create build description
@@ -131,7 +123,58 @@ function check_git_commit() {
   if [[ "${commit_sha}" != "" ]]; then
     git show ${commit_sha} --raw | tee "${README}"
     echo "----------------------------------------" >> "${README}"
-    git branch -v >> "${README}"
+    git branch -v | grep '^*' >> "${README}"
+  fi
+}
+
+# check python version and environment
+function check_python() {
+  if [[ "${USE_PYTHON3}" =~ (1|enable|on|true|yes) ]]; then
+    if [[ "${DEF_VERSION:0:1}" == "3" ]]; then
+      check_python_pip_
+    elif [[ "${PY3_VERSION:0:1}" == "3" ]]; then
+      PYTHON_EXEC="python3"
+      check_python_pip_ "3"
+    else
+      log_error "Cannot find python3."
+    fi
+  elif [[ "${USE_PYTHON2}" =~ (1|enable|on|true|yes) ]]; then
+    if [[ "${PY2_VERSION:0:1}" == "2" ]]; then
+      PYTHON_EXEC="python2"
+      check_python_pip_ "2"
+    elif [[ "${DEF_VERSION:0:1}" != "2" ]]; then
+      log_error "Cannot find python2."
+    fi
+    check_python_pip_
+  elif [[ "${DEF_VERSION:0:1}" == "3" ]]; then
+    USE_PYTHON3="true"
+    check_python_pip_
+  fi
+
+  echo ""
+  echo "Using $(${PYTHON_EXEC} --version 2>&1) [${PIP_COMMAND}] ..."
+
+  if [[ "${PIP_COMMAND}" == "pip3" ]]; then
+    if ! [[ -x "$(which pip3)" ]]; then
+      log_error "Cannot find command 'pip3'."
+    fi
+  fi
+}
+
+# check python pip
+function check_python_pip_() {
+  set +u
+  local _py_version_="${1}"  # should only be "", "2", or "3"
+  local _python_pip_="pip${_py_version_//2/}"
+  local _python_bin_="python${_py_version_//2/}"
+  local _python_ver_="$( ${_python_bin_} -m pip -V 2>/dev/null | awk -F '[()]' '{print $2}')"
+
+  if [[ "${_python_ver_}" != "" ]]; then
+    PIP_COMMAND="${_python_bin_} -m pip"
+  elif [[ -x "$(which ${_python_pip_})" ]]; then
+    PIP_COMMAND="${_python_pip_}"
+  else
+    log_error "Cannot find command '${_python_pip_}'."
   fi
 }
 
@@ -150,23 +193,37 @@ function check_return_code() {
 
 # log_error() func: exits with non-zero code on error unless $2 specified
 function log_error() {
+  set +u
   log_trace "$1" "ERROR" $2
 }
 
 # log_fatal() func: exits with non-zero code on fatal failure unless $2 specified
 function log_fatal() {
+  set +u
   log_trace "$1" "FATAL" $2
 }
 
 # log_trace() func: print message at level of INFO, DEBUG, WARNING, or ERROR
 function log_trace() {
+  set +u
   local err_text="${1:-Here}"
   local err_name="${2:-INFO}"
   local err_code="${3:-1}"
 
   if [[ "${err_name}" == "ERROR" ]] || [[ "${err_name}" == "FATAL" ]]; then
     HAS_ERROR="true"
+    echo ''
+    echo '                                                      \\\^|^///  '
+    echo '                                                     \\  - -  // '
+    echo '                                                      (  @ @  )  '
+    echo '----------------------------------------------------oOOo-(_)-oOOo-----'
     echo -e "\n${err_name}: ${err_text}" >&2
+    echo '                                                            Oooo '
+    echo '-----------------------------------------------------oooO---(   )-----'
+    echo '                                                     (   )   ) / '
+    echo '                                                      \ (   (_/  '
+    echo '                                                       \_)       '
+    echo ''
     exit ${err_code}
   else
     echo -e "\n${err_name}: ${err_text}"
