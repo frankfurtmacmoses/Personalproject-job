@@ -22,16 +22,15 @@ script_base="$( cd "$( echo "${script_file%/*}/.." )" && pwd )"
 script_path="$( cd "$( echo "${script_file%/*}" )" && pwd )"
 
 GITHUB_REPO="${GITHUB_REPO:-cyberint-watchmen}"
-GITHUB_USER="${GITHUB_USER:-jinchiZ}"
+GITHUB_USER="${GITHUB_USER:-Infoblox-CTO}"
 DOCKER_USER="${DOCKER_USER:-infobloxcto}"
 DOCKER_NAME="${DOCKER_NAME:-watchmen}"
 DOCKER_IMAG="${DOCKER_USER}/${DOCKER_NAME}"
 DOCKER_PORT="${DOCKER_PORT:-8080}"
-DOCKER_PORT_TEST="$(((8080 + 10000) % 65535))"
+DOCKER_PORT_TEST="8181"
 DOCKER_HOST_NAME="${DOCKER_NAME}"
 DOCKER_EXEC="run"
 
-DOCKER_FILE=${DOCKER_FILE:-Dockerfile}
 DOCKER_TAGS=$(docker images 2>&1|grep ${DOCKER_IMAG}|awk '{print $1;}')
 # detect if the process running inside the container
 DOCKER_PROC="$(cat /proc/1/cgroup 2>&1|grep -e "/docker/[0-9a-z]\{64\}"|head -1)"
@@ -85,9 +84,7 @@ function main() {
 
   # run make directly if already inside the container
   if [[ -e "/.dockerenv" ]] || [[ "${DOCKER_PROC}" != "" ]]; then
-    if [[ "${MAKE_ARGS}" != "docker" ]]; then
-      make ${MAKE_ARGS}
-    fi
+    make ${MAKE_ARGS}
     return
   fi
 
@@ -98,10 +95,6 @@ function main() {
     echo "-----------------------------------------------------------------------"
     docker build -t ${DOCKER_IMAG} .
     echo "-----------------------------------------------------------------------"
-    if [[ "${MAKE_ARGS}" == "docker" ]]; then
-      echo -e "\nDocker image [${DOCKER_IMAG}] is ready.\n"
-      return
-    fi
   fi
 
   # configure and start the container
@@ -119,8 +112,6 @@ function main() {
     -e BUILD_MASTER_VERSION
     -e BUILD_VERSION="${BUILD_VERSION:-1.0}"
     -e BUILDS_DIR
-    -e DOCKER_FILE
-    -e DOCKER_PORT
     -e LOCAL_USER_ID=${LOCAL_USER_ID:-$(id -u)}
     -e LOCAL_GROUP_ID=${LOCAL_GROUP_ID:-$(id -g)}
     -e USER

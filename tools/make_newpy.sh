@@ -31,12 +31,6 @@ _COPY_BASE_="example"
 _TEMP_PATH_="/tmp/__new_python_project_templ__"
 _TMPL_PATH_="${script_base}/docs/templ"
 _TOOL_PATH_="${script_base}/tools"
-# settings for python api framework
-_PAPI_SPEC_FIRST_="connexion"
-_PAPI_CODE_FIRST_="fastapi"
-# settings for using config_*.py for gunicorn wsgi
-_WSGI_SPEC_FIRST_="gunicorn"
-_WSGI_CODE_FIRST_="uvicorn"
 _DELIMITER_="------------------------------------------------------------------------"
 _DOT_SPLIT_="........................................................................"
 _BOX_TITLE_="
@@ -50,7 +44,6 @@ __AUTHOR_NAME__="$(git config --get user.name 2>/dev/null)"
 __AUTHOR_EMAIL__="$(git config --get user.email 2>/dev/null)"
 __CODECOV_TOKEN__="${CODECOV_TOKEN}"
 __DOCKER_CONTAINER_NAME__=
-__DOCKER_PORT__="8080"
 __DOCKER_USER_OR_ORGANIZATION_NAME__="${DOCKER_USER:-${docker_user:-infobloxcto}}"
 __GITHUB_USER_OR_ORGANIZATION__=
 __GITHUB_REPOSITORY_NAME__=""
@@ -65,9 +58,6 @@ __PROJECT_TITLE__=
 __PROJECT_URL__=
 __REPOSITORY_DIRECTORY__=""
 __TEST_COVERAGE_THRESHOLD__="90"
-__API_APP_MODULE__="${_PAPI_SPEC_FIRST_}"  # using spec-first framework by default
-__API_APP_WSGI__="${_WSGI_SPEC_FIRST_}"
-__API_VERSION__="v1"
 __VERSION__="1.0.0"
 
 
@@ -112,7 +102,6 @@ function check_all_inputs() {
   check_input_python_module
   check_input_project_info
   check_input_docker_hostname
-  check_input_docker_port
   check_input_docker_user
   check_input_author
   check_input_author_email
@@ -144,10 +133,6 @@ function check_depends() {
       log_error "Cannot find command: '${cmd}'"
     fi
   done
-
-  if [[ ! -d "${_TMPL_PATH_}" ]]; then
-    log_error "Cannot find templates in '${_TMPL_PATH_}'."
-  fi
 }
 
 function check_input_author() {
@@ -173,11 +158,10 @@ function check_input_author() {
   done
 }
 
-# see http://emailregex.com/
 function check_input_author_email() {
   local _stdin_=''
   local _valid_='false'
-  local _regex_='^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+'
+  local _regex_='^[a-z]{1,10}([._-]?[a-z]{1,10})*@[a-z]{1,15}([._-]?[a-z]{1,15})$'
   while [[ "${_valid_}" == "false" ]]; do
     read -p "Author e-mail (${__AUTHOR_EMAIL__:-N/A}): " _stdin_
     if [[ "${_stdin_}" =~ ^\s*$ ]] && [[ "${__AUTHOR_EMAIL__}" =~ ${_regex_} ]]; then
@@ -243,31 +227,10 @@ function check_input_docker_hostname() {
   done
 }
 
-function check_input_docker_port() {
-  local _stdin_=''
-  local _valid_='false'
-  local _regex_='^([1-9][0-9]{1,3})$'
-  while [[ "${_valid_}" == "false" ]]; do
-    read -p "Docker or API service port (${__DOCKER_PORT__}): " _stdin_
-    if [[ "${_stdin_}" =~ ^\s*$ ]] && [[ "${__DOCKER_PORT__}" =~ ${_regex_} ]]; then
-      _valid_="true"
-    elif [[ "${_stdin_}" =~ ${_regex_} ]]; then
-      __DOCKER_PORT__="${_stdin_}"
-      _valid_="true"
-    else
-      echo "${_DOT_SPLIT_}"
-      echo 'Docker or API service port is validated by regex:'
-      echo ''
-      echo "    ${_regex_}"
-      echo ''
-    fi
-  done
-}
-
 function check_input_docker_user() {
   local _stdin_=''
   local _valid_='false'
-  local _regex_='^[a-z][a-z0-9]{1,19}$'
+  local _regex_='^[a-z]{1,19}$'
   while [[ "${_valid_}" == "false" ]]; do
     read -p "Docker user/organization (${__DOCKER_USER_OR_ORGANIZATION_NAME__:-N/A}): " _stdin_
     if [[ "${_stdin_}" =~ ^\s*$ ]] && [[ "${__DOCKER_USER_OR_ORGANIZATION_NAME__}" =~ ${_regex_} ]]; then
@@ -423,7 +386,6 @@ function check_input_project_info() {
   local _regex_='^[A-Z][-~a-zA-Z_.0-9 ]{5,25}$'
   while [[ "${_valid_}" == "false" ]]; do
     read -p "Project title (${__PROJECT_TITLE__:-N/A}): " _stdin_
-    if [[ "${_stdin_}" == "proj" ]]; then continue; fi
     if [[ "${_stdin_}" =~ ^\s*$ ]] && [[ "${__PROJECT_TITLE__}" =~ ${_regex_} ]]; then
       _valid_="true"
     elif [[ "${_stdin_}" =~ ${_regex_} ]]; then
@@ -440,8 +402,6 @@ function check_input_project_info() {
 
   check_input_project_codename
   check_input_version
-  check_input_api_version
-  check_input_api_options
   check_input_subject
 
   read -p "Project description (optional): " __PROJECT_DESCRIPTION__
@@ -458,6 +418,7 @@ function check_input_python_module() {
   local _regex_='^[a-zA-Z][0-9a-zA-Z_]{1,15}$'
   while [[ "${_valid_}" == "false" ]]; do
     read -p "Project top level module (${__PYTHON_MODULE__:-N/A}): " _stdin_
+    if [[ "${_stdin_}" == "proj" ]]; then continue; fi
     if [[ "${_stdin_}" =~ ^\s*$ ]] && [[ "${__PYTHON_MODULE__}" =~ ${_regex_} ]]; then
       __PROJECT_FOLDER_AS_PYTHON_TOP_MODULE_NAME__="${__PYTHON_MODULE__}"
       _valid_="true"
@@ -499,48 +460,6 @@ function check_input_subject() {
     else
       echo "${_DOT_SPLIT_}"
       echo 'Project subject is validated by regex:'
-      echo ''
-      echo "    ${_regex_}"
-      echo ''
-    fi
-  done
-}
-
-function check_input_api_options() {
-  local _query_="Use spec-first API template"
-  local _stdin_=""
-  echo ""
-  echo "${_DOT_SPLIT_}"
-  echo 'Python API Framework template options:'
-  echo '  * spec-first using connexion/flask with gunicorn wsgi'
-  echo '  * code-first using fastapi with gunicorn/uvicorn'
-  echo ''
-  echo "${_DELIMITER_}"
-  read -p "${_query_} (y/n): " _stdin_
-  shopt -s nocasematch
-  if [[ ! "${_stdin_}" =~ ^\s*$ ]] && [[ ! "${_stdin_}" =~ ^(okay|sure|yes|yeah|ye|y)$ ]]; then
-    echo ""
-    echo '  * using gunicorn/uvicorn wsgi for fastapi'
-    __API_APP_MODULE__="${_PAPI_CODE_FIRST_}"
-    __API_APP_WSGI__="${_WSGI_CODE_FIRST_}"
-    echo ""
-  fi
-}
-
-function check_input_api_version() {
-  local _stdin_=''
-  local _valid_='false'
-  local _regex_='^v[0-9]$'
-  while [[ "${_valid_}" == "false" ]]; do
-    read -p "Project API version (${__API_VERSION__:-v1}): " _stdin_
-    if [[ "${_stdin_}" =~ ^\s*$ ]] && [[ "${__API_VERSION__}" =~ ${_regex_} ]]; then
-      _valid_="true"
-    elif [[ "${_stdin_}" =~ ${_regex_} ]]; then
-      __API_VERSION__="${_stdin_}"
-      _valid_="true"
-    else
-      echo "${_DOT_SPLIT_}"
-      echo 'Project API version is validated by regex:'
       echo ''
       echo "    ${_regex_}"
       echo ''
@@ -734,18 +653,6 @@ function copy_templates() {
   mkdir -p "${_dst_path_}"
   cp -Rf "${_src_path_}/${_COPY_BASE_}" "${_dst_path_}"
 
-  log_trace "Updating api version path to ${__API_VERSION__}"
-  mv "${_dst_path_}/${_COPY_BASE_}/proj/api/ver" \
-     "${_dst_path_}/${_COPY_BASE_}/proj/api/${__API_VERSION__}"
-  mv "${_dst_path_}/${_COPY_BASE_}/proj/apidoc/ver" \
-     "${_dst_path_}/${_COPY_BASE_}/proj/apidoc/${__API_VERSION__}"
-  mv "${_dst_path_}/${_COPY_BASE_}/proj/api_ver.py.templ" \
-     "${_dst_path_}/${_COPY_BASE_}/proj/api_${__API_VERSION__}.py.templ"
-  mv "${_dst_path_}/${_COPY_BASE_}/tests/test_api_ver_info.py.templ" \
-     "${_dst_path_}/${_COPY_BASE_}/tests/test_api_${__API_VERSION__}_info.py.templ"
-  mv "${_dst_path_}/${_COPY_BASE_}/tests/test_api_ver.py.templ" \
-     "${_dst_path_}/${_COPY_BASE_}/tests/test_api_${__API_VERSION__}.py.templ"
-
   local _pym_="${__PROJECT_FOLDER_AS_PYTHON_TOP_MODULE_NAME__:-${__PYTHON_MODULE__}}"
   local _dir_="${_dst_path_}/${_COPY_BASE_}/${_pym_}"
   local _msg_="Cannot create python module: ${_dir_}"
@@ -758,7 +665,6 @@ function copy_templates() {
     if [[ "${__DRY_RUN__}" == "true" ]]; then
       echo "  ::: dry-run processing file ${_file_}"
     else
-      # updating all place holders in each file
       create_project_file "${_file_}"
     fi
   done
@@ -817,14 +723,10 @@ function create_project_file() {
 
   local _pym_="${__PROJECT_FOLDER_AS_PYTHON_TOP_MODULE_NAME__:-${__PYTHON_MODULE__}}"
   while IFS='' read -r _line || [[ -n "${_line}" ]]; do
-    _line="${_line//\{\{__API_VERSION__\}\}/${__API_VERSION__}}"
-    _line="${_line//\{\{__API_APP_MODULE__\}\}/${__API_APP_MODULE__}}"
-    _line="${_line//\{\{__API_APP_WSGI__\}\}/${__API_APP_WSGI__}}"
     _line="${_line//\{\{__AUTHOR_NAME__\}\}/${__AUTHOR_NAME__}}"
     _line="${_line//\{\{__AUTHOR_EMAIL__\}\}/${__AUTHOR_EMAIL__}}"
     _line="${_line//\{\{__CODECOV_TOKEN__\}\}/${__CODECOV_TOKEN__}}"
     _line="${_line//\{\{__DOCKER_CONTAINER_NAME__\}\}/${__DOCKER_CONTAINER_NAME__}}"
-    _line="${_line//\{\{__DOCKER_PORT__\}\}/${__DOCKER_PORT__}}"
     _line="${_line//\{\{__DOCKER_USER_OR_ORGANIZATION_NAME__\}\}/${__DOCKER_USER_OR_ORGANIZATION_NAME__}}"
     _line="${_line//\{\{__GITHUB_USER_OR_ORGANIZATION__\}\}/${__GITHUB_USER_OR_ORGANIZATION__}}"
     _line="${_line//\{\{__GITHUB_REPOSITORY_NAME__\}\}/${__GITHUB_REPOSITORY_NAME__}}"
@@ -860,13 +762,9 @@ function display_inputs() {
   echo "     Github repository name : ${__GITHUB_REPOSITORY_NAME__}"
   echo "Docker user or organization : ${__DOCKER_USER_OR_ORGANIZATION_NAME__}"
   echo "      Docker container name : ${__DOCKER_CONTAINER_NAME__}"
-  echo " Docker or API service port : ${__DOCKER_PORT__}"
-  echo "        Project API version : ${__API_VERSION__}"
-  echo "      Project API Framework : ${__API_APP_MODULE__}"
-  echo "    Project API WSGI server : ${__API_APP_WSGI__}"
+  echo "   Test covergage threshold : ${__TEST_COVERAGE_THRESHOLD__} %"
   echo "Project/repository top path : ${__REPOSITORY_DIRECTORY__} ${_dir_tag_:-[new]}"
   echo "       Project logfile name : ${__PROJECT_LOG_NAME__}"
-  echo "   Test covergage threshold : ${__TEST_COVERAGE_THRESHOLD__} %"
   echo "              Codecov token : ${__CODECOV_TOKEN__}"
   echo "${_DOT_SPLIT_}"
   echo ""

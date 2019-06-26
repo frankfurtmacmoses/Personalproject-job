@@ -1,7 +1,7 @@
 """
 # setup module
 #
-# Author: Jason Zhu <jzhu@infoblox.com>
+# Author: Jason Zhu <jason_zhuyx@hotmail.com> (https://github.com/dockerian)
 #
 """
 import os
@@ -10,12 +10,12 @@ from setuptools import setup, find_packages
 
 NAME = 'watchmen'
 
-AUTHOR = 'Cyber Intel'
-AUTHOR_EMAIL = 'kramos@infoblox.com'
+AUTHOR = 'Jinchi Zhang'
+AUTHOR_EMAIL = 'jzhang@infoblox.com'
 BULD_VERSION = '1.0.0'  # in format of `<major>.<minor>.<release>`
 PROJECT_CODE_NAME = 'Watchmen'
-PROJECT_DESCRIPTION = 'internal monitoring systems'
-PROJECT_URL = 'https://github.com/jinchiZ/cyberint-watchmen'
+PROJECT_DESCRIPTION = ''
+PROJECT_URL = 'https://github.com/Infoblox-CTO/cyberint-watchmen'
 SUBJECT = 'Software'
 
 HERE = os.path.abspath(os.path.dirname(__file__))

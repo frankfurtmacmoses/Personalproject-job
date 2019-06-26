@@ -22,7 +22,6 @@ from watchmen.utils.extension import del_attr
 from watchmen.utils.extension import get_attr
 from watchmen.utils.extension import get_camel_title_word
 from watchmen.utils.extension import get_class
-from watchmen.utils.extension import get_func
 from watchmen.utils.extension import get_function
 from watchmen.utils.extension import get_hash
 from watchmen.utils.extension import get_json
@@ -33,13 +32,9 @@ from watchmen.utils.extension import pickle_to_str
 
 LOGGER = getLogger(__name__)
 
-FUNC_FOR_TEST = {
-    "func_name": "func_for_test"
-}
-
 
 def func_for_test():
-    return FUNC_FOR_TEST
+    pass
 
 
 class Bar():
@@ -66,22 +61,6 @@ class Bar():
 
     def func(self):
         pass
-
-
-class ClassRaiseError:
-    def __init__(self):
-        raise NotImplementedError
-
-
-class ClassTest():
-    def __init__(self, **kwargs):
-        self.args = kwargs
-
-    def merge_args(self, **kwargs):
-        import copy
-        copy_args = copy.deepcopy(self.args)
-        copy_args.update(kwargs)
-        return copy_args
 
 
 class EncodeTest(object):
@@ -378,44 +357,6 @@ class ExtensionTests(unittest.TestCase):
             result = get_class(test.get('class'), test.get('module'))
             self.assertIsNone(result)
 
-    def test_func(self):
-        """
-        test watchmen.utils.extension.get_func
-        """
-        class_args = {"a": 1, "b": 2}
-        func_params = {"x": 100, "y": 200, "z": 300}
-        merged = {**class_args, **func_params}
-        tests = [{
-            "cls_name": "ClassTest",
-            "cls_args": class_args,
-            "pkg_name": "tests.test_utils_extension",
-            "func_name": "merge_args",
-            "func_args": func_params,
-            "expected": merged,
-        }, {
-            "pkg_name": "tests.test_utils_extension",
-            "func_name": "func_for_test",
-            "expected": FUNC_FOR_TEST,
-        }]
-        for idx, test in enumerate(tests):
-            cls_name = test.get('cls_name')
-            cls_args = test.get('cls_args', {})
-            pkg_name = test.get('pkg_name')
-            func_name = test.get('func_name')
-            func_args = test.get('func_args')
-            expected = test.get('expected')
-            LOGGER.debug('Test %d: calling func: %s(%s)', idx, func_name, func_args)
-            func = get_func(func_name, pkg_name, cls_name, **cls_args)
-            self.assertIsNotNone(func, 'should have function object')
-            result = func(**func_args) if func_args else func()
-            print('expected:', expected)
-            print('result:', result)
-            self.assertDictEqual(result, expected)
-
-        no_func = get_func(
-            'does_not_exist', 'tests.test_utils_extension', 'ClassRaiseError')
-        self.assertIsNone(no_func)
-
     def test_get_function(self):
         import inspect
         tests = [{
@@ -502,7 +443,7 @@ class ExtensionTests(unittest.TestCase):
 
     def test_get_module(self):
         """
-        test watchmen.utils.extension.get_module
+        test northstar.utils.extension.get_module
         """
         tests = [{
             'func': 'func_for_test',

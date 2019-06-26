@@ -124,5 +124,6 @@ venv.bak/
 .mypy_cache/
 
 # html
-/htmlcov
+htmlcov
+
 

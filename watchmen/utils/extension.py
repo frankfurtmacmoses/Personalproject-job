@@ -160,28 +160,6 @@ def get_module(module_name: str):
         return None
 
 
-def get_func(func_name, pkg_name, class_name='', **kwargs):
-    obj = None
-    cls = get_class(class_name, pkg_name)
-    try:
-        if cls:
-            obj = cls(**kwargs) if kwargs else cls()
-        else:
-            obj = get_module(pkg_name)
-        func = get_function(obj, func_name)
-        return func
-    except Exception as ex:
-        msg = get_func_info(func_name, pkg_name, class_name, **kwargs)
-        LOGGER.error('cannot get %s\n%s', msg, ex)
-    return None
-
-
-def get_func_info(func_name, pkg_name, class_name='', **kwargs):
-    info = 'function [{}] from module "{}" or by class "{}"({})'.format(
-        func_name, pkg_name, class_name, kwargs)
-    return info
-
-
 def get_function(obj, function_name):
     """
     Get function object by name.
@@ -239,6 +217,13 @@ def get_hash(string_input="", salt="", hash_type="sha256", large_size=1024 * 102
     return hash_func(content).hexdigest() if data else ""
 
 
+def get_json(obj, indent=4):
+    """
+    Get formatted JSON dump string
+    """
+    return json.dumps(obj, sort_keys=True, indent=indent)
+
+
 def is_function(func_var):
     """
     Check if a variable is a callable function object.
@@ -253,13 +238,6 @@ def is_function(func_var):
         types.MethodType, types.BuiltinMethodType))
     positive = inspect.isfunction(func_var)
     return can_call or chk_type or positive
-
-
-def get_json(obj, indent=4):
-    """
-    Get formatted JSON dump string
-    """
-    return json.dumps(obj, sort_keys=True, indent=indent)
 
 
 def pickle_object(obj, *rm_keys):
