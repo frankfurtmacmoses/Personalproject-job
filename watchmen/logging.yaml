@@ -3,6 +3,7 @@
   disable_existing_loggers: False
   formatters:
     complex:
+      datefmt: "%Y-%m-%d %H:%M:%S"
       format: "%(asctime)s [%(name)s/%(module)s #%(lineno)d] %(levelname)s: %(message)s"
     console:
       format: "%(asctime)s [%(name)s/%(module)s #%(lineno)d] %(levelname)s: %(message)s"
@@ -18,10 +19,11 @@
       class: logging.handlers.RotatingFileHandler
       level: DEBUG
       formatter: complex
-      filename: watchmen.log
-      maxBytes: 10485760 # 10MB
-      backupCount: 5
+      filename: __watchmen__.log.log
       encoding: utf8
+      backupCount: 5
+      maxBytes: 10485760 # 10MB
+      mode: w
   loggers:
     root:
       handlers: [console, file]

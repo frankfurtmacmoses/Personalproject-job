@@ -1,3 +1,14 @@
+debug:
+  # CRITICAL/FATAL = 50, ERROR = 40, WARNING/WARN = 30, INFO = 20, DEBUG = 10
+  level: 20
+
+mysql:
+  database:
+  host:
+  port: 3306
+  username: admin
+  password:
+
 api:
   timeout: 7
 
@@ -47,3 +58,4 @@ spectre:
 
 sns:
   pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
+

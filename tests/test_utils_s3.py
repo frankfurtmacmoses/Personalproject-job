@@ -154,11 +154,11 @@ class TestS3(unittest.TestCase):
         self.example_s3_content = "Example content"
 
     def tearDown(self):
-        print "\ndone: " + self.id()
+        print("\ndone: " + self.id())
 
     @classmethod
     def tearDownClass(cls):
-        print "\ndone."
+        print("\ndone.")
 
     @patch('watchmen.utils.s3.boto3_session')
     def test_check_bucket_boto3_error(self, mock_boto3):
@@ -169,7 +169,7 @@ class TestS3(unittest.TestCase):
         mock_boto3.Session.return_value = self.mock_session
         with self.assertRaises(ClientError) as context:
             s3.check_bucket("any")
-        self.assertTrue(self.err_boto3_msg in context.exception.message)
+        self.assertTrue(self.err_boto3_msg in str(context.exception))
 
     @patch('watchmen.utils.s3.boto3_session')
     def test_check_bucket_s3_param_validation_error(self, mock_boto3):
@@ -569,9 +569,9 @@ class TestS3(unittest.TestCase):
         '''
         mock_get_content.return_value = contents
         result = s3.get_parquet_data(key_name, bucket)
-        self.assertEqual(result[0]['prop1'], 'value1')
-        self.assertEqual(result[1]['prop2'], 'value2')
-        self.assertEqual(result[2]['prop3'], 'value3')
+        self.assertEqual(result[0], {"prop1": "value1"})
+        self.assertEqual(result[1], {"prop2": "value2"})
+        self.assertEqual(result[2], {"prop3": "value3"})
 
     @patch('watchmen.utils.s3.convert_parquet_to_json')
     @patch('watchmen.utils.s3.get_content')
@@ -659,7 +659,7 @@ class TestS3(unittest.TestCase):
         """
         with self.assertRaises(ValueError) as context:
             s3.process(self.doBadFunc, '', '', bucket=self.bucket)
-        self.assertTrue(self.err_doFunc in context.exception)
+        self.assertEqual(self.err_doFunc, str(context.exception))
 
     @patch('watchmen.utils.s3.check_bucket')
     def test_process_check_bucket_false(self, mock_check):
@@ -669,7 +669,7 @@ class TestS3(unittest.TestCase):
         mock_check.return_value = self.mock_check_false
         with self.assertRaises(ValueError) as context:
             s3.process(self.doFunc, '', '', bucket=self.bucket)
-        self.assertTrue(self.err_bucket in context.exception)
+        self.assertEqual(self.err_bucket, str(context.exception))
 
     @patch('watchmen.utils.s3.boto3_session')
     @patch('watchmen.utils.s3.check_bucket')
@@ -681,7 +681,7 @@ class TestS3(unittest.TestCase):
         mock_boto3.Session.side_effect = self.mock_client_err
         with self.assertRaises(ClientError) as context:
             s3.process(self.doFunc, '', '', bucket=self.bucket)
-        self.assertTrue(self.err_boto3_msg in context.exception.message)
+        self.assertTrue(self.err_boto3_msg in str(context.exception))
 
     @patch('watchmen.utils.s3.boto3_session')
     @patch('watchmen.utils.s3.check_bucket')
@@ -790,7 +790,8 @@ class TestS3(unittest.TestCase):
         for dir in self.mock_prefix_more_keys[:2]:
             self.assertDictEqual(dir, next(res))
         # last one raises exception
-        self.assertRaises(StopIteration, res.next)
+        with self.assertRaises(StopIteration):
+            next(res)
         self.mock_client.get_paginator.assert_called_with('list_objects')
         self.mock_paginator.paginate.assert_called_with(
             **self.mock_params_test_dirs)

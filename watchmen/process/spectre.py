@@ -44,9 +44,9 @@ def check_if_found_file(filename):
         found_file = validate_file_on_s3(BUCKET_NAME, file_path)
         return found_file
     except Exception as ex:
-        LOGGER.error(ex)
-        trace = traceback.format_exc(ex)
-        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_BODY_MESSAGE.format(trace), EXCEPTION_MESSAGE)
+        LOGGER.exception(traceback.extract_stack())
+        LOGGER.info('*' * 80)
+        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
         return None
 
 

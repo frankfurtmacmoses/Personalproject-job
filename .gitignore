@@ -1,11 +1,12 @@
-**/*.bak
 **/.DS_Store
+**/*.bak
 **/*.log
-**/*.tee
 **/*.out
+**/*.pid
+**/*.pyc
+**/*.swp
+**/*.tee
 **/*.zip
-.idea
-.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -15,32 +16,26 @@ __pycache__/
 # C extensions
 *.so
 
-# Database files on top
-/*.mwb
-
 # Distribution / packaging
-.eggs/
-.installed.cfg
 .Python
-*.egg
-*.egg-info/
-*.pyc
-archive/
 bin/
 build/
 builds/
-cover/
-CyberInt-*.json
 develop-eggs/
 dist/
 downloads/
 eggs/
-env/
+.eggs/
 lib/
 lib64/
 parts/
 sdist/
 var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -51,6 +46,7 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+log*.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -60,8 +56,9 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
-*,cover
+*.cover
 .hypothesis/
+.pytest_cache/
 
 # Translations
 *.mo
@@ -70,6 +67,7 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
+db.sqlite3
 
 # Eclipse
 .project
@@ -88,7 +86,7 @@ docs/_build/
 # PyBuilder
 target/
 
-# IPython Notebook
+# Jupyter Notebook
 .ipynb_checkpoints
 
 # pyenv
@@ -97,18 +95,35 @@ target/
 # celery beat schedule file
 celerybeat-schedule
 
-# dotenv
-.env
+# SageMath parsed files
+*.sage.py
 
-# virtualenv
-.venv/
+# Environments
+.env
+.idea
+.venv
+.virtualenv
+.vscode
+env/
 venv/
 ENV/
+env.bak/
+venv.bak/
 
-# pytest
-.pytest_cache/
 # Spyder project settings
 .spyderproject
+.spyproject
 
 # Rope project settings
 .ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+
+# html
+htmlcov
+
+

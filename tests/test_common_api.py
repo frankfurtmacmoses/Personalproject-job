@@ -48,7 +48,6 @@ class CommonApiTester(unittest.TestCase):
         }, {
             'status': 408, 'content': '',
             'expected': None,
-        }, {
         }]
         result = None
         num = 0
@@ -79,6 +78,13 @@ class CommonApiTester(unittest.TestCase):
                 log = '{} <==> status: {}, result: {}'.format(msg, status, result)
                 # LOGGER.debug("Result is %s and expected is %s", result, test_expected)
                 self.assertEqual(result, test_expected, log)
+                # with wrong type run time
+                result, status = get_api_data(api_url=self.api_url, api_headers=self.headers, timeout='string')
+                self.assertEqual(result, test_expected, log)
             #     self.assertEqual(status, test_status)
             num += 1
+            # test not res
+            mock_requests.get.return_value = None
+            result, __ = get_api_data(self.api_url, self.headers)
+            self.assertEqual(result, None)
         pass

@@ -10,11 +10,10 @@ import copy
 import logging
 import re
 import threading
+import queue
 import time
 
-from Queue import Queue
-
-from urlparse import urlparse
+from urllib.parse import urlparse
 
 from watchmen.config import get_uint
 from watchmen.common.api import get_api_data
@@ -60,7 +59,7 @@ class ServiceChecker(object):
         self._max_level = LEVEL_LIMIT if max_level < 0 or max_level > LEVEL_LIMIT else max_level
 
         self._run_level = -1
-        self._run_queue = Queue()
+        self._run_queue = queue.Queue()
         self._py_locker = threading.Lock()
 
         self._all_paths = []  # validated endpoints

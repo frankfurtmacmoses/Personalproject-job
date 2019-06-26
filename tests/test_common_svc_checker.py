@@ -161,9 +161,9 @@ class ServiceCheckerTester(unittest.TestCase):
                     mt, results_string)
                 str2 = json.dumps(expected, sort_keys=True, indent=2)
                 _msg = 'Test #{}: {}\n{}'.format('%02d' % num, str1, str2)
-
+                print(expected)
                 for key in ['failure', 'success']:
-                    self.assertItemsEqual(
+                    self.assertCountEqual(
                         results[key], expected[key], _msg)
             num += 1
         pass
@@ -192,14 +192,14 @@ class ServiceCheckerTester(unittest.TestCase):
 
         msg = 'should not have failure: {}'.format(results)
         self.assertEqual(results['failure'], [], msg)
-        self.assertItemsEqual(results['success'], expected)
+        self.assertCountEqual(results['success'], expected)
         e1 = svc._elapsed
 
         svc.start(test_data, multi_threads=True)
         results = svc._results
         msg = 'should not have failure: {}'.format(results)
         self.assertEqual(results['failure'], [], msg)
-        self.assertItemsEqual(results['success'], expected)
+        self.assertCountEqual(results['success'], expected)
         e2 = svc._elapsed
         self.assertLess(e2, e1, 'should take less time')
         pass

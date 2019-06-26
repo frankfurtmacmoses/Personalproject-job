@@ -30,9 +30,9 @@ class SummarizedResult(object):
         """
         if not isinstance(success, bool):
             raise TypeError(SUCCESS_TYPE_ERROR_MESSAGE)
-        if not isinstance(message, basestring):
+        if not isinstance(message, str):
             raise TypeError(MESSAGE_TYPE_ERROR_MESSAGE)
-        if not isinstance(subject, basestring):
+        if not isinstance(subject, str):
             raise TypeError(SUBJECT_TYPE_ERROR_MESSAGE)
 
         if not message:
@@ -66,5 +66,5 @@ class SummarizedResult(object):
         Log the result dictionary on a line by line basis so reading the content is easy.
         @return:
         """
-        for key, value in self.result.iteritems():
+        for key, value in iter(self.result.items()):
             LOGGER.info("{}: {}".format(key, value))
