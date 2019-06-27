@@ -1,0 +1,353 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Watchmen project monitors several CyberIntel services for issues and outages"
+Mappings:
+  EnvMap:
+    test:
+      Bucket: cyber-intel-test
+      BuildFile: cyberint-watchmen-test.zip
+    prod:
+      Bucket: cyber-intel
+      BuildFile: cyberint-watchmen-prod.zip
+Parameters:
+  Env:
+    Description: Environment to be deployed.
+    Type: String
+  BuildsPrefix:
+    Description: The S3 prefix that contains the Watchmen builds.
+    Type: String
+Resources:
+  WatchmenManhattanLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors hourly, daily, and weekly reaper feeds.
+      Handler: handler.start_manhattan_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-manhattan
+        - Key: Env
+          Value: !Ref Env
+  WatchmenMolochLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors NOH/D Feed hourly.
+      Handler: handler.start_moloch_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-moloch
+        - Key: Env
+          Value: !Ref Env
+  WatchmenOzymandiasLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors neustar data coming into S3.
+      Handler: handler.start_ozymandias_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-ozymandias
+        - Key: Env
+          Value: !Ref Env
+  WatchmenRorschachLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors parquet data coming into S3 hourly.
+      Environment:
+        Variables:
+          BUCKET_NAME: bitaa
+          ENVIRONMENT: cyberint-prod
+          PREFIX: parquet/com.farsightsecurity.300021
+      Handler: handler.start_rorschach_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-rorschach
+        - Key: Env
+          Value: !Ref Env
+  WatchmenSilhouetteLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors lookalike feed.
+      Handler: handler.start_silhouette_watcher
+      MemorySize: 128
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 7
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-silhouette
+        - Key: Env
+          Value: !Ref Env
+  WatchmenSpectreLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors Georgia Tech data coming into S3.
+      Handler: handler.start_spectre_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-spectre
+        - Key: Env
+          Value: !Ref Env
+  ManhattanDailyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A daily event that kicks off ManhattanDailyWatchmen
+      ScheduleExpression: cron(0 15 * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: ManhattanDailyScheduler
+          Arn: !GetAtt WatchmenManhattanLambda.Arn
+          Input: '{"type": "Daily"}'
+  ManhattanHourlyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A hourly event that kicks off ManhattanHourlyWatchmen
+      ScheduleExpression: cron(0 * * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: ManhattanHourlyScheduler
+          Arn: !GetAtt WatchmenManhattanLambda.Arn
+          Input: '{"type": "Hourly"}'
+  ManhattanWeeklyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A weekly event that kicks off ManhattanWeeklyWatchmen
+      ScheduleExpression: cron(0 15 ? * FRI *)
+      State: ENABLED
+      Targets:
+        - Id: ManhattanWeeklyScheduler
+          Arn: !GetAtt WatchmenManhattanLambda.Arn
+          Input: '{"type": "Weekly"}'
+  MolochScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A hourly event that kicks off Moloch Watchman.
+      ScheduleExpression: cron(59 * * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: MolochScheduler
+          Arn: !GetAtt WatchmenMolochLambda.Arn
+  OzymandiasScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A daily event that kicks off OzymandiasWatchmen
+      ScheduleExpression: cron(40 11 * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: OzymandiasScheduler
+          Arn: !GetAtt WatchmenOzymandiasLambda.Arn
+  RorschachScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A hourly event that kicks off Rorschach watchmen
+      ScheduleExpression: cron(0 * * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: RorschachScheduler
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+  SilhouetteScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A daily event that kicks off Silhouette Watchman.
+      ScheduleExpression: cron(0 15 * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: SilhouetteScheduler
+          Arn: !GetAtt WatchmenSilhouetteLambda.Arn
+  SpectreScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A daily event that kicks off Spectre Watchman
+      ScheduleExpression: cron(0 16 * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: SpectreScheduler
+          Arn: !GetAtt WatchmenSpectreLambda.Arn
+  InvokeManhattanDailyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenManhattanLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ManhattanDailyScheduledEvent.Arn
+  InvokeManhattanHourlyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenManhattanLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ManhattanHourlyScheduledEvent.Arn
+  InvokeManhattanWeeklyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenManhattanLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ManhattanWeeklyScheduledEvent.Arn
+  InvokeMolochLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenMolochLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MolochScheduledEvent.Arn
+  InvokeOzymandiasLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenOzymandiasLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt OzymandiasScheduledEvent.Arn
+  InvokeRorschachLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachScheduledEvent.Arn
+  InvokeSilhouetteLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenSilhouetteLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt SilhouetteScheduledEvent.Arn
+  InvokeSpectreLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenSpectreLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt SpectreScheduledEvent.Arn
+  WatchmenLambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Join ['-', [WatchmenLambdaExecutionRole, !Ref Env]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Join ['', [WatchmenLambdaExecutionRole, !Ref Env]]
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudwatch:DescribeAlarmsForMetric'
+                  - 'cloudwatch:PutMetricAlarm'
+                  - 'dynamodb:Query'
+                  - 'ecs:ListTasks'
+                  - 'ecs:DescribeTasks'
+                  - 'lambda:InvokeFunction'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:DescribeLogStreams'
+                  - 'logs:PutLogEvents'
+                  - 'SNS:Publish'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 's3:Get*'
+                  - 's3:List*'
+                Resource:
+                  - 'arn:aws:s3:::bitaa'
+                  - 'arn:aws:s3:::cyber-intel'
+                  - 'arn:aws:s3:::cyber-intel-test'
+                  - 'arn:aws:s3:::bitaa/*'
+                  - 'arn:aws:s3:::cyber-intel/*'
+                  - 'arn:aws:s3:::cyber-intel-test/*'
+                  - 'arn:aws:s3:::deteque-new-observable-data'
+                  - 'arn:aws:s3:::deteque-new-observable-data/*'
+              - Effect: Allow
+                Action:
+                  - 's3:GetAccountPublicAccessBlock'
+                  - 's3:ListAllMyBuckets'
+                  - 's3:HeadBucket'
+                Resource: '*'

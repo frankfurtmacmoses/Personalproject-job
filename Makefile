@@ -43,6 +43,7 @@ UTTEST_ARGS := --buffer --catch --failfast --verbose
 PYVENV_NAME ?= .venv
 
 MAKE_BUILD := tools/build.sh
+MAKE_DEPLOY := cloudformation/deploy-cf.sh
 MAKE_VENV := tools/make_venv.sh
 MAKE_RUN := tools/run.sh
 
@@ -239,41 +240,6 @@ endif
 
 
 ############################################################
-# Makefile targets for docker
-############################################################
-docker cmd: docker_build.tee clean-cache
-ifeq ("$(DOCKER_DENV)", "")
-	@echo ""
-	@echo `date +%Y-%m-%d:%H:%M:%S` "Start bash in container '$(DOCKER_NAME)'"
-	PROJECT_DIR="$(PWD)" \
-	GITHUB_USER=$(GITHUB_CORP) GITHUB_REPO=$(GITHUB_REPO) \
-	DOCKER_USER=$(DOCKER_USER) DOCKER_NAME=$(DOCKER_NAME) \
-	$(MAKE_RUN) cmd
-else
-	@echo "env in the container:"
-	@echo "-----------------------------------------------------------------------"
-	@env | sort
-	@echo "-----------------------------------------------------------------------"
-endif
-	@echo "- DONE: $@"
-
-docker_build.tee: Dockerfile
-ifeq ("$(DOCKER_DENV)", "")
-	# make in a docker host environment
-	@echo ""
-	@echo `date +%Y-%m-%d:%H:%M:%S` "Building '$(DOCKER_TAGS)'"
-	@echo "-----------------------------------------------------------------------"
-	docker build -t $(DOCKER_TAGS) . | tee docker_build.tee
-	@echo "-----------------------------------------------------------------------"
-	@echo ""
-	docker images --all | grep -e 'REPOSITORY' -e '$(DOCKER_TAGS)'
-	@echo "......................................................................."
-	@echo "- DONE: {docker build}"
-	@echo ""
-endif
-
-
-############################################################
 # Makefile targets for testing
 ############################################################
 .PHONY: coverage-only show
@@ -389,3 +355,15 @@ build-test-only:
 	BUILD_ENV=test USE_PYTHON3=$(USE_PYTHON3) $(MAKE_BUILD)
 	@echo
 	@echo "- DONE: $@"
+
+deploy-test:
+	@echo
+	BUILD_ENV=test BUCKET=cyber-intel-test $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE :$@"
+
+deploy-prod:
+	@echo
+	BUILD_ENV=prod BUCKET=cyber-intel $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE :$@"
