@@ -5,61 +5,57 @@
 # 2019-6-27
 """
 from datetime import datetime
+import json
 
 from watchmen.utils.logger import get_logger
 
 LOGGER = get_logger('watchmen.' + __name__)
 
-DEFAULT_DISABLE_NOTIFIER = False
-DEFAULT_DETAILS = {}
-DEFAULT_RESULT_ID = 0
-DEFAULT_MESSAGE = 'DEFAULT MESSAGE'
-DEFAULT_SOURCE = 'DEFAULT_SOURCE'
-DEFAULT_STATE = "DEFAULT_STATE"
-DEFAULT_SUBJECT = 'DEFAULT SUBJECT'
-DEFAULT_TARGET = 'DEFAULT TARGET'
+DEFAULT_MESSAGE = 'NO MESSAGE'
 
 
 class Result:
     """
-    Result is a database class containing result properties
+    Result is a class containing watchmen result properties
     """
 
-    def __init__(self,
-                 disable_notifier=DEFAULT_DISABLE_NOTIFIER,
-                 details=DEFAULT_DETAILS,
-                 result_id=DEFAULT_RESULT_ID,
-                 message=DEFAULT_MESSAGE,
-                 source=DEFAULT_SOURCE,
-                 state=DEFAULT_STATE,
-                 subject=DEFAULT_SUBJECT,
-                 target=DEFAULT_TARGET,
-                 time=datetime.utcnow()):
+    def __init__(
+            self,
+            success: bool,
+            state: str,
+            subject: str,
+            source: str,
+            target: str,
+            details={},
+            disable_notifier=False,
+            message=DEFAULT_MESSAGE,
+            observed_time: datetime = None,
+            result_id: int = 0):
         """
-        Constructor of class Result
-        @param disable_notifier: whether the notifier should be disabled, boolean
-        @param details: details for short notifications, dict
-        @param result_id: id of the result, int
-        @param message: message for long notification, str
-        @param source: source of information, meanly the name of watchmen, str
-        @param state: state of the target, str
-        @param subject: subject to be sent for long notification, str
-        @param target: name of the target being monitored, str
-        @param time: time when generated, datetime
+        Constructor of Result class
+
+        @param success: <bool> whether the event that notifier watching succeeded
+        @param state: <str> state of the target
+        @param subject: <str> subject to be sent for long notification
+        @param source: <str> source of information, mainly the name of watchmen
+        @param target: <str> name of the target being monitored
+        @param details: <dict> details for short notifications
+        @param disable_notifier: <bool> whether the notifier should be disabled
+        @param message: <str> message for long notification
+        @param observed_time: <datetime> time when generated
+        @param result_id: <int> id of the result
         """
-        self.disable_notifier = disable_notifier
         self.details = details
-        self.result_id = result_id
+        self.disable_notifier = disable_notifier
         self.message = message
+        self.observed_time = datetime.utcnow() if observed_time is None else observed_time
+        self.result_id = result_id
+        self.success = success
         self.source = source
         self.state = state
         self.subject = subject
         self.target = target
-        self.time = time
-        LOGGER.info('A result has been generated, '
-                    '\nresult id: {}, '
-                    '\nsource name: {}'
-                    '\ntime: {}'.format(self.result_id, self.source, self.time))
+        LOGGER.info('Generated result: \n%s\n', json.dumps(self.to_dict(), indent=4, sort_keys=True))
         pass
 
     def to_dict(self):
@@ -68,15 +64,15 @@ class Result:
         @return: whether the whole process succeeded, boolean
         """
         dict_data = {
-            "disable_notifier": self.disable_notifier,
             "details": self.details,
-            "result_id": self.result_id,
+            "disable_notifier": self.disable_notifier,
             "message": self.message,
+            "observed_time": self.observed_time.isoformat(),
+            "result_id": self.result_id,
+            "success": self.success,
             "source": self.source,
             "state": self.state,
             "subject": self.subject,
             "target": self.target,
-            "time": self.time.isoformat(),
         }
         return dict_data
-        pass
