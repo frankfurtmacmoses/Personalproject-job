@@ -58,3 +58,4 @@ spectre:
 
 sns:
   pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
+
