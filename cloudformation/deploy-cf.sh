@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ######################################################################
-# Deploy CloudFormation statck
+# Deploy CloudFormation stack
 #
 # Environment variables:
 #   BUCKET: e.g. 'cyber-intel-test' (default), 'cyber-intel'
@@ -25,7 +25,7 @@ PROJECT="watchmen"
 FEATURE="${FEATURE:-${PROJECT}}"
 BUCKET="${BUCKET:-cyber-intel-test}"
 BUILD_ENV="${BUILD_ENV:-test}"
-BUILD_PACKAGE="cyberint-${PROJECT}-${BUILD_ENV}.zip"
+BUILD_PACKAGE="${FEATURE}-lambdas-${BUILD_ENV}.zip"
 CF_STACK_NAME="CyberInt-${PROJECT}-${BUILD_ENV}"
 
 
