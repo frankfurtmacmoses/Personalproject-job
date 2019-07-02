@@ -60,8 +60,23 @@ class Result:
 
     def to_dict(self):
         """
-        output the result properties to a json file
-        @return: whether the whole process succeeded, boolean
+        Outputs the result properties to a dictionary.
+        example dict: {
+            "details": {},
+            "disable_notifier": False,
+            "message":
+                "Error: 2018/12/gt_mpdns_20181217.zip"
+                "could not be found in cyber-intel/hancock/georgia_tech/!
+                "Please check S3 and Georgia Tech logs!",
+            "observed_time": "2018-12-18T00:00:00+00:00",
+            "result_id": 0,
+            "success": False,
+            "source": "Spectre",
+            "state": "FAILURE",
+            "subject": "Spectre Georgia Tech data monitor detected a failure!",
+            "target": "Georgia Tech S3",
+        }
+        @return: <dict> dictionary form of the result
         """
         dict_data = {
             "details": self.details,
