@@ -54,6 +54,8 @@ silhouette:
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3
 
 spectre:
+  bucket_name: cyber-intel
+  path_prefix: hancock/georgia_tech/
   sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
 
 sns:
