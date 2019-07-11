@@ -150,7 +150,8 @@ def find_bad_feeds(event_type):
             downed_feeds = process_feeds_logs(
                 event_type_content.get(event_type).get("feeds_names"),
                 event_type_content.get(event_type).get("start"),
-                event_type_content.get(event_type).get("end")
+                event_type_content.get(event_type).get("end"),
+                LOG_GROUP_NAME
             )
             submitted_out_of_range_feeds = process_feeds_metrics(
                 event_type_content.get(event_type).get("feeds_to_check"),
