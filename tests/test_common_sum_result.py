@@ -58,16 +58,16 @@ class SummarizedResultTester(unittest.TestCase):
         for test in success_error_tests:
             with self.assertRaises(TypeError) as error:
                 SummarizedResult(success=test, subject=self.example_subject, message=self.example_message)
-            self.assertEqual(SUCCESS_TYPE_ERROR_MESSAGE, error.exception.message)
+            self.assertEqual(SUCCESS_TYPE_ERROR_MESSAGE, str(error.exception))
 
         for test in typeerror_tests:
             with self.assertRaises(TypeError) as error:
                 SummarizedResult(success=False, subject=test, message=self.example_message)
-            self.assertEqual(SUBJECT_TYPE_ERROR_MESSAGE, error.exception.message)
+            self.assertEqual(SUBJECT_TYPE_ERROR_MESSAGE, str(error.exception))
 
             with self.assertRaises(TypeError) as error:
                 SummarizedResult(success=True, subject=self.example_subject, message=test)
-            self.assertEqual(MESSAGE_TYPE_ERROR_MESSAGE, error.exception.message)
+            self.assertEqual(MESSAGE_TYPE_ERROR_MESSAGE, str(error.exception))
 
         for test in empty_tests:
             success = test.get('success')
@@ -77,7 +77,7 @@ class SummarizedResultTester(unittest.TestCase):
 
             with self.assertRaises(ValueError) as error:
                 SummarizedResult(success=success, subject=subj, message=msg)
-            self.assertEqual(err_msg, error.exception.message)
+            self.assertEqual(err_msg, str(error.exception))
 
         # Missing Success
         with self.assertRaises(Exception):

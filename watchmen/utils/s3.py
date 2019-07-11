@@ -158,7 +158,7 @@ def convert_parquet_to_json(parquet_content):
     for parquet in parquet_content.strip().split("\n"):
         LOGGER.debug("- Parquet: %s\n", parquet)
         # parquet = clean_json(parquet)  # removing trailing commas
-        data.append(json.loads(parquet, 'utf-8'))
+        data.append(json.loads(parquet))
     return data
 
 

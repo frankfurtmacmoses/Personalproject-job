@@ -1,39 +1,51 @@
-# Makefile for cyberint-watchmen
-.PHONY: all build clean clean-all cmd cover dev-setup docker list setup show test unittest pytest functest venv
+# Makefile at repository root
+#
+# Author: Jason Zhu <jason_zhuyx@hotmail.com> (https://github.com/dockerian)
+#
+# Dependencies:
+#   * Python 2.7 virtualenv or Python 3 venv module (if USE_PYTHON3=true)
+#   * setup.py, setup.cfg, .pylintrc
+#   * tools/make_venv.sh
+#   * docker and tools/run.sh (to build docker image and run in container)
+#   * $(PROJECT)/requirements-dev.txt (for dev and testing)
+#   * $(PROJECT)/requirements.txt (for production)
+#   * $(SYSTOOLS)
+#
+.PHONY: clean clean-cache
 
+# Project name at top level of the repository
 PROJECT := watchmen
-# predefined/default environment variables
-BUILD_ENV ?= dev
-CHECK_STACK ?= true
-PREFIX_NAME ?= CyberInt
-STACK_NAME ?= watchmen
 
-GITHUB_REPO := cyberint-watchmen
-GITHUB_CORP := Infoblox-CTO
-
-BUILDS_DIR := builds
-BUILDS_ALL := $(BUILDS_DIR)/$(PROJECT)-lambdas.zip
-COVERAGE_DIR := htmlcov
-COVERAGE_REPORT := $(COVERAGE_DIR)/index.html
-COVERAGE_ARGS := --cov=. --cov-report=term --cov-report=html --cov-fail-under=97
-
-SYSTOOLS := cp find jq ln rm pip tar tee virtualenv xargs zip
-PYTEST_ARGS := --flakes --pep8 --pylint -s -vv
-PYVENV_NAME ?= .venv
-MAKE_VENV := tools/make_venv.sh
-MAKE_PUBLISH := tools/publish-builds.sh
-MAKE_CF := tools/deploy-cf.sh
-MAKE_DEPLOY := tools/deploy.sh
-MAKE_RUN := tools/run.sh
-
-# set AWS default region for moto3 testing
-AWS_DEFAULT_REGION ?= us-east-1
-
+############################################################
+# Makefile variables and functions
+############################################################
 DOCKER_USER := infobloxcto
-DOCKER_IMAG := $(PROJECT)
-DOCKER_TAGS := $(DOCKER_USER)/$(DOCKER_IMAG)
+DOCKER_NAME := watchmen
+DOCKER_IMAG := $(DOCKER_USER)/$(DOCKER_NAME)
+DOCKER_TAGS := $(DOCKER_USER)/$(DOCKER_NAME)
 DOCKER_DENV := $(wildcard /.dockerenv)
 DOCKER_PATH := $(shell which docker)
+
+BUILD_ENV ?= test
+COVERAGE_DIR := htmlcov
+COVERAGE_REPORT := $(COVERAGE_DIR)/index.html
+
+SYSTOOLS := find rm python tee xargs zip
+
+USE_PYTHON3 := true
+PIPLIST_ALL := $(PROJECT)/requirements.txt
+PIPLIST_DEV := $(PROJECT)/requirements-dev.txt
+PY_LIB_PATH := $(shell python -c "import site; print(site.getsitepackages()[0])")
+PYTEST_ARGS := --flakes --pep8 --pylint -s -vv --cov-report term-missing
+NOSE_2_ARGS := --output-buffer -v --with-coverage --coverage $(PROJECT) --coverage-report html --coverage-report term
+UTTEST_ARGS := --buffer --catch --failfast --verbose
+# Python venv (virtual env) directory name (without full path)
+PYVENV_NAME ?= .venv
+
+MAKE_BUILD := tools/build.sh
+MAKE_DEPLOY := cloudformation/deploy-cf.sh
+MAKE_VENV := tools/make_venv.sh
+MAKE_RUN := tools/run.sh
 
 # returns "" if all undefined; otherwise, there is defined.
 ifdef_any_of = $(filter-out undefined,$(foreach v,$(1),$(origin $(v))))
@@ -52,84 +64,33 @@ ifany_undef = $(filter undefined,$(foreach v,$(1),$(origin $(v))))
 #     - ifeq ($(call ifany_undef,VAR1 VAR2),)
 
 # Don't need to start docker in 2 situations:
-ifneq ("$(DOCKER_DENV)","")  # assume inside docker container
-    DONT_RUN_DOCKER := true
+ifneq ("$(DOCKER_DENV)", "")  # assume inside docker container
+	DONT_RUN_DOCKER := true
 endif
-ifeq ("$(DOCKER_PATH)","")   # docker command is NOT installed
-    DONT_RUN_DOCKER := true
+ifeq ("$(DOCKER_PATH)", "")   # docker command is NOT installed
+	DONT_RUN_DOCKER := true
 endif
 
-# Don't need to start virtualenv in 2 situations:
-ifneq ("$(DOCKER_DENV)","")  # assume inside docker container
+# Don't need venv insider docker (in most situations)
+ifneq ("$(DOCKER_DENV)", "")  # assume inside docker container
 	DONT_RUN_PYVENV := true
 endif
-ifneq ("$(VIRTUAL_ENV)","")  # assume python venv is activated
+# Don't start venv (virtual env) if it is already activated:
+ifneq ("$(VIRTUAL_ENV)", "")  # assume python venv is activated
 	DONT_RUN_PYVENV := true
 endif
 
 
-all: clean-all dev-setup test
-
+############################################################
+# Makefile targets
+############################################################
+.PHONY: list
 list:
-	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | xargs
+	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | \
+	awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | \
+	sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | xargs
 
-clean clean-cache:
-	@echo
-	@echo "--- Removing pyc and log files"
-	find . -name '.DS_Store' -type f -delete
-	find . -name \*.pyc -type f -delete -o -name \*.log -delete
-	find . -name '__pycache__' -type d -delete
-	rm -Rf .cache
-	rm -Rf .vscode
-	rm -Rf $(PROJECT)/.cache
-	rm -Rf $(PROJECT)/tests/__pycache__
-	@echo
-	@echo "--- Removing coverage files"
-	find . -name '.coverage' -type f -delete
-	rm -rf .coveragerc
-	rm -rf cover
-	rm -rf $(PROJECT)/cover
-	rm -rf $(COVERAGE_DIR)
-	@echo
-	@echo "--- Removing *.egg-info"
-	rm -Rf *.egg-info
-	rm -Rf $(PROJECT)/*.egg-info
-	@echo
-	@echo "--- Removing tox virtualenv"
-	rm -Rf $(PROJECT)/.tox*
-	@echo
-	@echo "--- Removing build"
-	rm -rf $(PROJECT)_build.tee
-	rm -rf $(BUILDS_DIR)
-	rm -rf build
-	@echo
-	@echo "- DONE: $@"
-
-clean-all: clean-cache
-	@echo
-ifneq ("$(VIRTUAL_ENV)","")
-	@echo "--- Cleaning up pip list in $(VIRTUAL_ENV) ..."
-	pip freeze | grep -v "^-e" | xargs pip uninstall -y || true
-else
-	@echo "--- Removing virtual env"
-	rm -Rf $(PROJECT)/.venv*
-endif
-	@echo
-ifeq ("$(wildcard /.dockerenv)","")
-	# not in a docker container
-	@echo "--- Removing docker image $(DOCKER_TAGS)"
-	docker rm -f $(shell docker ps -a|grep $(DOCKER_IMAG)|awk '{print $1}') 2>/dev/null || true
-	docker rmi -f $(shell docker images -a|grep $(DOCKER_TAGS) 2>&1|awk '{print $1}') 2>/dev/null || true
-	rm -rf docker_build.tee
-endif
-	@echo
-	find . -name '*.tee' -type f -delete
-	@echo "--- Uninstalling $(PROJECT)"
-	pip uninstall $(PROJECT) -y 2>/dev/null; true
-	rm -Rf database/*.bak
-	@echo
-	@echo "- DONE: $@"
-
+.PHONY: check-tools
 check-tools:
 	@echo
 	@echo "--- Checking for presence of required tools: $(SYSTOOLS)"
@@ -139,201 +100,113 @@ check-tools:
 	@echo
 	@echo "- DONE: $@"
 
-
-# build targets
-$(PROJECT)_build.tee:
+clean clean-cache:
 	@echo
-ifeq ("$(DONT_RUN_PYVENV)", "true")
-	tools/build.sh all | tee $(PROJECT)_build.tee
+	@echo "--- Removing pyc and log files"
+	find . -name '.DS_Store' -type f -delete
+	find . -name \*.pyc -type f -delete -o -name \*.log -delete
+	find . -name '__pycache__' -type d -delete
+	rm -Rf .cache
+	rm -Rf .pytest_cache
+	rm -Rf $(PROJECT)/.cache
+	rm -rf log*.txt
+	@echo
+	@echo "--- Removing coverage files"
+	find . -name '.coverage' -type f -delete
+	find . -name '$(COVERAGE_DIR)' -type d | xargs rm -rf
+	rm -rf cover
+	rm -rf $(PROJECT)/cover
+	rm -rf cover
+	@echo
+	@echo "--- Removing *.egg-info"
+	rm -Rf *.egg-info
+	rm -Rf $(PROJECT)/*.egg-info
+	@echo
+	@echo "--- Removing tox virtualenv"
+	rm -Rf $(PROJECT)/.tox*
+	rm -Rf .tox
+	@echo
+	@echo "--- Removing build"
+	rm -rf $(PROJECT)_build.tee
+	rm -rf build*
+	@echo
 	@echo "- DONE: $@"
-else
-	VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
+
+clean-all: clean-cache
+	@echo
+ifeq ("$(DOCKER_DENV)", "")
+	# not in a docker container
+	@echo "--- Removing docker image $(DOCKER_TAGS)"
+	docker rm -f $(shell docker ps -a|grep $(DOCKER_NAME)|awk '{print $1}') 2>/dev/null || true
+	docker rmi -f $(shell docker images -a|grep $(DOCKER_TAGS) 2>&1|awk '{print $1}') 2>/dev/null || true
+	rm -rf docker_build.tee
 endif
-
-build: test-all build-lambdas
-	@echo ""
-	@echo "- DONE: $@"
-	@echo ""
-
-build-lambdas: $(PROJECT)_build.tee
-	@echo ""
-	@echo "- DIST: $(BUILDS_ALL)"
-	@echo ""
-	@echo "- DONE: $@"
-	@echo ""
-
-deploy-cf: build
 	@echo
-	@echo "--- Publising AWS cloudformation [$(BUILD_ENV)] ---"
-	BUILD_ENV=$(BUILD_ENV) $(MAKE_PUBLISH)
-	@echo
-	@echo "--- Deploying AWS cloudformation [$(BUILD_ENV)] ---"
-	CHECK_STACK=$(CHECK_STACK) PREFIX_NAME="$(PREFIX_NAME)" $(MAKE_CF) "$(STACK_NAME)" "$(BUILD_ENV)"
-	@echo "- DONE: $@"
-
-deploy-cf-prod: build
-	@echo
-	@echo "--- Publising AWS cloudformation [prod] ---"
-	BUILD_ENV=prod $(MAKE_PUBLISH)
-	@echo
-	@echo "--- Deploying AWS cloudformation [prod] ---"
-	CHECK_STACK=$(CHECK_STACK) PREFIX_NAME="$(PREFIX_NAME)" $(MAKE_CF) "$(STACK_NAME)" prod
-	@echo "- DONE: $@"
-
-deploy-cf-test: build
-	@echo
-	@echo "--- Publising AWS cloudformation [test] ---"
-	BUILD_ENV=test $(MAKE_PUBLISH)
-	@echo
-	@echo "--- Deploying AWS cloudformation [test] ---"
-	CHECK_STACK=$(CHECK_STACK) PREFIX_NAME="$(PREFIX_NAME)" $(MAKE_CF) "$(STACK_NAME)" test
-@echo "- DONE: $@"
-
-# setup and dev-setup targets
-$(PYVENV_NAME)/bin/activate: check-tools $(PROJECT)/requirements-dev.txt
-	@echo
-ifeq ("$(VIRTUAL_ENV)", "")
-	@echo "Checking python venv: $(PYVENV_NAME)"
-	@echo "----------------------------------------------------------------------"
-	test -d $(PYVENV_NAME) || virtualenv --no-site-packages $(PYVENV_NAME)
-	@echo
-	@echo "--- Installing required dev packages [$(PYVENV_NAME)] ..."
-	$(PYVENV_NAME)/bin/pip install -Ur $(PROJECT)/requirements-dev.txt
-	@echo
-	$(PYVENV_NAME)/bin/pip list
-	# touch $(PYVENV_NAME)/bin/activate
-else
+ifneq ("$(VIRTUAL_ENV)", "")
 	@echo "--- Cleaning up pip list in $(VIRTUAL_ENV) ..."
-	pip freeze | grep -v "^-e" | xargs pip uninstall -y || true
+	python -m pip freeze | grep -v '^-e' | grep -v '^#' | grep -v 'pkg-resources' | xargs pip uninstall -y || true
+	@echo ''
+	@echo '**********************************************************************'
+	@echo '* Please `deactivate` '"$(PYVENV_NAME) before cleaning all eggs and virtual env *"
+	@echo '**********************************************************************'
+else
+	@echo "--- Removing virtual env"
+	rm -rf *.tee
+	rm -Rf $(PYVENV_NAME)
+	rm -Rf .venv*
+	rm -Rf .eggs
+endif
+	@echo
+	@echo "- DONE: $@"
+
+
+############################################################
+# Makefile targets for venv (virtual env)
+############################################################
+$(PYVENV_NAME).tee: $(PIPLIST_DEV) $(PIPLIST_ALL)
+	@make dev-setup-venv
+	@echo
+	@echo "- DONE: $(PYVENV_NAME)"
+
+.PHONY: dev-setup-venv dev-setup
+dev-setup-venv dev-setup: clean-cache check-tools
+	@echo
+ifneq ("$(VIRTUAL_ENV)", "")
+	@echo "--- Cleaning up pip list in $(VIRTUAL_ENV) ..."
+	python -m pip install --upgrade pip || true
+	python -m pip freeze | grep -v '^-e' | grep -v '^#' | grep -v 'pkg-resources' | xargs pip uninstall -y || true
 	@echo
 	@echo "--- Setting up $(PROJECT) develop ..."
-	python setup.py develop
+	# disabling setup.py due to easy_install issue on ubuntu
+	# python setup.py develop
 	@echo
 	@echo "--- Installing required dev packages ..."
 	# running setup.py in upper level of `$(PROJECT)` folder to register the package
-	pip install -r $(PROJECT)/requirements-dev.txt
+	python -m pip install -r $(PIPLIST_ALL) | tee $(PYVENV_NAME).tee
+	python -m pip install -r $(PIPLIST_DEV) | tee $(PYVENV_NAME).tee
 	@echo
-	pip list
+	python -m pip list
+else
+	@echo "Checking python venv: $(PYVENV_NAME)"
+	@echo "----------------------------------------------------------------------"
+	USE_PYTHON3=$(USE_PYTHON3) VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
+	# @touch $(PYVENV_NAME).tee
+	@echo
 endif
 	@echo
 	@echo "- DONE: $@"
 
-dev-setup: $(PYVENV_NAME)/bin/activate
+.PHONY: setup test-setup
+setup test-setup: $(PYVENV_NAME).tee
 	@echo "----------------------------------------------------------------------"
 	@echo "Python environment: $(PYVENV_NAME)"
 	@echo "- Activate command: source $(PYVENV_NAME)/bin/activate"
 	@echo
 
-
-
-setup:
+.PHONY: venv-clean dvenv
+venv-clean dvenv:
 	@echo
-	@echo "--- Starting setup ..."
-	python setup.py install
-	cd $(PROJECT) && pip install -r requirements.txt
-	@echo
-	@echo "- DONE: $@"
-
-
-# test targets
-coverage-only show:
-ifeq ("$(wildcard /.dockerenv)","")
-	@echo "--- Opening $(COVERAGE_REPORT)"
-ifeq ($(OS), Windows_NT) # Windows
-	start "$(COVERAGE_REPORT)"
-else ifeq ($(shell uname),Darwin) # Mac OS
-	open "$(COVERAGE_REPORT)"
-else
-	nohup xdg-open "$(COVERAGE_REPORT)" >/dev/null 2>&1 &
-endif
-else
-	@echo ""
-	@echo "Cannot open test coverage in the container."
-endif
-
-coverage cover: test coverage-only
-
-python-test unittest: clean-cache check-tools
-	@echo
-ifeq ("$(DONT_RUN_PYVENV)", "true")
-	@echo "--- Starting unittest discover ..."
-	@echo
-	# python -m unittest discover --buffer --catch --failfast --verbose
-	AWS_DEFAULT_REGION=$(AWS_DEFAULT_REGION) \
-	python -m unittest discover -bcfv
-	@echo
-	@echo "- DONE: $@"
-else
-	VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) dev-setup "$@"
-endif
-
-nosetest nosetests: clean-cache check-tools
-	@echo
-ifeq ("$(DONT_RUN_PYVENV)", "true")
-	@echo "--- Starting nosetests ..."
-	@echo
-	# nosetests must be in the same path with setup.cfg
-	AWS_DEFAULT_REGION=$(AWS_DEFAULT_REGION) \
-	nosetests
-	@echo "......................................................................"
-	@echo "See coverage report: cover/index.html"
-	@echo
-	@echo "- DONE: $@"
-else
-	VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) dev-setup "$@"
-endif
-
-functest: clean-cache check-tools
-	@echo
-ifeq ("$(DONT_RUN_PYVENV)", "true")
-	@echo "--- Starting pytest for functional tests ..."
-	@echo
-	AWS_DEFAULT_REGION=$(AWS_DEFAULT_REGION) \
-	pytest -c setup.cfg -m "functest" $(PYTEST_ARGS) --cov-fail-under=20
-	@echo
-	@echo "- DONE: $@"
-else
-	VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
-endif
-
-test pytest: clean-cache check-tools
-	@echo
-ifeq ("$(DONT_RUN_PYVENV)", "true")
-	@echo "--- Starting pytest for unit tests ..."
-	@echo
-	PYTHONPATH=. \
-	AWS_DEFAULT_REGION=$(AWS_DEFAULT_REGION) \
-	pytest -c setup.cfg -m "not functest" $(PYTEST_ARGS)
-
-	@echo
-	@echo "- DONE: $@"
-else
-	VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
-endif
-
-test-all-only:
-	@echo
-ifeq ("$(DONT_RUN_PYVENV)", "true")
-	# @echo "--- Setup $(PROJECT) develop [$@] ..."
-	# python setup.py develop
-	# @echo
-	pip list
-	@echo
-	@echo "--- Starting pytest for all tests ..."
-	AWS_DEFAULT_REGION=$(AWS_DEFAULT_REGION) \
-	pytest -c setup.cfg $(PYTEST_ARGS)
-else
-	VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
-endif
-
-test-all: clean-all dev-setup test-all-only
-	@echo
-	@echo "- DONE: $@"
-
-
-dvenv:
-	@echo
-ifeq ("$(DONT_RUN_PYVENV)", "true")
+ifneq ("$(VIRTUAL_ENV)", "")
 	@echo "----------------------------------------------------------------------"
 	@echo "Python environment: $(VIRTUAL_ENV)"
 	@echo "- Activate command: source $(VIRTUAL_ENV)/bin/activate"
@@ -342,16 +215,18 @@ ifeq ("$(DONT_RUN_PYVENV)", "true")
 else
 	@echo "Cleaning up python venv: $(PYVENV_NAME)"
 	rm -rf $(PYVENV_NAME)
+	rm -Rf .eggs
 endif
 	@echo ""
 	@echo "- DONE: $@"
 	@echo ""
 
+.PHONY: venv
 venv: check-tools
 	@echo
 ifeq ("$(VIRTUAL_ENV)", "")
 	@echo "Preparing for venv: [$(PYVENV_NAME)] ..."
-	virtualenv --no-site-packages $(PYVENV_NAME)
+	python3 -m venv $(PYVENV_NAME)
 	@echo "----------------------------------------------------------------------"
 	@echo "Python environment: $(PYVENV_NAME)"
 	@echo "- Activate command: source $(PYVENV_NAME)/bin/activate"
@@ -362,3 +237,133 @@ endif
 	@echo "----------------------------------------------------------------------"
 	@echo "- DONE: $@"
 	@echo ""
+
+
+############################################################
+# Makefile targets for testing
+############################################################
+.PHONY: coverage-only show
+coverage-only show:
+	@echo ""
+ifeq ("$(DOCKER_DENV)", "")
+	@echo "--- Opening $(COVERAGE_REPORT)"
+ifeq ($(OS), Windows_NT) # Windows
+	start "$(COVERAGE_REPORT)"
+else ifeq ($(shell uname),Darwin) # Mac OS
+	open "$(COVERAGE_REPORT)"
+else
+	nohup xdg-open "$(COVERAGE_REPORT)" >/dev/null 2>&1 &
+endif
+else
+	@echo "- WARNING: Cannot open test coverage in the container."
+endif
+
+.PHONY: coverage cover
+coverage cover: test coverage-only
+
+functest: clean-cache check-tools
+	@echo
+ifeq ("$(DONT_RUN_PYVENV)", "true")
+	@echo "--- Starting pytest for functional tests ..."
+	@echo
+	PYTHONPATH=. pytest -c setup.cfg -m "functest" $(PYTEST_ARGS) --cov-fail-under=20
+	@echo
+	@echo "- DONE: $@"
+else
+	USE_PYTHON3=$(USE_PYTHON3) VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
+endif
+
+nosetest nosetests: clean-cache check-tools test-setup
+	@echo
+ifeq ("$(DONT_RUN_PYVENV)", "true")
+	@echo "--- Starting nose2 tests ..."
+	@echo
+	PYTHONPATH=. nose2 $(NOSE_2_ARGS)
+	@echo "......................................................................"
+	@echo "See coverage report: $(COVERAGE_REPORT)"
+	@echo
+	@echo "- DONE: $@"
+else
+	USE_PYTHON3=$(USE_PYTHON3) VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) dev-setup "$@"
+endif
+
+python-test unittest: clean-cache check-tools test-setup
+	@echo
+ifeq ("$(DONT_RUN_PYVENV)", "true")
+	@echo "--- Starting unittest discover ..."
+	@echo
+	# python -m unittest discover ${UTTEST_ARGS}
+	PYTHONPATH=. python -m unittest discover -bcfv
+	@echo
+	@echo "- DONE: $@"
+else
+	USE_PYTHON3=$(USE_PYTHON3) VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) dev-setup "$@"
+endif
+
+pytest test: clean-cache check-tools test-setup test-only
+	@echo
+	@echo "- DONE: $@"
+
+test-all: clean-all dev-setup-venv test-all-only
+	@echo
+	@echo "- DONE: $@"
+
+test-all-only:
+	@echo
+ifeq ("$(DONT_RUN_PYVENV)", "true")
+	# @echo "--- Setup $(PROJECT) develop [$@] ..."
+	# python setup.py develop
+	# @echo
+	python -m pip list
+	@echo
+	@echo "--- Starting pytest for all tests ..."
+	PYTHONPATH=. pytest -c setup.cfg $(PYTEST_ARGS)
+	@echo
+	@echo "- DONE: $@"
+else
+	USE_PYTHON3=$(USE_PYTHON3) VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
+endif
+
+test-only:
+	@echo
+ifeq ("$(DONT_RUN_PYVENV)", "true")
+	@echo "--- Python lib: $(PY_LIB_PATH)"
+	@echo
+	@echo "--- Starting pytest for unit tests ..."
+	@echo
+	PYTHONPATH=. pytest -c setup.cfg -m 'not functest' $(PYTEST_ARGS)
+	@echo
+	@echo "- DONE: $@"
+else
+	USE_PYTHON3=$(USE_PYTHON3) VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
+endif
+
+
+############################################################
+# build and deploy targets
+############################################################
+build: clean-cache build-only
+build-only:
+	@echo
+	BUILD_ENV=$(BUILD_ENV) USE_PYTHON3=$(USE_PYTHON3) $(MAKE_BUILD)
+	@echo
+	@echo "- DONE: $@"
+
+build-test: clean-cache build-test-only
+build-test-only:
+	@echo
+	BUILD_ENV=test USE_PYTHON3=$(USE_PYTHON3) $(MAKE_BUILD)
+	@echo
+	@echo "- DONE: $@"
+
+deploy-test:
+	@echo
+	BUILD_ENV=test BUCKET=cyber-intel-test $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE :$@"
+
+deploy-prod:
+	@echo
+	BUILD_ENV=prod BUCKET=cyber-intel $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE :$@"

@@ -1,0 +1,63 @@
+debug:
+  # CRITICAL/FATAL = 50, ERROR = 40, WARNING/WARN = 30, INFO = 20, DEBUG = 10
+  level: 20
+
+mysql:
+  database:
+  host:
+  port: 3306
+  username: admin
+  password:
+
+api:
+  timeout: 7
+
+aws:
+  s3:
+    bucket: cyber-intel-test
+    prefix: watchmen
+
+ecs:
+  feeds:
+    cluster: cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8
+    url: https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services
+
+holiday:
+  good_friday: false
+  day_b4_xmas_eve: true
+
+jupiter:
+  enable_calendar: true
+  endpoints: jupiter/endpoints.json
+  sns_topic: arn:aws:sns:us-east-1:405093580753:Sockeye
+  s3_prefix: jupiter
+  min_items: 1
+  hr_start_pdt: 6
+  hr_end_pdt: 18
+
+logging:
+  level: 10
+
+manhattan:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
+
+moloch:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
+
+ozymandias:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
+
+rorschach:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
+
+silhouette:
+  sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3
+
+spectre:
+  bucket_name: cyber-intel
+  path_prefix: hancock/georgia_tech/
+  sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
+
+sns:
+  pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
+

@@ -117,7 +117,7 @@ class TestFeeds(unittest.TestCase):
             process_feeds_logs(start_greater_than_end.get('feeds'),
                                start_greater_than_end.get('start'),
                                start_greater_than_end.get('end'))
-        self.assertEqual(VALUE_ERROR_MESSAGE, error.exception.message)
+        self.assertEqual(VALUE_ERROR_MESSAGE, str(error.exception))
 
     @patch('watchmen.utils.feeds.get_feed_metrics')
     @patch('watchmen.utils.dynamo.select_dynamo_time_string')

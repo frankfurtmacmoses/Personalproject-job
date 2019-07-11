@@ -47,9 +47,9 @@ def check_process_status():
         is_status_valid = process_status()
         return is_status_valid
     except Exception as ex:
-        LOGGER.error(ex)
-        trace = traceback.format_exc(ex)
-        raise_alarm(SNS_TOPIC_ARN, EXCEPTION_BODY_MESSAGE.format(trace), EXCEPTION_MESSAGE)
+        LOGGER.exception(traceback.extract_stack())
+        LOGGER.info('*' * 80)
+        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
         return None
 
 
@@ -75,7 +75,7 @@ def process_status():
     is_completed = False
     check_time = (datetime.now(pytz.utc) - timedelta(days=2)).strftime("%Y %m %d").split(' ')
     key = FILE_PATH + check_time[0] + '/' + check_time[1] + '/' + check_time[2] + '/' + STATUS_FILE
-    file_contents = get_file_contents_s3(key)
+    file_contents = get_file_contents_s3(BUCKET_NAME, key)
     if file_contents:
         status_json = json.loads(file_contents)
         if status_json.get('STATE') == COMPLETED_STATUS:

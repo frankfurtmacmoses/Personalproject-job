@@ -86,7 +86,7 @@ def process_feeds_logs(feed_names, start, end, log_group_name=""):
         for log_stream in response.get('logStreams'):
             log_time = datetime.fromtimestamp(log_stream.get('lastEventTimestamp') / 1000, pytz.utc)
             feed_name = log_stream.get('logStreamName').split('/')[0]
-            if start < log_time < end:
+            if start <= log_time <= end:
                 feed_name_set.add(feed_name)
             end = log_time
     for feed in feed_names:
