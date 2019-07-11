@@ -356,13 +356,13 @@ build-test-only:
 	@echo
 	@echo "- DONE: $@"
 
-deploy-test:
+deploy-test: clean
 	@echo
 	BUILD_ENV=test BUCKET=cyber-intel-test $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
-deploy-prod:
+deploy-prod: clean
 	@echo
 	BUILD_ENV=prod BUCKET=cyber-intel $(MAKE_DEPLOY)
 	@echo
