@@ -84,7 +84,7 @@ function build() {
 
   if [[ -e ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ]]; then
     log_trace "- copying config-${BUILD_ENV}.yaml to build ..."
-    cp -rf ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ${builds_path}/${FEATURE}/config.yaml
+    cp -rf ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ${builds_path}/${FEATURE}/${PROJECT}/config.yaml
     conf_yml=${SOURCE_DIR}/config-${BUILD_ENV}.yaml
     echo ""
   fi
