@@ -238,7 +238,6 @@ endif
 	@echo "- DONE: $@"
 	@echo ""
 
-
 ############################################################
 # Makefile targets for testing
 ############################################################
@@ -260,6 +259,18 @@ endif
 
 .PHONY: coverage cover
 coverage cover: test coverage-only
+
+bdd:
+	@echo
+ifeq ("$(DONT_RUN_PYVENV)", "true")
+	@echo "--- Starting feature test ..."
+	@echo
+	PYTHONPATH=. behave tests/features
+else
+	USE_PYTHON3=$(USE_PYTHON3) VENV_NAME=$(PYVENV_NAME) $(MAKE_VENV) "$@"
+endif
+	@echo
+	@echo "- DONE: $@"
 
 functest: clean-cache check-tools
 	@echo
