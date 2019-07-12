@@ -85,6 +85,7 @@ class TestSilhouette(unittest.TestCase):
         silhouette_obj = Silhouette()
         result = silhouette_obj._create_result(
             False,
+            False,
             "FAILURE",
             "Silhouette watchman detected an issue with lookalike feed!",
             self.example_message_chart.get(False)).to_dict()
@@ -128,19 +129,26 @@ class TestSilhouette(unittest.TestCase):
         test watchmen.models.silhouette :: Silhouette :: _process_status
         """
         silhouette_obj = Silhouette()
-        # Test when process produced completed result
-        mock_json_loads.return_value = self.example_success_json
-        expected_result = True
-        returned_result = silhouette_obj._process_status()
-        self.assertEqual(expected_result, returned_result)
-        # Test when process produced non-completed result
-        mock_json_loads.return_value = self.example_failed_json
-        expected_result = False
-        returned_result = silhouette_obj._process_status()
-        self.assertEqual(expected_result, returned_result)
-        # Test when status.json doesn't exist
-        mock_get_contents.return_value = None
-        expected_result = False
-        returned_result = silhouette_obj._process_status()
-        self.assertEqual(expected_result, returned_result)
-        pass
+        tests = [{
+            "json": self.example_success_json,
+            "content": "content",
+            "result": True,
+        }, {
+            "json": self.example_failed_json,
+            "content": "content",
+            "result": False,
+        }, {
+            "json": {},
+            "content": "content",
+            "result": False,
+        }, {
+            "json": self.example_success_json,
+            "content": None,
+            "result": False,
+        }]
+        for test in tests:
+            mock_get_contents.return_value = test.get("content")
+            mock_json_loads.return_value = test.get("json")
+            expected = test.get("result")
+            result = silhouette_obj._process_status()
+            self.assertEqual(expected, result)

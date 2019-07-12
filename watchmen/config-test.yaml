@@ -42,15 +42,22 @@ manhattan:
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
 moloch:
+  bucket_name: deteque-new-observable-data
+  domain_path: NewlyObservedDomains
+  hostname_path: NewlyObservedHostname
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
 ozymandias:
+  bucket_name: cyber-intel
+  path_prefix: hancock/neustar/
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
 rorschach:
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
 silhouette:
+  bucket_name: cyber-intel
+  path_prefix: analytics/lookalike/prod/results/
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
 spectre:

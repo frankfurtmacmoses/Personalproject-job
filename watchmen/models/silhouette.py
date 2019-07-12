@@ -23,12 +23,10 @@ import traceback
 
 # Cyberint imports
 from watchmen.utils.s3 import get_file_contents_s3
-from watchmen.utils.logger import get_logger
 from watchmen.common.result import Result
 from watchmen.config import settings
+from watchmen.common.watchmen_constants import LENGTH_OF_PRINT_LINE
 from watchmen.common.watchman import Watchman
-
-LOGGER = get_logger("Silhouette", settings('logging.level', 'INFO'))
 
 SUCCESS_MESSAGE = "Lookalike feed is up and running!"
 FAILURE_MESSAGE = "Lookalike feed never added files from 2 days ago! " \
@@ -53,6 +51,8 @@ TARGET = "Lookalike Feed S3"
 class Silhouette(Watchman):
 
     def __init__(self):
+        super().__init__()
+        self.filename = self._get_file_name()
         pass
 
     def monitor(self):
@@ -60,9 +60,8 @@ class Silhouette(Watchman):
         Checks whether or not the lookalike feed is on S3 and completed.
         @return: <result> Result Object.
         """
-        filename = self._get_file_name()
         is_status_valid, tb = self._check_process_status()
-        message = self._create_message(filename, is_status_valid, tb)
+        message = self._create_message(self.filename, is_status_valid, tb)
         parameter_chart = {
             None: {
                 "success": False,
@@ -84,17 +83,16 @@ class Silhouette(Watchman):
             },
         }
         parameters = parameter_chart.get(is_status_valid)
-        result = Result(success=parameters.get("success"),
-                        disable_notifier=parameters.get("disable_notifier"),
-                        state=parameters.get("state"),
-                        subject=parameters.get("subject"),
-                        message=message,
-                        source=self.__class__.__name__,
-                        target=TARGET,
-                        )
+        result = self._create_result(
+            success=parameters.get("success"),
+            disable_notifier=parameters.get("disable_notifier"),
+            state=parameters.get("state"),
+            subject=parameters.get("subject"),
+            message=message
+        )
         return result
 
-    def _create_result(self, success, state, subject, message):
+    def _create_result(self, success, disable_notifier, state, subject, message):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, otherwise false
@@ -105,6 +103,7 @@ class Silhouette(Watchman):
         """
         result = Result(
             success=success,
+            disable_notifier=disable_notifier,
             state=state,
             subject=subject,
             source=self.__class__.__name__,
@@ -136,22 +135,24 @@ class Silhouette(Watchman):
         status = FILE_STATUS.get(is_status_valid)
         message = status.get('message')
         if status.get('log_message'):
-            LOGGER.info(status.get('log_message'))
+            self.logger.info(status.get('log_message'))
         return message
 
     def _check_process_status(self):
         """
         Checks the status of the process check.
 
-        @return: <bool> whether or not the process succeeded; otherwise, None upon exception
+        @return: <bool> <str>
+            <bool> whether or not the process succeeded; otherwise, None upon exception
+            <str> traceback in the process
         """
         try:
             is_status_valid = self._process_status()
             return is_status_valid, None
         except Exception as ex:
-            LOGGER.exception(traceback.extract_stack())
-            LOGGER.info('*' * 80)
-            LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
+            self.logger.exception(traceback.extract_stack())
+            self.logger.info('*' * LENGTH_OF_PRINT_LINE)
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
 
@@ -172,8 +173,7 @@ class Silhouette(Watchman):
         @return: <bool> whether the process finished or not
         """
         is_completed = False
-        key = self._get_file_name()
-        file_contents = get_file_contents_s3(BUCKET_NAME, key)
+        file_contents = get_file_contents_s3(BUCKET_NAME, self.filename)
         if file_contents:
             status_json = json.loads(file_contents)
             if status_json.get('STATE') == COMPLETED_STATUS:
