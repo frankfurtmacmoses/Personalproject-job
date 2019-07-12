@@ -42,15 +42,22 @@ manhattan:
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
 
 moloch:
+  bucket_name: deteque-new-observable-data
+  domain_path: NewlyObservedDomains
+  hostname_path: NewlyObservedHostname
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
 
 ozymandias:
+  bucket_name: cyber-intel
+  path_prefix: hancock/neustar/
   sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
 
 rorschach:
   sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
 
 silhouette:
+  bucket_name: cyber-intel
+  path_prefix: analytics/lookalike/prod/results/
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3
 
 spectre:

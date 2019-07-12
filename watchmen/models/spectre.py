@@ -23,6 +23,7 @@ from watchmen.utils.logger import get_logger
 from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.utils.s3 import validate_file_on_s3
+from watchmen.common.watchmen_constants import LENGTH_OF_PRINT_LINE
 from watchmen.common.watchman import Watchman
 
 LOGGER = get_logger(__name__, settings('logging.level', 'INFO'))
@@ -82,14 +83,13 @@ class Spectre(Watchman):
             },
         }
         parameters = parameter_chart.get(file_found)
-        result = Result(success=parameters.get("success"),
-                        disable_notifier=parameters.get("disable_notifier"),
-                        state=parameters.get("state"),
-                        subject=parameters.get("subject"),
-                        message=message,
-                        source=self.__class__.__name__,
-                        target=TARGET,
-                        )
+        result = self._create_result(
+            success=parameters.get("success"),
+            disable_notifier=parameters.get("disable_notifier"),
+            state=parameters.get("state"),
+            subject=parameters.get("subject"),
+            message=message
+        )
         return result
 
     def _check_if_found_file(self, filename) -> Tuple[bool, str]:
@@ -105,7 +105,7 @@ class Spectre(Watchman):
             return found_file, None
         except Exception as ex:
             LOGGER.exception(traceback.extract_stack())
-            LOGGER.info('*' * 80)
+            LOGGER.info('*' * LENGTH_OF_PRINT_LINE)
             LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
@@ -137,7 +137,7 @@ class Spectre(Watchman):
             LOGGER.info(status.get('log_message'))
         return message
 
-    def _create_result(self, success, state, subject, message):
+    def _create_result(self, success, disable_notifier, state, subject, message):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, othrewise false
@@ -148,6 +148,7 @@ class Spectre(Watchman):
         """
         result = Result(
             success=success,
+            disable_notifier=disable_notifier,
             state=state,
             subject=subject,
             source=self.__class__.__name__,

@@ -1,0 +1,154 @@
+import unittest
+from datetime import datetime
+import pytz
+
+from mock import patch
+from watchmen.models.silhouette import Silhouette
+
+
+class TestSilhouette(unittest.TestCase):
+
+    def setUp(self):
+        self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
+        self.example_filename = "analytics/lookalike/prod/results/2018/12/16/status.json"
+        self.example_exception_message = "Something is not working"
+        self.example_message_chart = {
+            None: 'Silhouette for lookalike feeds failed '
+                  'on \n\t"analytics/lookalike/prod/results/2018/12/16/status.json" \ndue to '
+                  'the Exception:\n\n{}\n\nPlease check the logs!',
+            False: 'ERROR: analytics/lookalike/prod/results/2018/12/16/status.json'
+                   'Lookalike feed never added files from 2 days ago! '
+                   'The feed may be down or simply did not complete!',
+            True: 'Lookalike feed is up and running!',
+        }
+        self.example_success_json = {"STATE": "COMPLETED"}
+        self.example_failed_json = {"STATE": "UNCOMPLETED"}
+        self.example_result_dict = {
+            "details": {},
+            "disable_notifier": False,
+            "message": self.example_message_chart.get(False),
+            "observed_time": "2018-12-18T00:00:00+00:00",
+            "result_id": 0,
+            "success": False,
+            "source": "Silhouette",
+            "state": "FAILURE",
+            "subject": "Silhouette watchman detected an issue with lookalike feed!",
+            "target": "Lookalike Feed S3",
+        }
+        pass
+
+    def test_create_message(self):
+        """
+        test watchmen.models.silhouette :: Silhouette :: _create_message
+        """
+        is_valid_chart = [True, False, None]
+        silhouette_obj = Silhouette()
+        for is_valid in is_valid_chart:
+            expected = self.example_message_chart.get(is_valid)
+            result = silhouette_obj._create_message(self.example_filename, is_valid, {})
+            self.assertEqual(expected, result)
+
+    @patch('watchmen.models.silhouette.Silhouette._process_status')
+    def test_check_process_status(self, mock_process_status):
+        """
+        test watchmen.models.silhouette :: Silhouette :: _check_process_status
+        """
+        silhouette_obj = Silhouette()
+        tests = [{
+            "is_valid": True,
+            "result": True,
+            "tb": None,
+        }, {
+            "is_valid": False,
+            "result": False,
+            "tb": None,
+        }]
+        for test in tests:
+            expected = test.get("result")
+            expected_tb = test.get("tb")
+            mock_process_status.return_value = test.get("is_valid")
+            result, tb = silhouette_obj._check_process_status()
+            self.assertEqual(expected, result)
+            self.assertEqual(expected_tb, tb)
+
+        # Exception occurred
+        mock_process_status.side_effect = Exception(self.example_exception_message)
+        result, result_tb = silhouette_obj._check_process_status()
+        self.assertEqual(result, None)
+        self.assertTrue(self.example_exception_message in result_tb)
+
+    def test_create_result(self):
+        """
+        test watchmen.models.silhouette:: Silhouette :: _create_result
+        """
+        expected = self.example_result_dict
+        silhouette_obj = Silhouette()
+        result = silhouette_obj._create_result(
+            False,
+            False,
+            "FAILURE",
+            "Silhouette watchman detected an issue with lookalike feed!",
+            self.example_message_chart.get(False)).to_dict()
+        # since silhouette does not give observed time, we don't test the time here
+        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+
+        self.assertEqual(expected, result)
+
+    @patch('watchmen.models.silhouette.datetime')
+    def test_get_file_name(self, mock_datetime):
+        """
+        test watchmen.models.silhouette :: Silhouette :: _get_file_name
+        """
+        silhouette_obj = Silhouette()
+        mock_datetime.now.return_value = self.example_today
+        expected_result = self.example_filename
+        returned_result = silhouette_obj._get_file_name()
+        self.assertEqual(expected_result, returned_result)
+
+    @patch('watchmen.models.silhouette.Silhouette._check_process_status')
+    @patch('watchmen.models.silhouette.Silhouette._create_message')
+    def test_monitor(self, mock_create_message, mock_check_process_status):
+        """
+        test watchmen.models.silhouette:: Silhouette :: monitor
+        """
+        silhouette_obj = Silhouette()
+        mock_create_message.return_value = self.example_message_chart.get(False)
+        mock_check_process_status.return_value = False, "string"
+        expected = self.example_result_dict
+        result = silhouette_obj.monitor().to_dict()
+
+        # since silhouette does not give observed time, we don't test the time here
+        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+
+        self.assertDictEqual(result, expected)
+
+    @patch('watchmen.models.silhouette.json.loads')
+    @patch('watchmen.models.silhouette.get_file_contents_s3')
+    def test_process_status(self, mock_get_contents, mock_json_loads):
+        """
+        test watchmen.models.silhouette :: Silhouette :: _process_status
+        """
+        silhouette_obj = Silhouette()
+        tests = [{
+            "json": self.example_success_json,
+            "content": "content",
+            "result": True,
+        }, {
+            "json": self.example_failed_json,
+            "content": "content",
+            "result": False,
+        }, {
+            "json": {},
+            "content": "content",
+            "result": False,
+        }, {
+            "json": self.example_success_json,
+            "content": None,
+            "result": False,
+        }]
+        for test in tests:
+            mock_get_contents.return_value = test.get("content")
+            mock_json_loads.return_value = test.get("json")
+            expected = test.get("result")
+            result = silhouette_obj._process_status()
+            self.assertEqual(expected, result)

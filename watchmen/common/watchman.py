@@ -8,7 +8,10 @@ This is an interface that all watchmen must utilize
 @created: July 1, 2019
 """
 from abc import ABCMeta, abstractmethod
+
 from watchmen.common.result_svc import Result
+from watchmen.utils.logger import get_logger
+from watchmen.config import settings
 
 
 class Watchman(metaclass=ABCMeta):
@@ -27,6 +30,7 @@ class Watchman(metaclass=ABCMeta):
         """
         Constructor of Watchman class
         """
+        self.logger = get_logger(self.__class__.__name__, settings('logging.level', 'INFO'))
         pass
 
     @abstractmethod

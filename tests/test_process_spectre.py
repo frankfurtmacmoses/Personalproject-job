@@ -81,6 +81,7 @@ class TestSpectre(unittest.TestCase):
         spectre_obj = Spectre()
         result = spectre_obj._create_result(
             False,
+            False,
             "FAILURE",
             "Spectre Georgia Tech data monitor detected a failure!",
             self.example_message_chart.get(False)).to_dict()
