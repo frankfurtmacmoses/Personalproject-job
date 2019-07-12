@@ -30,7 +30,8 @@ class Watchman(metaclass=ABCMeta):
         """
         Constructor of Watchman class
         """
-        self.logger = get_logger(self.__class__.__name__, settings('logging.level', 'INFO'))
+        self.source = self.__class__.__name__
+        self.logger = get_logger(self.source, settings('logging.level', 'INFO'))
         pass
 
     @abstractmethod

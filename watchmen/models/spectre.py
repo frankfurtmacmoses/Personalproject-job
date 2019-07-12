@@ -19,14 +19,11 @@ import pytz
 import traceback
 from typing import Tuple
 
-from watchmen.utils.logger import get_logger
 from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.utils.s3 import validate_file_on_s3
 from watchmen.common.watchmen_constants import LENGTH_OF_PRINT_LINE
 from watchmen.common.watchman import Watchman
-
-LOGGER = get_logger(__name__, settings('logging.level', 'INFO'))
 
 # Filepath Strings
 BUCKET_NAME = settings("spectre.bucket_name", "cyber-intel")
@@ -52,6 +49,7 @@ TARGET = "Georgia Tech S3"
 class Spectre(Watchman):
 
     def __init__(self):
+        super().__init__()
         pass
 
     def monitor(self) -> Result:
@@ -104,9 +102,9 @@ class Spectre(Watchman):
             found_file = validate_file_on_s3(BUCKET_NAME, file_path)
             return found_file, None
         except Exception as ex:
-            LOGGER.exception(traceback.extract_stack())
-            LOGGER.info('*' * LENGTH_OF_PRINT_LINE)
-            LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
+            self.logger.exception(traceback.extract_stack())
+            self.logger.info('*' * LENGTH_OF_PRINT_LINE)
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
 
@@ -134,7 +132,7 @@ class Spectre(Watchman):
         status = FILE_STATUS.get(found_file)
         message = status.get('message')
         if status.get('log_message'):
-            LOGGER.info(status.get('log_message'))
+            self.logger.info(status.get('log_message'))
         return message
 
     def _create_result(self, success, disable_notifier, state, subject, message):
@@ -151,7 +149,7 @@ class Spectre(Watchman):
             disable_notifier=disable_notifier,
             state=state,
             subject=subject,
-            source=self.__class__.__name__,
+            source=self.source,
             target=TARGET,
             message=message)
         return result

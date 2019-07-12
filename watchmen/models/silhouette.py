@@ -106,7 +106,7 @@ class Silhouette(Watchman):
             disable_notifier=disable_notifier,
             state=state,
             subject=subject,
-            source=self.__class__.__name__,
+            source=self.source,
             target=TARGET,
             message=message)
         return result
