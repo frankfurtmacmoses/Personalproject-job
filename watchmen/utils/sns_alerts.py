@@ -29,11 +29,13 @@ def raise_alarm(topic_arn, msg, subject):
     """
     print("***Sounding the Alarm!***\n" + msg)
     sns_client = get_sns_client()
+    print("MADE SNS CLIENT")
     response = sns_client.publish(
         TopicArn=topic_arn,
         Message=msg,
         Subject=subject
     )
+    print("Response is :\n {}".format(response))
     try:
         assert response['ResponseMetadata']['HTTPStatusCode'] == 200, \
             "ERROR Publishing to sns failed!"

@@ -5,9 +5,15 @@ Mappings:
     test:
       Bucket: cyber-intel-test
       BuildFile: watchmen-lambdas-test.zip
+      VPC: vpc-28ee704e
+      SubnetC: subnet-9c16fbb0
+      SubnetD: subnet-870dd2cf
     prod:
       Bucket: cyber-intel
       BuildFile: watchmen-lambdas-prod.zip
+      VPC: vpc-28ee704e
+      SubnetC: subnet-9c16fbb0
+      SubnetD: subnet-870dd2cf
 Parameters:
   Env:
     Description: Environment to be deployed.
@@ -16,6 +22,37 @@ Parameters:
     Description: The S3 prefix that contains the Watchmen builds.
     Type: String
 Resources:
+  WatchmenJupiterLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors Sockeye endpoints.
+      Handler: handler.start_jupiter_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntelF
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-jupiter
+        - Key: Env
+          Value: !Ref Env
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt JupiterSecurityGroup.GroupId
+        SubnetIds:
+          - !FindInMap [EnvMap, !Ref Env, SubnetC]
+          - !FindInMap [EnvMap, !Ref Env, SubnetD]
   WatchmenManhattanLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -166,6 +203,16 @@ Resources:
           Value: watchmen-spectre
         - Key: Env
           Value: !Ref Env
+  JupiterScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A hourly event that kicks off the Jupiter Watchman
+      ScheduleExpression: cron(0 * * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: JupiterScheduler
+          Arn: !GetAtt WatchmenJupiterLambda.Arn
+          Input: '{"type": "Hourly"}'
   ManhattanDailyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -241,6 +288,13 @@ Resources:
       Targets:
         - Id: SpectreScheduler
           Arn: !GetAtt WatchmenSpectreLambda.Arn
+  InvokeJupiterLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenJupiterLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt JupiterScheduledEvent.Arn
   InvokeManhattanDailyLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -309,6 +363,8 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
       Policies:
         - PolicyName: !Join ['', [WatchmenLambdaExecutionRole, !Ref Env]]
           PolicyDocument:
@@ -346,3 +402,27 @@ Resources:
                   - 's3:ListAllMyBuckets'
                   - 's3:HeadBucket'
                 Resource: '*'
+  JupiterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group that allows connections to cyber-intel services
+      GroupName: !Join ['-', [!Ref "AWS::StackName", JupiterSecurityGroup]]
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-jupiter
+        - Key: Env
+          Value: !Ref Env
+      VpcId: !FindInMap [EnvMap, !Ref Env, VPC]
