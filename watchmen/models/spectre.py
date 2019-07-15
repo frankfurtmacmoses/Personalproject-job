@@ -19,10 +19,10 @@ import pytz
 import traceback
 from typing import Tuple
 
+from watchmen import const
 from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.utils.s3 import validate_file_on_s3
-from watchmen.common.watchmen_constants import LENGTH_OF_PRINT_LINE
 from watchmen.common.watchman import Watchman
 
 # Filepath Strings
@@ -103,7 +103,7 @@ class Spectre(Watchman):
             return found_file, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * LENGTH_OF_PRINT_LINE)
+            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb

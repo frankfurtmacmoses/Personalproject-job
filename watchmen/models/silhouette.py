@@ -22,10 +22,10 @@ import pytz
 import traceback
 
 # Cyberint imports
+from watchmen import const
 from watchmen.utils.s3 import get_file_contents_s3
 from watchmen.common.result import Result
 from watchmen.config import settings
-from watchmen.common.watchmen_constants import LENGTH_OF_PRINT_LINE
 from watchmen.common.watchman import Watchman
 
 SUCCESS_MESSAGE = "Lookalike feed is up and running!"
@@ -151,7 +151,7 @@ class Silhouette(Watchman):
             return is_status_valid, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * LENGTH_OF_PRINT_LINE)
+            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
