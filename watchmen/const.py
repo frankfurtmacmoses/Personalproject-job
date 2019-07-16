@@ -1,5 +1,5 @@
 """
-watchmen/common/watchmen_constants.py
+watchmen/common/const.py
 
 Constants for Watchmen project.
 
