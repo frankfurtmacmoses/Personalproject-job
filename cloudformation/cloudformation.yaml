@@ -103,7 +103,7 @@ Resources:
         Variables:
           BUCKET_NAME: bitaa
           ENVIRONMENT: cyberint-prod
-          PREFIX: parquet/com.farsightsecurity.300021
+          RORSCHACH_PREFIX: parquet/com.farsightsecurity.300021
       Handler: handler.start_rorschach_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
