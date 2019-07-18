@@ -24,6 +24,7 @@ class Watchman(metaclass=ABCMeta):
         "success": "SUCCESS",
         "exception": "EXCEPTION",
         "failure": "FAILURE",
+        "recovered": "RECOVERED",
     }
 
     def __init__(self):

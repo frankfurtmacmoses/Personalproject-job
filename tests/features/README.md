@@ -469,7 +469,7 @@
   {
       "details": {},
       "disable_notifier": false,
-      "message": "ERROR: 2019/07/gt_mpdns_20190711.zipcould not be found in cyber-intel/hancock/georgia_tech/! Please check S3 and Georgia Tech logs!",
+      "message": "ERROR: 2019/07/gt_mpdns_20190711.zip could not be found in cyber-intel/hancock/georgia_tech/! Please check S3 and Georgia Tech logs!",
       "observed_time": "2019-07-12T01:27:27.300489",
       "result_id": 0,
       "source": "Spectre",

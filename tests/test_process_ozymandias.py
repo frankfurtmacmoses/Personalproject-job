@@ -11,8 +11,8 @@ class TestOzymandias(unittest.TestCase):
     def setUp(self):
         self.example_filename = \
             (datetime.now(pytz.utc) - timedelta(days=2)).strftime("%Y%m%d").replace('/', '') + '.compressed'
-        self.example_exception_message = "Something is not working"
-        self.example_message_chart = {
+        self.example_exception_details = "Something is not working"
+        self.example_details_chart = {
             None: "Ozymandias failed due to "
                   "the following:\n\n{}\n\nPlease check the logs!",
             False: "ERROR: " + self.example_filename + " could not "
@@ -20,27 +20,32 @@ class TestOzymandias(unittest.TestCase):
             True: "Neustar data found on S3! File found: " + self.example_filename,
         }
         self.example_result_dict = {
-            "details": {},
+            "details": "ERROR: {} could not be found in hancock/neustar! "
+                       "Please check S3 and neustar VM!".format(self.example_filename),
             "disable_notifier": False,
-            "message": self.example_message_chart.get(False),
-            "observed_time": "2018-12-18T00:00:00+00:00",
+            "dt_created": "2018-12-18T00:00:00+00:00",
+            "dt_updated": "2018-12-18T00:00:00+00:00",
+            "is_ack": False,
+            "is_notified": False,
+            "message": "NO MESSAGE",
             "result_id": 0,
-            "success": False,
+            "snapshot": None,
             "source": "Ozymandias",
             "state": "FAILURE",
             "subject": "Ozymandias neustar data monitor detected a failure!",
+            "success": False,
             "target": "Neustar",
         }
 
-    def test_create_message(self):
+    def test_create_details(self):
         """
-        test watchmen.models.ozymandias :: Ozymandias :: _create_message
+        test watchmen.models.ozymandias :: Ozymandias :: _create_details
         """
         found_file_chart = [True, False, None]
         ozymandias_obj = Ozymandias()
         for found_file in found_file_chart:
-            expected = self.example_message_chart.get(found_file)
-            result = ozymandias_obj._create_message(found_file, {})
+            expected = self.example_details_chart.get(found_file)
+            result = ozymandias_obj._create_details(found_file, {})
             self.assertEqual(expected, result)
             pass
 
@@ -55,9 +60,10 @@ class TestOzymandias(unittest.TestCase):
             False,
             "FAILURE",
             "Ozymandias neustar data monitor detected a failure!",
-            self.example_message_chart.get(False)).to_dict()
+            self.example_details_chart.get(False)).to_dict()
         # since ozymandias does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+        result['dt_created'] = "2018-12-18T00:00:00+00:00"
+        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, result)
 
@@ -85,24 +91,25 @@ class TestOzymandias(unittest.TestCase):
             self.assertEqual(expected_tb, tb)
 
         # Exception occurred
-        mock_validate_file.side_effect = Exception(self.example_exception_message)
+        mock_validate_file.side_effect = Exception(self.example_exception_details)
         result, result_tb = ozymandias_obj._check_file_exists()
         self.assertEqual(result, None)
-        self.assertTrue(self.example_exception_message in result_tb)
+        self.assertTrue(self.example_exception_details in result_tb)
 
     @patch('watchmen.models.ozymandias.Ozymandias._check_file_exists')
-    @patch('watchmen.models.ozymandias.Ozymandias._create_message')
-    def test_monitor(self, mock_create_message, mock_check_file_exists):
+    @patch('watchmen.models.ozymandias.Ozymandias._create_details')
+    def test_monitor(self, mock_create_details, mock_check_file_exists):
         """
         test watchmen.models.ozymandias:: Ozymandias :: monitor
         """
         ozymandias_obj = Ozymandias()
-        mock_create_message.return_value = self.example_message_chart.get(False)
+        mock_create_details.return_value = self.example_details_chart.get(False)
         mock_check_file_exists.return_value = False, "string"
         expected = self.example_result_dict
         result = ozymandias_obj.monitor().to_dict()
 
         # since ozymandias does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+        result['dt_created'] = "2018-12-18T00:00:00+00:00"
+        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(result, expected)

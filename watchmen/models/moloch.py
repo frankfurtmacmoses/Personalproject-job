@@ -112,42 +112,42 @@ class Moloch(Watchman):
             tb = traceback.format_exc()
             return None, None, tb
 
-    def _create_message(self, hostname_check, domain_check, tb):
+    def _create_details(self, hostname_check, domain_check, tb):
         """
         Depending on the status of Newly Observed Hostnames and
-        Newly Observed Domains feeds, send message of failure for
+        Newly Observed Domains feeds, send details of failure for
         the situations where either of hostnames or domain feeds
-        is failed or both of them failed. Send successful message
-        when both of them are added successfully. Exception message
+        is failed or both of them failed. Send successful details
+        when both of them are added successfully. Exception details
         when exception happened in the process.
 
         @param hostname_check: <bool> status of newly observed hostnames
         @param domain_check: <bool> status of newly observed domains
         @param tb: <str> traceback of exception during the process, None if no exception
         @return: <str> <bool>
-        <str>: message
-        <bool>: type of message, True for success, False for failure, None for exception
+        <str>: details
+        <bool>: type of details, True for success, False for failure, None for exception
         """
-        status, message_type = SUCCESS_MESSAGE, True
+        status, details_type = SUCCESS_MESSAGE, True
         if domain_check is None or hostname_check is None:
             return EXCEPTION_MESSAGE.format(tb), None
 
         if not domain_check or not hostname_check:
             if not domain_check and not hostname_check:
-                status, message_type = FAILURE_BOTH, False
+                status, details_type = FAILURE_BOTH, False
             elif not domain_check:
-                status, message_type = FAILURE_DOMAIN, False
+                status, details_type = FAILURE_DOMAIN, False
             elif not hostname_check:
-                status, message_type = FAILURE_HOSTNAME, False
-        return status, message_type
+                status, details_type = FAILURE_HOSTNAME, False
+        return status, details_type
 
-    def _create_result(self, success, disable_notifier, state, subject, message):
+    def _create_result(self, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, otherwise false
         @param state: <str> state of the monitor check
         @param subject: <str> subject for the notification
-        @param message: <str> content for the notification
+        @param details: <str> content for the notification
         @return: <Result> result based on the parameters
         """
         result = Result(
@@ -157,7 +157,7 @@ class Moloch(Watchman):
             subject=subject,
             source=self.source,
             target=TARGET,
-            message=message)
+            details=details)
         return result
 
     def monitor(self) -> Result:
@@ -166,7 +166,7 @@ class Moloch(Watchman):
         @return: <Result> Result object
         """
         domain_check, host_check, tb = self._get_check_results()
-        message, msg_type = self._create_message(host_check, domain_check, tb)
+        details, msg_type = self._create_details(host_check, domain_check, tb)
         parameter_chart = {
             None: {
                 "success": False,
@@ -193,10 +193,13 @@ class Moloch(Watchman):
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
             subject=parameters.get("subject"),
-            message=message
+            details=details
         )
         return result
-#
+
+# the following blocked out code is for local testing in the future
+
+
 # def run():
 #     moloch_obj = Moloch()
 #     result = moloch_obj.monitor()

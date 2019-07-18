@@ -59,7 +59,7 @@ class Spectre(Watchman):
         """
         filename = self._create_s3_filename()
         file_found, tb = self._check_if_found_file(filename)
-        message = self._create_message(filename, file_found, tb)
+        details = self._create_details(filename, file_found, tb)
         parameter_chart = {
             None: {
                 "success": False,
@@ -86,7 +86,7 @@ class Spectre(Watchman):
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
             subject=parameters.get("subject"),
-            message=message
+            details=details
         )
         return result
 
@@ -108,7 +108,7 @@ class Spectre(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
-    def _create_message(self, filename, found_file, tb):
+    def _create_details(self, filename, found_file, tb):
         """
         Depending if the file was found or not, send an email alert if it was not or an error occurred
         @param found_file: whether or not the file was found (boolean) or None if there was an exception
@@ -117,31 +117,31 @@ class Spectre(Watchman):
         """
         FILE_STATUS = {
             None: {
-                'message': EXCEPTION_MESSAGE.format(filename, tb),
-                'log_message': EXCEPTION_MESSAGE.format(filename, tb),
+                'details': EXCEPTION_MESSAGE.format(filename, tb),
+                'log_details': EXCEPTION_MESSAGE.format(filename, tb),
             },
             False: {
-                'message': 'ERROR: {}{}'.format(filename, FAILURE_MESSAGE),
-                'log_message': 'File: {}{}'.format(filename, FILE_NOT_FOUND_ERROR),
+                'details': 'ERROR: {} {}'.format(filename, FAILURE_MESSAGE),
+                'log_details': 'File: {} {}'.format(filename, FILE_NOT_FOUND_ERROR),
             },
             True: {
-                'message': SUCCESS_MESSAGE,
-                'log_message': SUCCESS_MESSAGE,
+                'details': SUCCESS_MESSAGE,
+                'log_details': SUCCESS_MESSAGE,
             }
         }
         status = FILE_STATUS.get(found_file)
-        message = status.get('message')
-        if status.get('log_message'):
-            self.logger.info(status.get('log_message'))
-        return message
+        details = status.get('details')
+        if status.get('log_details'):
+            self.logger.info(status.get('log_details'))
+        return details
 
-    def _create_result(self, success, disable_notifier, state, subject, message):
+    def _create_result(self, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, othrewise false
         @param state: <str> state of the monitor check
         @param subject: <str> subject for the notification
-        @param message: <str> content for the notification
+        @param details: <str> content for the notification
         @return: <Result> result based on the parameters
         """
         result = Result(
@@ -151,7 +151,7 @@ class Spectre(Watchman):
             subject=subject,
             source=self.source,
             target=TARGET,
-            message=message)
+            details=details)
         return result
 
     def _create_s3_filename(self):
@@ -164,3 +164,15 @@ class Spectre(Watchman):
         filename = yesterday.strftime('%Y') + "/" + \
             yesterday.strftime('%m') + "/gt_mpdns_" + yesterday.strftime("%Y%m%d") + ".zip"
         return filename
+
+# then following blocked out code is for local testing in the future
+
+
+# def run():
+#     spectre_obj = Spectre()
+#     result = spectre_obj.monitor()
+#     print(result.to_dict())
+#
+
+# if __name__ == "__main__":
+#     run()

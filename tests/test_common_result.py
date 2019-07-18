@@ -16,20 +16,25 @@ class TestResult(unittest.TestCase):
         """
         setup for test
         """
-        self.static_time = datetime(year=2019, month=5, day=29)
-        self.result_time = '2019-09-23'
+        self.static_time = datetime(year=2018, month=12, day=18)
+        self.result_time = '2018-12-18'
         self.result_args = {
-            "details": {
-                "source": "Jupiter", "target": "Sockeye", "time": "2019-06-27T18"},
+            "details": "ERROR: 2018/12/gt_mpdns_20181217.zip could not be found in "
+                       "cyber-intel/hancock/georgia_tech/! Please check S3 and Georgia "
+                       "Tech logs!",
             "disable_notifier": False,
-            "message": "Endpoint count is below minimum. "
-                       "There is no need to check or something is wrong with endpoint file.",
-            "result_id": 9012018,
-            "success": False,
-            "source": "Jupiter",
+            "dt_created": self.static_time,
+            "dt_updated": self.static_time,
+            "is_ack": False,
+            "is_notified": False,
+            "message": "NO MESSAGE",
+            "result_id": 0,
+            "snapshot": None,
+            "source": "Spectre",
             "state": "FAILURE",
-            "subject": "Jupiter: Failure in checking endpoint",
-            "target": "Sockeye",
+            "subject": "Spectre Georgia Tech data monitor detected a failure!",
+            "success": False,
+            "target": "Georgia Tech S3",
         }
         pass
 
@@ -46,7 +51,7 @@ class TestResult(unittest.TestCase):
         import copy
         test1 = copy.deepcopy(self.result_args)
         test2 = copy.deepcopy(self.result_args)
-        test2['observed_time'] = self.static_time
+        test2["dt_created"] = test2["dt_updated"] = self.static_time
 
         tests = [{
             "args": test1
@@ -55,11 +60,13 @@ class TestResult(unittest.TestCase):
         }]
         for idx, test in enumerate(tests):
             args = test['args']
-            resultObj = Result(**args)
+            result_obj = Result(**args)
             expected = copy.deepcopy(self.result_args)
-            dt = args.get('observed_time')
-            expected['observed_time'] = self.result_time if dt is None else dt.isoformat()
+            dt_created = args.get('dt_created')
+            expected['dt_created'] = self.result_time if dt_created is None else dt_created.isoformat()
+            dt_updated = args.get('dt_updated')
+            expected['dt_updated'] = self.result_time if dt_updated is None else dt_updated.isoformat()
             LOGGER.info('Test %02d: %s', idx, args)
-            result = resultObj.to_dict()
+            result = result_obj.to_dict()
             self.assertDictEqual(result, expected)
         pass
