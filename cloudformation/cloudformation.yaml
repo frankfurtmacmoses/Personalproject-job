@@ -99,11 +99,6 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors parquet data coming into S3 hourly.
-      Environment:
-        Variables:
-          BUCKET_NAME: bitaa
-          ENVIRONMENT: cyberint-prod
-          RORSCHACH_PREFIX: parquet/com.farsightsecurity.300021
       Handler: handler.start_rorschach_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn

@@ -11,8 +11,8 @@ class TestSilhouette(unittest.TestCase):
     def setUp(self):
         self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
         self.example_filename = "analytics/lookalike/prod/results/2018/12/16/status.json"
-        self.example_exception_message = "Something is not working"
-        self.example_message_chart = {
+        self.example_exception_details = "Something is not working"
+        self.example_details_chart = {
             None: 'Silhouette for lookalike feeds failed '
                   'on \n\t"analytics/lookalike/prod/results/2018/12/16/status.json" \ndue to '
                   'the Exception:\n\n{}\n\nPlease check the logs!',
@@ -24,28 +24,35 @@ class TestSilhouette(unittest.TestCase):
         self.example_success_json = {"STATE": "COMPLETED"}
         self.example_failed_json = {"STATE": "UNCOMPLETED"}
         self.example_result_dict = {
-            "details": {},
+            "details": "ERROR: "
+                       "analytics/lookalike/prod/results/2018/12/16/status.jsonLookalike "
+                       "feed never added files from 2 days ago! The feed may be down or "
+                       "simply did not complete!",
             "disable_notifier": False,
-            "message": self.example_message_chart.get(False),
-            "observed_time": "2018-12-18T00:00:00+00:00",
+            "dt_created": "2018-12-18T00:00:00+00:00",
+            "dt_updated": "2018-12-18T00:00:00+00:00",
+            "is_ack": False,
+            "is_notified": False,
+            "message": "NO MESSAGE",
             "result_id": 0,
-            "success": False,
+            "snapshot": None,
             "source": "Silhouette",
             "state": "FAILURE",
             "subject": "Silhouette watchman detected an issue with lookalike feed!",
+            "success": False,
             "target": "Lookalike Feed S3",
         }
         pass
 
-    def test_create_message(self):
+    def test_create_details(self):
         """
-        test watchmen.models.silhouette :: Silhouette :: _create_message
+        test watchmen.models.silhouette :: Silhouette :: _create_details
         """
         is_valid_chart = [True, False, None]
         silhouette_obj = Silhouette()
         for is_valid in is_valid_chart:
-            expected = self.example_message_chart.get(is_valid)
-            result = silhouette_obj._create_message(self.example_filename, is_valid, {})
+            expected = self.example_details_chart.get(is_valid)
+            result = silhouette_obj._create_details(self.example_filename, is_valid, {})
             self.assertEqual(expected, result)
 
     @patch('watchmen.models.silhouette.Silhouette._process_status')
@@ -72,10 +79,10 @@ class TestSilhouette(unittest.TestCase):
             self.assertEqual(expected_tb, tb)
 
         # Exception occurred
-        mock_process_status.side_effect = Exception(self.example_exception_message)
+        mock_process_status.side_effect = Exception(self.example_exception_details)
         result, result_tb = silhouette_obj._check_process_status()
         self.assertEqual(result, None)
-        self.assertTrue(self.example_exception_message in result_tb)
+        self.assertTrue(self.example_exception_details in result_tb)
 
     def test_create_result(self):
         """
@@ -88,9 +95,10 @@ class TestSilhouette(unittest.TestCase):
             False,
             "FAILURE",
             "Silhouette watchman detected an issue with lookalike feed!",
-            self.example_message_chart.get(False)).to_dict()
+            self.example_details_chart.get(False)).to_dict()
         # since silhouette does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+        result['dt_created'] = "2018-12-18T00:00:00+00:00"
+        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, result)
 
@@ -106,19 +114,20 @@ class TestSilhouette(unittest.TestCase):
         self.assertEqual(expected_result, returned_result)
 
     @patch('watchmen.models.silhouette.Silhouette._check_process_status')
-    @patch('watchmen.models.silhouette.Silhouette._create_message')
-    def test_monitor(self, mock_create_message, mock_check_process_status):
+    @patch('watchmen.models.silhouette.Silhouette._create_details')
+    def test_monitor(self, mock_create_details, mock_check_process_status):
         """
         test watchmen.models.silhouette:: Silhouette :: monitor
         """
         silhouette_obj = Silhouette()
-        mock_create_message.return_value = self.example_message_chart.get(False)
+        mock_create_details.return_value = self.example_details_chart.get(False)
         mock_check_process_status.return_value = False, "string"
         expected = self.example_result_dict
         result = silhouette_obj.monitor().to_dict()
 
         # since silhouette does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+        result['dt_created'] = "2018-12-18T00:00:00+00:00"
+        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(result, expected)
 

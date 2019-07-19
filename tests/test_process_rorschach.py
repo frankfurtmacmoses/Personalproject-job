@@ -33,7 +33,7 @@ class TestRorschach(unittest.TestCase):
         self.example_check_time = self.example_now - self.example_dt_offset
 
         self.example_status = "A giant header was created"
-        self.example_exception_message = "Something really bad happened!"
+        self.example_exception_details = "Something really bad happened!"
         self.example_traceback = "Fake traceback"
         self.example_parquet_result = "Failure Occurred"
 
@@ -43,7 +43,7 @@ class TestRorschach(unittest.TestCase):
             rorschach.Rorschach.suffix_format)
         self.example_full_path = os.sep.join([self.prefix_env, self.example_suffix]) + os.sep
 
-        self.example_message = "This is a Test, Ignore!"
+        self.example_details = "This is a Test, Ignore!"
         self.example_arn = 'arn:aws:sns:us-east-1:405093580753:Hancock'
         self.example_subject = "TEST: Example Subject Message"
 
@@ -59,24 +59,29 @@ class TestRorschach(unittest.TestCase):
             self.msg_format
         self.all_zero = rorschach._EVERYTHING_ZERO_SIZE_MESSAGE + \
             self.msg_format
-        self.example_fail_message = "some failure message"
+        self.example_fail_details = "some failure details"
         self.example_fail_subject = "some failure subject"
         self.example_result_dict = {
-            "details": {},
-            "disable_notifier": False,
-            "message": self.example_fail_message,
-            "observed_time": "2017-05-19T08:00:00+00:00",
-            "result_id": 0,
-            "success": False,
-            "source": "Rorschach",
-            "state": "FAILURE",
-            "subject": self.example_fail_subject,
-            "target": "Parquet Data",
+                "details": self.example_fail_details,
+                "disable_notifier": False,
+                "dt_created": "2018-12-18T00:00:00+00:00",
+                "dt_updated": "2018-12-18T00:00:00+00:00",
+                "is_ack": False,
+                "is_notified": False,
+                "message": "NO MESSAGE",
+                "result_id": 0,
+                "snapshot": None,
+                "source": "Rorschach",
+                "state": "FAILURE",
+                "subject": "some failure subject",
+                "success": False,
+                "target": "Parquet Data",
         }
 
         # example result dict with time but not str
         self.example_result_dict_time = self.example_result_dict.copy()
-        self.example_result_dict_time["observed_time"] = self.example_check_time
+        self.example_result_dict_time["dt_created"] = self.example_check_time
+        self.example_result_dict_time["dt_updated"] = self.example_check_time
         self.example_result = Result(**self.example_result_dict_time)
 
         # adjust time in the reuslt for result
@@ -195,7 +200,7 @@ class TestRorschach(unittest.TestCase):
         expected_result = {
             "success": False,
             "subject": _SUBJECT_MESSAGE,
-            "message": "The S3 bucket for today is empty or missing!  %s" % self.example_full_path
+            "details": "The S3 bucket for today is empty or missing!  %s" % self.example_full_path
         }
         self.assertEqual(expected_result, return_result)
 
@@ -206,7 +211,7 @@ class TestRorschach(unittest.TestCase):
         watcher.nothing_parquet = True
         watcher.everything_zero_size = True
         return_result = watcher._summarize_parquet_stream()
-        # Create message
+        # Create details
         msg = ''
         msg += _NOTHING_RECENT_MESSAGE
         msg += _NOTHING_PARQUET_MESSAGE
@@ -214,7 +219,7 @@ class TestRorschach(unittest.TestCase):
         expected_result = {
             "success": False,
             "subject": _SUBJECT_MESSAGE,
-            "message": msg
+            "details": msg
         }
         self.assertEqual(expected_result, return_result)
 
@@ -228,7 +233,7 @@ class TestRorschach(unittest.TestCase):
         expected_result = {
             "success": True,
             'subject': _SUCCESS_SUBJECT,
-            "message": _SUCCESS_MESSAGE
+            "details": _SUCCESS_MESSAGE
         }
         self.assertEqual(expected_result, return_result)
 
@@ -246,13 +251,13 @@ class TestRorschach(unittest.TestCase):
         returned = watcher._get_parquet_result()
         self.assertEqual(expected, returned)
 
-        mock_check.side_effect = Exception(self.example_exception_message)
+        mock_check.side_effect = Exception(self.example_exception_details)
         msg = "An error occurred while checking the parquet at {} due to the following:\n\n{}\n\n".format(
             self.example_check_time, self.example_traceback)
         expected = {
             "success": None,
             "subject": _SUBJECT_EXCEPTION_MESSAGE,
-            "message": msg + "\n\t%s\n\t%s" % (self.example_full_path, self.example_check_time)
+            "details": msg + "\n\t%s\n\t%s" % (self.example_full_path, self.example_check_time)
         }
         returned = watcher._get_parquet_result()
         self.assertEqual(expected, returned)
@@ -262,12 +267,14 @@ class TestRorschach(unittest.TestCase):
         test watchmen.models.rorschach :: Rorschach :: _create_result
         """
         watcher = self.createWatcher()
-        summary = {"success": False, "message": self.example_fail_message, "subject": self.example_fail_subject}
+        summary = {"success": False, "details": self.example_fail_details, "subject": self.example_fail_subject}
         result_dict = watcher._create_result(summary).to_dict()
         expected = self.example_result_dict
 
         # since rorschach does not give observed time, we don't test the time here
-        result_dict["observed_time"] = "2017-05-19T08:00:00+00:00"
+
+        result_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
+        result_dict["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(expected, result_dict)
 
@@ -279,12 +286,15 @@ class TestRorschach(unittest.TestCase):
         watcher = self.createWatcher()
         mock_get_parquet.return_value = {
             "success": False,
-            "message": self.example_fail_message,
+            "details": self.example_fail_details,
             "subject": self.example_fail_subject,
         }
         watcher._get_parquet_result = mock_get_parquet
         expected = self.example_result_dict
         result = watcher.monitor().to_dict()
+
         # since rorschach does not give observed time, we don't test the time here
-        result["observed_time"] = "2017-05-19T08:00:00+00:00"
+        result["dt_created"] = "2018-12-18T00:00:00+00:00"
+        result["dt_updated"] = "2018-12-18T00:00:00+00:00"
+
         self.assertDictEqual(expected, result)

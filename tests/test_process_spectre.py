@@ -11,27 +11,33 @@ class TestSpectre(unittest.TestCase):
     def setUp(self):
         self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
         self.example_filename = "2018/12/gt_mpdns_20181217.zip"
-        self.example_exception_message = "Something is not working"
+        self.example_exception_details = "Something is not working"
         self.example_status = "The file was checked"
-        self.example_message_chart = {
+        self.example_details_chart = {
             None: 'Spectre for Georgia Tech failed '
                   'on \n\t"2018/12/gt_mpdns_20181217.zip" \ndue to '
                   'the Exception:\n\n{}\n\nPlease check the logs!',
-            False: "ERROR: 2018/12/gt_mpdns_20181217.zip"
+            False: "ERROR: 2018/12/gt_mpdns_20181217.zip "
                    "could not be found in cyber-intel/hancock/georgia_tech/! "
                    "Please check S3 and Georgia Tech logs!",
             True: "Georgia Tech Feed data found on S3!",
         }
         self.example_result_dict = {
-            "details": {},
+            "details": "ERROR: 2018/12/gt_mpdns_20181217.zip could not be found in "
+                       "cyber-intel/hancock/georgia_tech/! Please check S3 and Georgia "
+                       "Tech logs!",
             "disable_notifier": False,
-            "message": self.example_message_chart.get(False),
-            "observed_time": "2018-12-18T00:00:00+00:00",
+            "dt_created": "2018-12-18T00:00:00+00:00",
+            "dt_updated": "2018-12-18T00:00:00+00:00",
+            "is_ack": False,
+            "is_notified": False,
+            "message": "NO MESSAGE",
             "result_id": 0,
-            "success": False,
+            "snapshot": None,
             "source": "Spectre",
             "state": "FAILURE",
             "subject": "Spectre Georgia Tech data monitor detected a failure!",
+            "success": False,
             "target": "Georgia Tech S3",
         }
 
@@ -57,20 +63,20 @@ class TestSpectre(unittest.TestCase):
             self.assertEqual(result, expected)
 
         # Exception occurred
-        mock_validate.side_effect = Exception(self.example_exception_message)
+        mock_validate.side_effect = Exception(self.example_exception_details)
         result, result_tb = spectre_obj._check_if_found_file(self.example_filename)
         self.assertEqual(result, None)
-        self.assertTrue(self.example_exception_message in result_tb)
+        self.assertTrue(self.example_exception_details in result_tb)
 
-    def test_create_message(self):
+    def test_create_details(self):
         """
-        test watchmen.models.spectre:: Spectre :: _create_message
+        test watchmen.models.spectre:: Spectre :: _create_details
         """
         file_founds = [True, False, None]
         spectre_obj = Spectre()
         for file_found in file_founds:
-            expected = self.example_message_chart.get(file_found)
-            result = spectre_obj._create_message(self.example_filename, file_found, {})
+            expected = self.example_details_chart.get(file_found)
+            result = spectre_obj._create_details(self.example_filename, file_found, {})
             self.assertEqual(result, expected)
 
     def test_create_result(self):
@@ -84,9 +90,10 @@ class TestSpectre(unittest.TestCase):
             False,
             "FAILURE",
             "Spectre Georgia Tech data monitor detected a failure!",
-            self.example_message_chart.get(False)).to_dict()
+            self.example_details_chart.get(False)).to_dict()
         # since spectre does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+        result['dt_created'] = "2018-12-18T00:00:00+00:00"
+        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(result, expected)
 
@@ -102,18 +109,19 @@ class TestSpectre(unittest.TestCase):
         self.assertEqual(expected_result, returned_result)
 
     @patch('watchmen.models.spectre.Spectre._check_if_found_file')
-    @patch('watchmen.models.spectre.Spectre._create_message')
-    def test_monitor(self, mock_message, mock_found):
+    @patch('watchmen.models.spectre.Spectre._create_details')
+    def test_monitor(self, mock_details, mock_found):
         """
         test watchmen.models.spectre:: Spectre :: monitor
         """
         spectre_obj = Spectre()
-        mock_message.return_value = self.example_message_chart.get(False)
+        mock_details.return_value = self.example_details_chart.get(False)
         mock_found.return_value = False, "string"
         expected = self.example_result_dict
         result = spectre_obj.monitor().to_dict()
 
         # since spectre does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+        result['dt_created'] = "2018-12-18T00:00:00+00:00"
+        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(result, expected)

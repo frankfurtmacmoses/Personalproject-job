@@ -61,7 +61,7 @@ class Silhouette(Watchman):
         @return: <result> Result Object.
         """
         is_status_valid, tb = self._check_process_status()
-        message = self._create_message(self.filename, is_status_valid, tb)
+        details = self._create_details(self.filename, is_status_valid, tb)
         parameter_chart = {
             None: {
                 "success": False,
@@ -88,17 +88,17 @@ class Silhouette(Watchman):
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
             subject=parameters.get("subject"),
-            message=message
+            details=details
         )
         return result
 
-    def _create_result(self, success, disable_notifier, state, subject, message):
+    def _create_result(self, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, otherwise false
         @param state: <str> state of the monitor check
         @param subject: <str> subject for the notification
-        @param message: <str> content for the notification
+        @param details: <str> content for the notification
         @return: <Result> result based on the parameters
         """
         result = Result(
@@ -108,10 +108,10 @@ class Silhouette(Watchman):
             subject=subject,
             source=self.source,
             target=TARGET,
-            message=message)
+            details=details)
         return result
 
-    def _create_message(self, filename, is_status_valid, tb):
+    def _create_details(self, filename, is_status_valid, tb):
         """
         Depending on if the status of lookalike feed, send an email alert if it was not or an error occurred
         @param is_status_valid: whether or not the lookalike feed has good status or None if there was an exception
@@ -120,23 +120,23 @@ class Silhouette(Watchman):
         """
         FILE_STATUS = {
             None: {
-                'message': EXCEPTION_MESSAGE.format(filename, tb),
-                'log_message': EXCEPTION_MESSAGE.format(filename, tb),
+                'details': EXCEPTION_MESSAGE.format(filename, tb),
+                'log_details': EXCEPTION_MESSAGE.format(filename, tb),
             },
             False: {
-                'message': 'ERROR: {}{}'.format(filename, FAILURE_MESSAGE),
-                'log_message': 'File: {}{}'.format(filename, FAILURE_MESSAGE),
+                'details': 'ERROR: {}{}'.format(filename, FAILURE_MESSAGE),
+                'log_details': 'File: {}{}'.format(filename, FAILURE_MESSAGE),
             },
             True: {
-                'message': SUCCESS_MESSAGE,
-                'log_message': SUCCESS_MESSAGE,
+                'details': SUCCESS_MESSAGE,
+                'log_details': SUCCESS_MESSAGE,
             }
         }
         status = FILE_STATUS.get(is_status_valid)
-        message = status.get('message')
-        if status.get('log_message'):
-            self.logger.info(status.get('log_message'))
-        return message
+        details = status.get('details')
+        if status.get('log_details'):
+            self.logger.info(status.get('log_details'))
+        return details
 
     def _check_process_status(self):
         """
@@ -179,3 +179,15 @@ class Silhouette(Watchman):
             if status_json.get('STATE') == COMPLETED_STATUS:
                 is_completed = True
         return is_completed
+
+# the following blocked out code is for local testing in the future
+
+
+# def run():
+#     silhouette_obj = Silhouette()
+#     result = silhouette_obj.monitor()
+#     print(result.to_dict())
+#
+#
+# if __name__ == "__main__":
+#     run()

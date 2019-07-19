@@ -48,28 +48,6 @@ _LOCALDFLT = False
 # Watchman profile
 TARGET = "Parquet Data"
 
-_SUCCESS_HEADER = """
-*******************************************************************
-___SSSS____UU___UU_____CCCCC_____CCCCC___EEEEEE____SSSS_____SSSS
-__SS__SS___UU___UU____CC________CC_______EE_______SS__SS___SS__SS
-___SS______UU___UU___CC________CC________EE________SS_______SS
-____SS_____UU___UU___CC________CC________EEEEE______SS_______SS
-_____SS____UU___UU___CC________CC________EE__________SS_______SS
-__SS__SS___UU___UU____CC________CC_______EE_______SS__SS___SS__SS
-___SSSS_____UUUUU______CCCCC_____CCCCC___EEEEEE____SSSS_____SSSS
-*******************************************************************"""
-
-_FAILURE_HEADER = """
-*******************************************************************
-__FFFFFF____AAAAA____IIIIII___LL_______UU___UU___RRRRRR____EEEEEE
-__FF_______AA___AA_____II_____LL_______UU___UU___RR___RR___EE
-__FF_______AA___AA_____II_____LL_______UU___UU___RR___RR___EE
-__FFFFF____AAAAAAA_____II_____LL_______UU___UU___RRRRRR____EEEEE
-__FF_______AA___AA_____II_____LL_______UU___UU___RR___RR___EE
-__FF_______AA___AA_____II_____LL_______UU___UU___RR___RR___EE
-__FF_______AA___AA___IIIIII___LLLLLL____UUUUU____RR___RR___EEEEEE
-*******************************************************************"""
-
 
 class Rorschach(Watchman):
     """
@@ -153,7 +131,7 @@ class Rorschach(Watchman):
             return {
                 "success": False,
                 "subject": _SUBJECT_MESSAGE,
-                "message": msg
+                "details": msg
             }
 
         self.logger.info("The directory is not empty at:  %s" % self.full_path)
@@ -174,13 +152,13 @@ class Rorschach(Watchman):
             return {
                 "success": True,
                 "subject": _SUCCESS_SUBJECT,
-                "message": _SUCCESS_MESSAGE
+                "details": _SUCCESS_MESSAGE
             }
 
         return {
             "success": False,
             "subject": _SUBJECT_MESSAGE,
-            "message": msg
+            "details": msg
         }
 
     def _get_parquet_result(self):
@@ -204,7 +182,7 @@ class Rorschach(Watchman):
             my_result = {
                 "success": None,
                 "subject": _SUBJECT_EXCEPTION_MESSAGE,
-                "message": msg + "\n\t%s\n\t%s" % (self.full_path, self.check_time)
+                "details": msg + "\n\t%s\n\t%s" % (self.full_path, self.check_time)
             }
 
         return my_result
@@ -212,7 +190,7 @@ class Rorschach(Watchman):
     def _create_result(self, summary):
         """
         Create the result object
-        @param summary: <dict> dictionary with three keys: "success", "subject", "message"
+        @param summary: <dict> dictionary with three keys: "success", "subject", "details"
         @return: <Result> result based on the parameters
         """
         state_chart = {
@@ -234,12 +212,24 @@ class Rorschach(Watchman):
         }
         check_result = summary.get("success")
         subject = summary.get("subject")
-        message = summary.get("message")
+        details = summary.get("details")
         parameters = state_chart.get(check_result)
         result = Result(
             **parameters,
             subject=subject,
             source=self.source,
             target=TARGET,
-            message=message)
+            details=details)
         return result
+
+# the following blocked out code is for local testing in the future
+
+
+# def run():
+#     rorschach_obj = Rorschach()
+#     result = rorschach_obj.monitor()
+#     print(result.to_dict())
+#
+#
+# if __name__ == "__main__":
+#     run()

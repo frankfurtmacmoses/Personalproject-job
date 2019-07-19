@@ -58,7 +58,7 @@ class Ozymandias(Watchman):
         @return: <Result> Result Object.
         """
         found_file, tb = self._check_file_exists()
-        message = self._create_message(found_file, tb)
+        details = self._create_details(found_file, tb)
         parameter_chart = {
             None: {
                 "success": False,
@@ -85,7 +85,7 @@ class Ozymandias(Watchman):
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
             subject=parameters.get("subject"),
-            message=message
+            details=details
         )
         return result
 
@@ -106,13 +106,13 @@ class Ozymandias(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
-    def _create_result(self, success, disable_notifier, state, subject, message):
+    def _create_result(self, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, otherwise false
         @param state: <str> state of the monitor check
         @param subject: <str> subject for the notification
-        @param message: <str> content for the notification
+        @param details: <str> content for the notification
         @return: <Result> result based on the parameters
         """
         result = Result(
@@ -122,10 +122,10 @@ class Ozymandias(Watchman):
             subject=subject,
             source=self.source,
             target=TARGET,
-            message=message)
+            details=details)
         return result
 
-    def _create_message(self, is_status_valid, tb):
+    def _create_details(self, is_status_valid, tb):
         """
         Depending on the status of neustar file, sends an email alert if it was not found or an error occurred.
 
@@ -134,16 +134,28 @@ class Ozymandias(Watchman):
         """
         FILE_STATUS = {
             None: {
-                'message': EXCEPTION_MESSAGE.format(tb),
+                'details': EXCEPTION_MESSAGE.format(tb),
             },
             False: {
-                'message': FAILURE_MESSAGE,
+                'details': FAILURE_MESSAGE,
             },
             True: {
-                'message': SUCCESS_MESSAGE,
+                'details': SUCCESS_MESSAGE,
             }
         }
         status = FILE_STATUS.get(is_status_valid)
-        message = status.get('message')
-        self.logger.info(status.get('message'))
-        return message
+        details = status.get('details')
+        self.logger.info(status.get('details'))
+        return details
+
+# the following blocked out code is for local testing in the future
+
+
+# def run():
+#     ozymandias_obj = Ozymandias()
+#     result = ozymandias_obj.monitor()
+#     print(result.to_dict())
+#
+#
+# if __name__ == "__main__":
+#     run()

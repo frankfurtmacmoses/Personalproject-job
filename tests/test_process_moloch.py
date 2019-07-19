@@ -11,34 +11,41 @@ class TestMoloch(unittest.TestCase):
     def setUp(self):
         self.example_filename = "/2019/12/18/ZMQ_Output_"
         self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
-        self.example_file_path = 'somepath/to/a/file'
-        self.example_exception_message = "Something is not working"
+        self.example_file_path = "somepath/to/a/file"
+        self.example_exception_details = "Something is not working"
         self.error = "ERROR: "
         self.failure_domain_start = self.error + "The newly observed domains feed has gone down!"
         self.failure_hostname_start = self.error + "The newly observed hostname feed has gone down!"
         self.failure_both_start = self.error + "Both hostname and domains feed have gone down!"
-        self.failure_general_message = "{}\nPlease check the Response Guide for Moloch in watchmen documents: " \
+        self.failure_general_details = "{}\nPlease check the Response Guide for Moloch in watchmen documents: " \
                                        "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4" \
                                        "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
-        self.example_message_chart = {
+        self.example_details_chart = {
             "exception": "The newly observed domain feeds and hostname "
                          "feeds reached an exception during the file checking "
                          "process due to the following:\n\n{}\n\nPlease look at the logs for more insight.",
-            "fail_domain": self.failure_general_message.format(self.failure_domain_start),
-            "fail_hostname": self.failure_general_message.format(self.failure_hostname_start),
-            "fail_both": self.failure_general_message.format(self.failure_both_start),
+            "fail_domain": self.failure_general_details.format(self.failure_domain_start),
+            "fail_hostname": self.failure_general_details.format(self.failure_hostname_start),
+            "fail_both": self.failure_general_details.format(self.failure_both_start),
             "success": "NOH/D Feeds are up and running!",
         }
         self.example_result_dict = {
-            "details": {},
+            "details": "ERROR: Both hostname and domains feed have gone down!\n"
+                       "Please check the Response Guide for Moloch in watchmen documents: "
+                       "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe430bWWxR"
+                       "APCkWk68pcwjE/edit#heading=h.6dcje1sj7gup",
             "disable_notifier": False,
-            "message": self.example_message_chart.get("fail_both"),
-            "observed_time": "2018-12-18T00:00:00+00:00",
+            "dt_created": "2018-12-18T00:00:00+00:00",
+            "dt_updated": "2018-12-18T00:00:00+00:00",
+            "is_ack": False,
+            "is_notified": False,
+            "message": "NO MESSAGE",
             "result_id": 0,
-            "success": False,
+            "snapshot": None,
             "source": "Moloch",
             "state": "FAILURE",
             "subject": "Moloch watchmen detected an issue with NOH/D feed!",
+            "success": False,
             "target": "Newly Observed Data",
         }
 
@@ -100,60 +107,60 @@ class TestMoloch(unittest.TestCase):
             self.assertEqual(expected, returned)
 
         # Exception occurred
-        mock_check.side_effect = Exception(self.example_exception_message)
+        mock_check.side_effect = Exception(self.example_exception_details)
         returned_domain, returned_hostname, returned_tb = moloch_obj._get_check_results()
         self.assertEqual((returned_domain, returned_hostname), (None, None))
-        self.assertTrue(self.example_exception_message in returned_tb)
+        self.assertTrue(self.example_exception_details in returned_tb)
 
-    def test_create_message(self):
+    def test_create_details(self):
         """
-        test watchmen.models.moloch :: Moloch :: _create_message
+        test watchmen.models.moloch :: Moloch :: _create_details
         """
         moloch_obj = Moloch()
         tests = [{
             "hostname_check": True,
             "domain_check": True,
-            "result": self.example_message_chart.get("success"),
+            "result": self.example_details_chart.get("success"),
             "msg_type": True,
         }, {
             "hostname_check": False,
             "domain_check": True,
-            "result": self.example_message_chart.get("fail_hostname"),
+            "result": self.example_details_chart.get("fail_hostname"),
             "msg_type": False,
         }, {
             "hostname_check": True,
             "domain_check": False,
-            "result": self.example_message_chart.get("fail_domain"),
+            "result": self.example_details_chart.get("fail_domain"),
             "msg_type": False,
         }, {
             "hostname_check": False,
             "domain_check": False,
-            "result": self.example_message_chart.get("fail_both"),
+            "result": self.example_details_chart.get("fail_both"),
             "msg_type": False,
         }, {
             "hostname_check": None,
             "domain_check": False,
-            "result": self.example_message_chart.get("exception"),
+            "result": self.example_details_chart.get("exception"),
             "msg_type": None,
         }, {
             "hostname_check": False,
             "domain_check": None,
-            "result": self.example_message_chart.get("exception"),
+            "result": self.example_details_chart.get("exception"),
             "msg_type": None,
         }, {
             "hostname_check": True,
             "domain_check": None,
-            "result": self.example_message_chart.get("exception"),
+            "result": self.example_details_chart.get("exception"),
             "msg_type": None,
         }, {
             "hostname_check": None,
             "domain_check": True,
-            "result": self.example_message_chart.get("exception"),
+            "result": self.example_details_chart.get("exception"),
             "msg_type": None,
         }, {
             "hostname_check": None,
             "domain_check": None,
-            "result": self.example_message_chart.get("exception"),
+            "result": self.example_details_chart.get("exception"),
             "msg_type": None,
         }]
 
@@ -162,7 +169,7 @@ class TestMoloch(unittest.TestCase):
             domain_check = test.get("domain_check")
             expected = test.get("result")
             expected_msg_type = test.get("msg_type")
-            result, msg_type = moloch_obj._create_message(hostname_check, domain_check, {})
+            result, msg_type = moloch_obj._create_details(hostname_check, domain_check, {})
             self.assertEqual(expected, result)
             self.assertEqual(expected_msg_type, msg_type)
 
@@ -177,25 +184,27 @@ class TestMoloch(unittest.TestCase):
             False,
             "FAILURE",
             "Moloch watchmen detected an issue with NOH/D feed!",
-            self.example_message_chart.get("fail_both")).to_dict()
-        # since moloch does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+            self.example_details_chart.get("fail_both")).to_dict()
+        # since moloch does not give observed time, we don"t test the time here
+        result["dt_created"] = "2018-12-18T00:00:00+00:00"
+        result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, result)
 
     @patch('watchmen.models.moloch.Moloch._get_check_results')
-    @patch('watchmen.models.moloch.Moloch._create_message')
-    def test_monitor(self, mock_create_message, mock_get_check):
+    @patch('watchmen.models.moloch.Moloch._create_details')
+    def test_monitor(self, mock_create_details, mock_get_check):
         """
         test watchmen.models.moloch:: Moloch :: monitor
         """
         moloch_obj = Moloch()
-        mock_create_message.return_value = self.example_message_chart.get("fail_both"), False
+        mock_create_details.return_value = self.example_details_chart.get("fail_both"), False
         mock_get_check.return_value = False, False, "string"
         expected = self.example_result_dict
         result = moloch_obj.monitor().to_dict()
 
-        # since moloch does not give observed time, we don't test the time here
-        result['observed_time'] = "2018-12-18T00:00:00+00:00"
+        # since moloch does not give observed time, we don"t test the time here
+        result["dt_created"] = "2018-12-18T00:00:00+00:00"
+        result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(result, expected)
