@@ -114,8 +114,8 @@ def process_feeds_metrics(feeds_to_check, table_name, time_string_choice):
             if metric_val:
                 if feed_metrics.get('min') > metric_val or \
                         feed_metrics.get('max') < metric_val:
-                    submitted_out_of_range_feeds.append(feed + ", Amount Submitted: " + str(metric_val) +
-                                                        ", Min Submission Amount " + str(feed_metrics.get('min')) +
-                                                        ", Max Submission Amount : " + str(feed_metrics.get('max')))
+                    submitted_out_of_range_feeds.append(feed + ":\n  Amount Submitted: " + str(metric_val) +
+                                                        ", Min Submission Amount: " + str(feed_metrics.get('min')) +
+                                                        ", Max Submission Amount: " + str(feed_metrics.get('max')))
 
     return submitted_out_of_range_feeds
