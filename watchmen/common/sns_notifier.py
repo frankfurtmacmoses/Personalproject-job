@@ -25,7 +25,7 @@ class SnsNotifier(Notifier):
         """
         self.result = result
         self.subject = str(result.subject)
-        self.message = str(result.message)
+        self.details = str(result.details)
 
     def notify(self, topic: str):
         """
@@ -35,4 +35,4 @@ class SnsNotifier(Notifier):
         """
         if not isinstance(topic, str):
             raise TypeError("Topic arn must be string!")
-        raise_alarm(topic_arn=topic, msg=self.message, subject=self.subject)
+        raise_alarm(topic_arn=topic, msg=self.details, subject=self.subject)
