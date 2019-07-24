@@ -29,14 +29,14 @@ Resources:
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-      Description: Monitors Sockeye endpoints.
+      Description: Monitors Cyber-Intel endpoints.
       Handler: handler.start_jupiter_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
       Timeout: 30
       Tags:
         - Key: Owner
-          Value: CyberIntelF
+          Value: CyberIntel
         - Key: Product
           Value: watchmen
         - Key: Protected
@@ -387,6 +387,8 @@ Resources:
                 Action:
                   - 's3:Get*'
                   - 's3:List*'
+                  - 's3:PutObject'
+                  - 's3:DeleteObject'
                 Resource:
                   - 'arn:aws:s3:::bitaa'
                   - 'arn:aws:s3:::cyber-intel'
@@ -408,9 +410,9 @@ Resources:
       GroupDescription: Security group that allows connections to cyber-intel services
       GroupName: !Join ['-', [!Ref "AWS::StackName", JupiterSecurityGroup]]
       SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Owner

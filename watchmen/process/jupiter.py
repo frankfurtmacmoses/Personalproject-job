@@ -1,8 +1,11 @@
 """
 Created on January 29, 2019
 
-This script monitors Sockeye ensuring the database and endpoints are working correctly for all endpoints on Sockeye.
-If data is not found in the database or the endpoint does work correctly, an SNS will be sent.
+This script monitors a variety of Cyber-Intel endpoints and ensures they are working correctly.
+Endpoints may have keys to check that determine if certain resources are working as well.
+Example: An endpoint may check the db_info key to ensure the database is working
+
+If an endpoint is not working correctly or key check fails its conditions, an SNS will be sent.
 
 @author: Kayla Ramos
 @email: kramos@infoblox.com
@@ -18,10 +21,10 @@ from watchmen.common.cal import InfobloxCalendar
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.logger import get_logger
-# from watchmen.utils.sns_alerts import raise_alarm
+from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import copy_contents_to_bucket
 from watchmen.utils.s3 import get_content
-# from watchmen.utils.s3 import mv_key
+from watchmen.utils.s3 import mv_key
 
 LOGGER = get_logger("Jupiter", settings('logging.level'))
 
@@ -49,7 +52,7 @@ NOT_ENOUGH_EPS_MESSAGE = "Endpoint count is below minimum. There is no need to c
 RESULTS_DNE = "Results do not exist! There is nothing to check. Service Checker may not be working correctly. " \
               "Please check logs and endpoint file to help identify the issue."
 SKIP_MESSAGE_FORMAT = "Notification is skipped at {}"
-SUCCESS_MESSAGE = "All endpoints are good!"
+SUCCESS_MESSAGE = "All endpoints are healthy!"
 
 
 def check_endpoints(endpoints):
@@ -76,14 +79,14 @@ def check_endpoints(endpoints):
             messages.append(msg)
             LOGGER.error('Notify failure:\n%s', msg)
         message = '\n'.join(messages)
-        # raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
+        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
         pass
 
     if len(validated) < MIN_ITEMS:
         subject = NOT_ENOUGH_EPS
         message = NOT_ENOUGH_EPS_MESSAGE
         LOGGER.warning(NOT_ENOUGH_EPS_MESSAGE)
-        # raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
+        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
         return None
 
     return validated
@@ -96,8 +99,7 @@ def _check_last_failure():
 
     @return: True if last check failed; otherwise, False.
     """
-    data = ''
-    # data = get_content(S3_PREFIX_STATE, bucket=S3_BUCKET)
+    data = get_content(S3_PREFIX_STATE, bucket=S3_BUCKET)
     return data != '' and data is not None
 
 
@@ -137,26 +139,20 @@ def load_endpoints():
 
     bucket = settings("aws.s3.bucket")
 
-    data = get_content(key_name=data_file, bucket=bucket)
     try:
-        LOGGER.info("The contents of data: \n{}".format(data))
+        data = get_content(key_name=data_file, bucket=bucket)
         endpoints = json.loads(data)
         if endpoints and isinstance(endpoints, list):
             validated = check_endpoints(endpoints)
             if validated:
                 return validated
     except Exception as ex:
-        LOGGER.info("Inside Exception Block")
         subject = "Jupiter endpoints - load error"
         fmt = "Cannot load endpoints from bucket={}, key={}\n{}\nException:{}"
         msg = fmt.format(bucket, data_file, data, ex)
         LOGGER.warning(msg)
-        LOGGER.info("About to send alarm")
-        # raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=subject, msg=msg)
-        LOGGER.info("Alarm sent")
+        raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=subject, msg=msg)
     endpoints = ENDPOINTS_DATA
-    LOGGER.info("The contents of endpoints: \n{}".format(endpoints))
-
     return endpoints
 
 
@@ -171,8 +167,7 @@ def log_result(results):
         LOGGER.info("Jupiter Watchmen results:\n{}".format(results))
         # save result to s3
         content = json.dumps(results, indent=4, sort_keys=True)
-        # copy_contents_to_bucket(content, prefix_result, S3_BUCKET)
-        LOGGER.debug("Skipped S3 content dump in log result")
+        copy_contents_to_bucket(content, prefix_result, S3_BUCKET)
     except Exception as ex:
         LOGGER.error(ex)
     return prefix_result
@@ -191,10 +186,9 @@ def log_state(summarized_result, prefix):
         success = summarized_result.get('success')
         content = '' if success else json.dumps(summarized_result, indent=4, sort_keys=True)
         prefix_state = '{}/{}/LATEST'.format(S3_PREFIX, S3_PREFIX_JUPITER)
-        LOGGER.debug("Skipped S3 content dump in log state")
-        # copy_contents_to_bucket(content, prefix_state, S3_BUCKET)
+        copy_contents_to_bucket(content, prefix_state, S3_BUCKET)
         state = 'SUCCESS' if success else 'FAILURE'
-        # mv_key(prefix, '{}_{}.json'.format(prefix, state), bucket=S3_BUCKET)
+        mv_key(prefix, '{}_{}.json'.format(prefix, state), bucket=S3_BUCKET)
     except Exception as ex:
         LOGGER.error(ex)
 
@@ -203,42 +197,26 @@ def log_state(summarized_result, prefix):
 def main(event, context):
     """
     Health check all the endpoints from endpoints.json
-    :return: results from checking Sockeye endpoints
+    :return: results from checking Cyber_Intel endpoints
     """
-    endpoints = load_endpoints()
-    LOGGER.debug("DONE: Loaded Endpoints")
-
-    checked_endpoints = check_endpoints(endpoints)
-    LOGGER.debug("DONE: Checked Endpoints")
-
-    checker = ServiceChecker(checked_endpoints)
-    LOGGER.debug("DONE: Endpoints went through ServiceChecker")
-
-    results = checker.start()
-    LOGGER.debug("DONE: Checked Endpoint Routes and got results")
-
-    prefix = log_result(results)
-    LOGGER.debug("DONE: Logged Results")
-
-    validated_paths = checker.get_validated_paths()
-    LOGGER.debug("DONE: Validated All Paths")
-
-    summarized_result = summarize(results, endpoints, validated_paths)
-    LOGGER.debug("DONE: Summarized Results")
-
-    log_state(summarized_result, prefix)
-    LOGGER.debug("DONE: Logged State")
-
-    status = notify(summarized_result)
-    LOGGER.debug("DONE: COMPLETED")
-
-    return status
+    # This method is only used when updating the endpoints on S3
     # _update_endpoints()
+
+    endpoints = load_endpoints()
+    checked_endpoints = check_endpoints(endpoints)
+    checker = ServiceChecker(checked_endpoints)
+    results = checker.start()
+    prefix = log_result(results)
+    validated_paths = checker.get_validated_paths()
+    summarized_result = summarize(results, endpoints, validated_paths)
+    log_state(summarized_result, prefix)
+    status = notify(summarized_result)
+    return status
 
 
 def notify(summarized_result):
     """
-    Send notifications to Sockeye topic if failed endpoints exist or no results exist at all.
+    Send notifications to the Sockeye topic if failed endpoints exist or no results exist at all.
     Notifications vary depending on the time and day.
     If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
     If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
@@ -260,7 +238,7 @@ def notify(summarized_result):
     if is_skipping:
         return SKIP_MESSAGE_FORMAT.format(CHECK_TIME_UTC)
 
-    # raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
+    raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=message)
     return "FAILURES occurred! Check the logs for more details!"
 
 
@@ -334,10 +312,11 @@ def summarize(results, endpoints, validated_paths):
 
 
 def _update_endpoints():
+    """
+    This methods will update the the endpoints.json file on S3 to match watchmen/process/endpoints.json
+    This is a private method that is only used locally and should be uncommented in the main() when intending
+    to update endpoints.
+    """
     content = json.dumps(ENDPOINTS_DATA, indent=4, sort_keys=True)
     key = '{}/{}/endpoints.json'.format(S3_PREFIX, S3_PREFIX_JUPITER)
     copy_contents_to_bucket(content, key, S3_BUCKET)
-
-
-if __name__ == "__main__":
-    main(None, None)
