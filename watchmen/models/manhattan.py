@@ -11,18 +11,14 @@ Refactored with Watchman interface on July 18, 2019
 # Python imports
 import traceback
 from datetime import datetime, timedelta
-import json
 import pytz
-
 # Watchmen imports
 from watchmen import const
 from watchmen.utils.ecs import get_stuck_ecs_tasks
 from watchmen.utils.feeds import process_feeds_metrics, process_feeds_logs
 from watchmen.common.result import DEFAULT_MESSAGE, Result
-from watchmen.utils.extension import GenericJSONEncoder
 from watchmen.config import settings
 from watchmen.common.watchman import Watchman
-
 
 DAILY = "Daily"
 HOURLY = "Hourly"
@@ -356,9 +352,7 @@ class Manhattan(Watchman):
         """
         try:
             stuck_tasks = get_stuck_ecs_tasks(CLUSTER_NAME)
-            result_json = json.dumps(stuck_tasks, cls=GenericJSONEncoder)
-            result = json.loads(result_json)
-            return result, None
+            return stuck_tasks, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
             self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
