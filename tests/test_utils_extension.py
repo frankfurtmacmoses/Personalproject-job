@@ -533,3 +533,43 @@ class ExtensionTests(unittest.TestCase):
             s1 = s1.replace(raw, pys)
             s2 = json.dumps(expected[i], sort_keys=True)
             self.assertEqual(s1, s2)
+
+    def test_generic_json_encoder(self):
+        """
+        test watchmen.utils.extension.GenericJSONEncoder
+        """
+        import datetime
+        from dateutil.tz import tzlocal
+
+        from watchmen.utils.extension import GenericJSONEncoder
+        test_list = [
+            {u'taskArn': u'arn:aws:ecs:us-east-1:405093580753:task/e808bf85-9654-4194-9fd7-c2472056f2c7',
+             u'group': u'family:cyberint-feed-eaters-prod-InfobloxLookalike-IBFUH8HOV767',
+             u'attachments': [],
+             u'overrides': {
+                 u'containerOverrides': [{u'name': u'infoblox-lookalike-scraper-prod'}]
+             },
+             u'lastStatus': u'RUNNING',
+             u'containerInstanceArn': u'arn:aws:ecs:us-east-1:405093580753:conta'
+                                      u'iner-instance/cd0ac136-c3fd-4728-bf4c-219097d85c5c',
+             u'createdAt': datetime.datetime(2019, 4, 8, 8, 0, 4, 590000, tzinfo=tzlocal()),
+             u'version': 2,
+             u'clusterArn': u'arn:aws:ecs:us-east-1:405093580753:'
+                            u'cluster/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8',
+             u'startedAt': datetime.datetime(2019, 4, 8, 8, 0, 7, 912000, tzinfo=tzlocal()),
+             u'desiredStatus': u'RUNNING',
+             u'taskDefinitionArn': u'arn:aws:ecs:us-east-1:4050935807'
+                                   u'53:task-definition/cyberint-feed-eaters-prod-InfobloxLookalike-IBFUH8HOV767:1',
+             u'startedBy': u'events-rule/cyberint-feed-eaters-pro',
+             u'containers': [
+                 {u'containerArn': u'arn:aws:ecs:us-east-1:405093580753:container/b09b36f9-257e-43cb-89b0-e12c3834afca',
+                  u'taskArn': u'arn:aws:ecs:us-east-1:405093580753:task/e808bf85-9654-4194-9fd7-c2472056f2c7',
+                  u'name': u'infoblox-lookalike-scraper-prod',
+                  u'networkBindings': [],
+                  u'lastStatus': u'RUNNING',
+                  u'networkInterfaces': []}
+             ]
+             }
+        ]
+        result = json.dumps(test_list, cls=GenericJSONEncoder)
+        self.assertIsInstance(result, str)
