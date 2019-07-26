@@ -27,6 +27,18 @@ class DictEncoder(json.JSONEncoder):
         return o.__dict__
 
 
+class GenericJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        try:
+            return super().default(obj)
+        except TypeError:
+            pass
+        data = str(obj)
+        if hasattr(obj, '__dict__'):
+            data = obj.__dict__
+        return data
+
+
 class JsonEncoder(json.JSONEncoder):
     """
     Default encoder for python set. Example: json.dumps(obj, cls=JsonEncoder)
