@@ -1,8 +1,11 @@
 """
 Created on January 29, 2019
 
-This script monitors Sockeye ensuring the database and endpoints are working correctly for all endpoints on Sockeye.
-If data is not found in the database or the endpoint does work correctly, an SNS will be sent.
+This script monitors a variety of Cyber-Intel endpoints and ensures they are working correctly.
+Endpoints may have keys to check that determine if certain resources are working as well.
+Example: An endpoint may check the db_info key to ensure the database is working
+
+If an endpoint is not working correctly or key check fails its conditions, an SNS will be sent.
 
 @author: Kayla Ramos
 @email: kramos@infoblox.com
@@ -49,7 +52,7 @@ NOT_ENOUGH_EPS_MESSAGE = "Endpoint count is below minimum. There is no need to c
 RESULTS_DNE = "Results do not exist! There is nothing to check. Service Checker may not be working correctly. " \
               "Please check logs and endpoint file to help identify the issue."
 SKIP_MESSAGE_FORMAT = "Notification is skipped at {}"
-SUCCESS_MESSAGE = "All endpoints are good!"
+SUCCESS_MESSAGE = "All endpoints are healthy!"
 
 
 def check_endpoints(endpoints):
@@ -135,8 +138,9 @@ def load_endpoints():
         data_file = '{}/{}'.format(data_path, data_file)
 
     bucket = settings("aws.s3.bucket")
-    data = get_content(data_file, bucket=bucket)
+
     try:
+        data = get_content(key_name=data_file, bucket=bucket)
         endpoints = json.loads(data)
         if endpoints and isinstance(endpoints, list):
             validated = check_endpoints(endpoints)
@@ -147,9 +151,8 @@ def load_endpoints():
         fmt = "Cannot load endpoints from bucket={}, key={}\n{}\nException:{}"
         msg = fmt.format(bucket, data_file, data, ex)
         LOGGER.warning(msg)
-        raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=msg)
+        raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=subject, msg=msg)
     endpoints = ENDPOINTS_DATA
-
     return endpoints
 
 
@@ -194,8 +197,11 @@ def log_state(summarized_result, prefix):
 def main(event, context):
     """
     Health check all the endpoints from endpoints.json
-    :return: results from checking Sockeye endpoints
+    :return: results from checking Cyber_Intel endpoints
     """
+    # This method is only used when updating the endpoints on S3
+    # _update_endpoints()
+
     endpoints = load_endpoints()
     checked_endpoints = check_endpoints(endpoints)
     checker = ServiceChecker(checked_endpoints)
@@ -205,13 +211,12 @@ def main(event, context):
     summarized_result = summarize(results, endpoints, validated_paths)
     log_state(summarized_result, prefix)
     status = notify(summarized_result)
-
     return status
 
 
 def notify(summarized_result):
     """
-    Send notifications to Sockeye topic if failed endpoints exist or no results exist at all.
+    Send notifications to the Sockeye topic if failed endpoints exist or no results exist at all.
     Notifications vary depending on the time and day.
     If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
     If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
@@ -304,3 +309,14 @@ def summarize(results, endpoints, validated_paths):
         "message": SUCCESS_MESSAGE,
         "success": True,
     }
+
+
+def _update_endpoints():
+    """
+    This methods will update the the endpoints.json file on S3 to match watchmen/process/endpoints.json
+    This is a private method that is only used locally and should be uncommented in the main() when intending
+    to update endpoints.
+    """
+    content = json.dumps(ENDPOINTS_DATA, indent=4, sort_keys=True)
+    key = '{}/{}/endpoints.json'.format(S3_PREFIX, S3_PREFIX_JUPITER)
+    copy_contents_to_bucket(content, key, S3_BUCKET)

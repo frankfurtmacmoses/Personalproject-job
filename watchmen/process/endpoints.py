@@ -4,7 +4,7 @@
 DATA = [{
     "name": "Sockeye NG",
     "desc": "Sockeye NG about page",
-    "path": "http://sng.r11.com/",
+    "path": "http://internal-cyber-socke-1ip36rm488fg7-1930265787.us-east-1.elb.amazonaws.com/",
     "format": "html",
     "routes": [{
         "name": "api",
@@ -58,5 +58,19 @@ DATA = [{
         "path": "/rest/info",
         "format": "text",
         "regx": "ThreatView REST API",
+    }]
+}, {
+    "name": "CyberIntel Services",
+    "desc": "A collection of CyberIntel services with scoring, labelling, and search.",
+    "path": "http://internal-cyber-applo-15ss4ldsgas1t-1993286264.us-east-1.elb.amazonaws.com/api/",
+    "format": "html",
+    "routes": [{
+        "name": "CyberIntel API Services",
+        "path": "info",
+        "format": "json"
+    }, {
+        "name": "Coeus Rules",
+        "path": "coeus/rules",
+        "format": "json"
     }]
 }]
