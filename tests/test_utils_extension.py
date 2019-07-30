@@ -15,7 +15,7 @@ import unittest
 from mock import MagicMock
 
 from logging import getLogger
-from watchmen.utils.extension import DictEncoder, JsonEncoder
+from watchmen.utils.extension import DictEncoder
 from watchmen.utils.extension import check_duplicate_key
 from watchmen.utils.extension import check_valid_md5
 from watchmen.utils.extension import del_attr
@@ -199,39 +199,6 @@ class ExtensionTests(unittest.TestCase):
         s1 = json.dumps(json.loads(result), sort_keys=True)
         s2 = json.dumps(json.loads(expected), sort_keys=True)
         self.assertEqual(s1, s2)
-
-    def test_json_encoder(self):
-        """
-        test watchmen.utils.extension.DictEncoder
-        """
-        class JsonEncoderTest(object):
-            def __init__(self):
-                self.age = 33
-                self.name = "Test Name"
-                self.ns = set([3, 1, 4])
-                self.ss = set(["x", "y", "z"])
-                print("\n")
-                pass
-
-        tests = [
-            {
-                "obj": JsonEncoderTest(),
-                "out": """
-                {"age": 33, "name": "Test Name", "ns": [3, 1, 4], "ss": ["y", "x", "z"]}
-                       """.strip()
-            },
-            {
-                "obj": {"x": "xyz", "a": "abc", "n": [3, 1, 4], "none": None},
-                "out": '{"a": "abc", "n": [3, 1, 4], "none": null, "x": "xyz"}',
-            },
-            {
-                "obj": None,
-                "out": 'null',
-            },
-        ]
-        for test in tests:
-            result = json.dumps(test["obj"], cls=JsonEncoder, sort_keys=True)
-        self.assertEqual(result, test["out"])
 
     def test_get_attr(self):
         """
@@ -534,14 +501,14 @@ class ExtensionTests(unittest.TestCase):
             s2 = json.dumps(expected[i], sort_keys=True)
             self.assertEqual(s1, s2)
 
-    def test_generic_json_encoder(self):
+    def test_json_encoder(self):
         """
-        test watchmen.utils.extension.GenericJSONEncoder
+        test watchmen.utils.extension.JsonEncoder
         """
         import datetime
         from dateutil.tz import tzlocal
 
-        from watchmen.utils.extension import GenericJSONEncoder
+        from watchmen.utils.extension import JsonEncoder
         test_list = [
             {u'taskArn': u'arn:aws:ecs:us-east-1:405093580753:task/e808bf85-9654-4194-9fd7-c2472056f2c7',
              u'group': u'family:cyberint-feed-eaters-prod-InfobloxLookalike-IBFUH8HOV767',
@@ -571,5 +538,40 @@ class ExtensionTests(unittest.TestCase):
              ]
              }
         ]
-        result = json.dumps(test_list, cls=GenericJSONEncoder)
+        result = json.dumps(test_list, cls=JsonEncoder)
         self.assertIsInstance(result, str)
+
+        class TestClassDict:
+            __dict__ = 'example_dict'
+
+        class JsonEncoderTest(object):
+            def __init__(self):
+                self.age = 33
+                self.name = "Test Name"
+                self.ns = [3, 1, 4]
+                self.ss = ["x", "y", "z"]
+                print("\n")
+                pass
+        tests = [
+            {
+                "obj": JsonEncoderTest(),
+                "out": """
+                {"age": 33, "name": "Test Name", "ns": [3, 1, 4], "ss": ["x", "y", "z"]}
+                       """.strip()
+            },
+            {
+                "obj": {"x": "xyz", "a": "abc", "n": [3, 1, 4], "none": None},
+                "out": '{"a": "abc", "n": [3, 1, 4], "none": null, "x": "xyz"}',
+            },
+            {
+                "obj": TestClassDict(),
+                "out": '"example_dict"'
+            },
+            {
+                "obj": None,
+                "out": 'null',
+            },
+        ]
+        for test in tests:
+            result = json.dumps(test["obj"], cls=JsonEncoder, sort_keys=True)
+            self.assertEqual(test["out"], result)
