@@ -140,7 +140,7 @@ class Manhattan(Watchman):
         tb = self._create_tb_details(find_bf_tb, find_st_tb)
         summary = self._create_summary(stuck_tasks, bad_feeds, tb)
         result = self._create_result(summary, snapshot)
-        return result
+        return [result]
 
     def _create_result(self, summary, snapshot):
         """

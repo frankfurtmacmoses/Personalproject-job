@@ -88,7 +88,7 @@ class Spectre(Watchman):
             subject=parameters.get("subject"),
             details=details
         )
-        return result
+        return [result]
 
     def _check_if_found_file(self, filename) -> Tuple[bool, str]:
         """

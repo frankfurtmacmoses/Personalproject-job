@@ -87,7 +87,7 @@ class Ozymandias(Watchman):
             subject=parameters.get("subject"),
             details=details
         )
-        return result
+        return [result]
 
     def _check_file_exists(self):
         """

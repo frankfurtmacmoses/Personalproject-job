@@ -88,7 +88,7 @@ class Rorschach(Watchman):
         """
         summary = self._get_parquet_result()
         result = self._create_result(summary)
-        return result
+        return [result]
 
     def _process_all_files(self):
         """
