@@ -135,6 +135,16 @@ def get_camel_title_word(target_str, keep_capitals=True):
     return str_words.replace(' ', '')
 
 
+def convert_to_snake_case(word):
+    """
+    convert from CamelCase to snake_case
+    @param word: <str> CamelCase word
+    @return: <str> snake_case of the word
+    """
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', str(word))
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
 def get_class(class_name, module_name):
     """
     Retrieves a class based off the module using __import__.

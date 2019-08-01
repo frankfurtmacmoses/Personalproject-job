@@ -46,7 +46,7 @@ _DEBUGDFLT = False
 _LOCALDFLT = False
 
 # Watchman profile
-TARGET = "Parquet Data"
+TARGET = "Farsight Data"
 
 
 class Rorschach(Watchman):

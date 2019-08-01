@@ -75,7 +75,7 @@ class TestRorschach(unittest.TestCase):
                 "state": "FAILURE",
                 "subject": "some failure subject",
                 "success": False,
-                "target": "Parquet Data",
+                "target": "Farsight Data",
         }
 
         # example result dict with time but not str

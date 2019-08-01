@@ -1,0 +1,26 @@
+{
+  "Georgia Tech S3": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Lookalike Feed S3": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Farsight Data": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Neustar": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Newly Observed Data":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Reaper Feeds": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  }
+}

@@ -1,10 +1,10 @@
 """
 test_common_result_svc.py
 """
-from datetime import datetime
+from mock import patch, MagicMock
 import unittest
 
-from watchmen.common.result import Result
+from watchmen.common.sns_notifier import SnsNotifier
 from watchmen.common.result_svc import ResultSvc
 from watchmen.utils.logger import get_logger
 
@@ -16,29 +16,102 @@ class TestResultSvc(unittest.TestCase):
         """
         setup for test
         """
-        self.example_time = datetime(year=2019, month=9, day=29)
-        self.test_result_arg = {
-            "details": {
-                "source": "Jupiter", "target": "Sockeye", "time": "2019-06-27T18"},
-            "disable_notifier": False,
-            "message": "Endpoint count is below minimum. "
-                       "There is no need to check or something is wrong with endpoint file.",
-            "result_id": 9012018,
-            "success": False,
-            "source": "Jupiter",
-            "state": "FAILURE",
-            "subject": "Jupiter: Failure in checking endpoint",
-            "target": "Sockeye",
+        self.test_result_list = [{
+            "result": 1
+        }, {
+            "result": 2
+        }]
+        self.test_notifier_dict = {
+            "target1":
+                "notifier1",
+            "target2":
+                "notifier2"
         }
-        self.test_result = Result(**self.test_result_arg)
+        self.test_sns_topic = "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+        self.test_exception_msg = "some exception"
         pass
 
     def test__init__(self):
         """
-        test watchmen.common.result_svc.__init__
-        @return:
+        test watchmen.common.result_svc :: ResultSvc :: __init__
         """
-        result_svc_obj = ResultSvc(self.test_result)
-        self.assertIsNotNone(result_svc_obj.result)
-        self.assertEqual(result_svc_obj.result.result_id, 9012018)
+        result_svc_obj = ResultSvc(self.test_result_list)
+        self.assertEqual(self.test_result_list, result_svc_obj.result_list)
         pass
+
+    @patch('watchmen.common.result_svc.json')
+    def test_load_notifiers(self, mock_json):
+        """
+        test watchmen.common.result_svc :: ResultSvc :: _load_notifiers
+        """
+        result_svc_obj = ResultSvc(self.test_result_list)
+        mock_json.load.return_value = self.test_notifier_dict
+        expected = self.test_notifier_dict
+        result = result_svc_obj._load_notifiers()
+        self.assertEqual(expected, result)
+
+    def test_get_notifier(self):
+        """
+        test watchmen.common.result_svc :: ResultSvc :: _ger_notifier
+        """
+        result_svc_obj = ResultSvc(self.test_result_list)
+
+        class TestResult:
+            target = 'Newly Observed Data'
+
+        test_result = TestResult()
+        expected = SnsNotifier
+        returned = result_svc_obj._get_notifier(test_result)
+        self.assertEqual(expected, returned)
+
+        # when target name not found
+        class TestWrongResults:
+            target = 'target which does not exist'
+
+        test_result = TestWrongResults
+        expected = None
+        returned = result_svc_obj._get_notifier(test_result)
+        self.assertEqual(expected, returned)
+
+    def test_get_sns_topic(self):
+        """
+        test watchmen.common.result_svc :: ResultSvc :: _get_sns_topic
+        """
+        result_svc_obj = ResultSvc(self.test_result_list)
+
+        class TestResult:
+            target = 'Newly Observed Data'
+
+        test_result = TestResult()
+        expected = self.test_sns_topic
+        returned = result_svc_obj._get_sns_topic(test_result)
+        self.assertEqual(expected, returned)
+
+        # when target name not found
+        class TestWrongResults:
+            target = 'target which does not exist'
+
+        test_result = TestWrongResults
+        expected = None
+        returned = result_svc_obj._get_sns_topic(test_result)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.common.result_svc.ResultSvc._get_notifier')
+    @patch('watchmen.common.result_svc.ResultSvc._get_sns_topic')
+    def test_send_alert(self, mock_get_sns, mock_get_notifier):
+        """
+        test watchmen.common.result_svc :: ResultSvc :: send_alert
+        """
+        result_svc_obj = ResultSvc(self.test_result_list)
+
+        mock_notifier = MagicMock()
+        mock_get_notifier.return_value = mock_notifier
+        mock_get_sns.return_value = self.test_sns_topic
+        returned = result_svc_obj.send_alert()
+        mock_notifier.assert_called()
+        self.assertTrue(returned)
+
+        # test exception
+        mock_get_notifier.side_effect = Exception
+        returned = result_svc_obj.send_alert()
+        self.assertFalse(returned)

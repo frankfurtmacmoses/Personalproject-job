@@ -382,11 +382,11 @@ class Manhattan(Watchman):
 #     mock_st.return_value = [{"taskDefinitionArn": "example arn topic yeah"}], None
 #     manhattan_obj._find_bad_feeds = mock_bf
 #     manhattan_obj._find_stuck_tasks = mock_st
-#     result = manhattan_obj.monitor()
-#     print("Result: ", result)
-#     from watchmen.common.sns_notifier import SnsNotifier
-#     sns_notifier = SnsNotifier(result)
-#     sns_notifier.notify(settings('manhattan.sns_topic'))
+#     results = manhattan_obj.monitor()
+#     print("Result: ", results[0])
+#     from watchmen.common.result_svc import ResultSvc
+#     result_svc = ResultSvc(results)
+#     result_svc.send_alert()
 #
 #
 # if __name__ == "__main__":
