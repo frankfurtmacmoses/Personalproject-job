@@ -15,7 +15,7 @@ import unittest
 from mock import MagicMock
 
 from logging import getLogger
-from watchmen.utils.extension import DictEncoder, JsonEncoder
+from watchmen.utils.extension import DictEncoder
 from watchmen.utils.extension import check_duplicate_key
 from watchmen.utils.extension import check_valid_md5
 from watchmen.utils.extension import del_attr
@@ -199,39 +199,6 @@ class ExtensionTests(unittest.TestCase):
         s1 = json.dumps(json.loads(result), sort_keys=True)
         s2 = json.dumps(json.loads(expected), sort_keys=True)
         self.assertEqual(s1, s2)
-
-    def test_json_encoder(self):
-        """
-        test watchmen.utils.extension.DictEncoder
-        """
-        class JsonEncoderTest(object):
-            def __init__(self):
-                self.age = 33
-                self.name = "Test Name"
-                self.ns = set([3, 1, 4])
-                self.ss = set(["x", "y", "z"])
-                print("\n")
-                pass
-
-        tests = [
-            {
-                "obj": JsonEncoderTest(),
-                "out": """
-                {"age": 33, "name": "Test Name", "ns": [3, 1, 4], "ss": ["y", "x", "z"]}
-                       """.strip()
-            },
-            {
-                "obj": {"x": "xyz", "a": "abc", "n": [3, 1, 4], "none": None},
-                "out": '{"a": "abc", "n": [3, 1, 4], "none": null, "x": "xyz"}',
-            },
-            {
-                "obj": None,
-                "out": 'null',
-            },
-        ]
-        for test in tests:
-            result = json.dumps(test["obj"], cls=JsonEncoder, sort_keys=True)
-        self.assertEqual(result, test["out"])
 
     def test_get_attr(self):
         """
@@ -488,6 +455,97 @@ class ExtensionTests(unittest.TestCase):
             msg = 'expecting {} for func: {}'.format(expected, func)
             self.assertEqual(is_function(func), expected, msg)
 
+    def test_json_encoder(self):
+        """
+        test watchmen.utils.extension.JsonEncoder
+        """
+
+        from watchmen.utils.extension import JsonEncoder
+
+        class TestClassDict:
+            __dict__ = 'example_dict'
+
+        class JsonEncoderTest(object):
+            def __init__(self):
+                self.age = 33
+                self.name = "Test Name"
+                self.ns = [3, 1, 4]
+                self.ss = ["x", "y", "z"]
+                print("\n")
+                pass
+        tests = [
+            {
+                "obj": JsonEncoderTest(),
+                "out": """
+                {"age": 33, "name": "Test Name", "ns": [3, 1, 4], "ss": ["x", "y", "z"]}
+                       """.strip()
+            },
+            {
+                "obj": {"x": "xyz", "a": "abc", "n": [3, 1, 4], "none": None},
+                "out": '{"a": "abc", "n": [3, 1, 4], "none": null, "x": "xyz"}',
+            },
+            {
+                "obj": TestClassDict(),
+                "out": '"example_dict"'
+            },
+            {
+                "obj": None,
+                "out": 'null',
+            },
+        ]
+        for test in tests:
+            result = json.dumps(test["obj"], cls=JsonEncoder, sort_keys=True)
+            self.assertEqual(test["out"], result)
+
+    def test_json_encoder_nested_list(self):
+        """
+        test watchmen.utils.extension.JsonEncoder
+        """
+        import datetime
+        from dateutil.tz import tzlocal
+        from watchmen.utils.extension import JsonEncoder
+
+        test_list = [
+            {
+                u'taskArn': u'arn:aws:ecs:us-east-1:405093580753:task/e808bf85-9654-4194-9fd7-c2472056f2c7',
+                u'group': u'family:cyberint-feed-eaters-prod-InfobloxLookalike-IBFUH8HOV767',
+                u'attachments': [],
+                u'overrides':{
+                    u'containerOverrides': [{
+                        u'name': u'infoblox-lookalike-scraper-prod'
+                    }]
+                },
+                u'lastStatus': u'RUNNING',
+                u'containerInstanceArn':
+                    u'arn:aws:ecs:us-east-1:405093580753:conta'
+                    u'iner-instance/cd0ac136-c3fd-4728-bf4c-219097d85c5c',
+                u'createdAt': datetime.datetime(2019, 4, 8, 8, 0, 4, 590000, tzinfo=tzlocal()),
+                u'version': 2,
+                u'clusterArn': u'arn:aws:ecs:us-east-1:405093580753:'
+                               u'cluster/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8',
+                u'startedAt': datetime.datetime(2019, 4, 8, 8, 0, 7, 912000, tzinfo=tzlocal()),
+                u'desiredStatus': u'RUNNING',
+                u'taskDefinitionArn':
+                    u'arn:aws:example-definition-arn',
+                u'startedBy': u'events-rule/cyberint-feed-eaters-pro',
+                u'containers': [{
+                    u'containerArn':
+                        u'arn:aws:ecs:us-east-1:405093580753:container/b09b36f9-257e-43cb-89b0-e12c3834afca',
+                    u'taskArn': u'arn:aws:ecs:us-east-1:405093580753:task/e808bf85-9654-4194-9fd7-c2472056f2c7',
+                    u'name': u'infoblox-lookalike-scraper-prod',
+                    u'networkBindings': [],
+                    u'lastStatus': u'RUNNING',
+                    u'networkInterfaces': []
+                }]
+            }
+        ]
+        result_json = json.dumps(test_list, cls=JsonEncoder)
+        result_list = json.loads(result_json)
+        for key in test_list[0].keys():
+            expected = str(test_list[0].get(key))
+            result = str(result_list[0].get(key))
+            self.assertEqual(expected, result)
+
     def test_pickle_object(self):
         """
         test watchmen.utils.extension.pickle_object
@@ -533,43 +591,3 @@ class ExtensionTests(unittest.TestCase):
             s1 = s1.replace(raw, pys)
             s2 = json.dumps(expected[i], sort_keys=True)
             self.assertEqual(s1, s2)
-
-    def test_generic_json_encoder(self):
-        """
-        test watchmen.utils.extension.GenericJSONEncoder
-        """
-        import datetime
-        from dateutil.tz import tzlocal
-
-        from watchmen.utils.extension import GenericJSONEncoder
-        test_list = [
-            {u'taskArn': u'arn:aws:ecs:us-east-1:405093580753:task/e808bf85-9654-4194-9fd7-c2472056f2c7',
-             u'group': u'family:cyberint-feed-eaters-prod-InfobloxLookalike-IBFUH8HOV767',
-             u'attachments': [],
-             u'overrides': {
-                 u'containerOverrides': [{u'name': u'infoblox-lookalike-scraper-prod'}]
-             },
-             u'lastStatus': u'RUNNING',
-             u'containerInstanceArn': u'arn:aws:ecs:us-east-1:405093580753:conta'
-                                      u'iner-instance/cd0ac136-c3fd-4728-bf4c-219097d85c5c',
-             u'createdAt': datetime.datetime(2019, 4, 8, 8, 0, 4, 590000, tzinfo=tzlocal()),
-             u'version': 2,
-             u'clusterArn': u'arn:aws:ecs:us-east-1:405093580753:'
-                            u'cluster/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8',
-             u'startedAt': datetime.datetime(2019, 4, 8, 8, 0, 7, 912000, tzinfo=tzlocal()),
-             u'desiredStatus': u'RUNNING',
-             u'taskDefinitionArn': u'arn:aws:ecs:us-east-1:4050935807'
-                                   u'53:task-definition/cyberint-feed-eaters-prod-InfobloxLookalike-IBFUH8HOV767:1',
-             u'startedBy': u'events-rule/cyberint-feed-eaters-pro',
-             u'containers': [
-                 {u'containerArn': u'arn:aws:ecs:us-east-1:405093580753:container/b09b36f9-257e-43cb-89b0-e12c3834afca',
-                  u'taskArn': u'arn:aws:ecs:us-east-1:405093580753:task/e808bf85-9654-4194-9fd7-c2472056f2c7',
-                  u'name': u'infoblox-lookalike-scraper-prod',
-                  u'networkBindings': [],
-                  u'lastStatus': u'RUNNING',
-                  u'networkInterfaces': []}
-             ]
-             }
-        ]
-        result = json.dumps(test_list, cls=GenericJSONEncoder)
-        self.assertIsInstance(result, str)

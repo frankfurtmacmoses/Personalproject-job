@@ -27,7 +27,7 @@ class DictEncoder(json.JSONEncoder):
         return o.__dict__
 
 
-class GenericJSONEncoder(json.JSONEncoder):
+class JsonEncoder(json.JSONEncoder):
     def default(self, obj):
         try:
             return super().default(obj)
@@ -37,16 +37,6 @@ class GenericJSONEncoder(json.JSONEncoder):
         if hasattr(obj, '__dict__'):
             data = obj.__dict__
         return data
-
-
-class JsonEncoder(json.JSONEncoder):
-    """
-    Default encoder for python set. Example: json.dumps(obj, cls=JsonEncoder)
-    """
-    def default(self, o):  # pylint: disable=method-hidden
-        if isinstance(o, set):
-            return list(o)
-        return o.__dict__
 
 
 def check_duplicate_key(pairs):
