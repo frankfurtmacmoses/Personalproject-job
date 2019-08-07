@@ -195,7 +195,7 @@ class Moloch(Watchman):
             subject=parameters.get("subject"),
             details=details
         )
-        return result
+        return [result]
 
 # the following blocked out code is for local testing in the future
 

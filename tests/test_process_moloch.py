@@ -201,7 +201,7 @@ class TestMoloch(unittest.TestCase):
         mock_create_details.return_value = self.example_details_chart.get("fail_both"), False
         mock_get_check.return_value = False, False, "string"
         expected = self.example_result_dict
-        result = moloch_obj.monitor().to_dict()
+        result = moloch_obj.monitor()[0].to_dict()
 
         # since moloch does not give observed time, we don"t test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"

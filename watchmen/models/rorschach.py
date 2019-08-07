@@ -46,7 +46,7 @@ _DEBUGDFLT = False
 _LOCALDFLT = False
 
 # Watchman profile
-TARGET = "Parquet Data"
+TARGET = "Farsight Data"
 
 
 class Rorschach(Watchman):
@@ -88,7 +88,7 @@ class Rorschach(Watchman):
         """
         summary = self._get_parquet_result()
         result = self._create_result(summary)
-        return result
+        return [result]
 
     def _process_all_files(self):
         """

@@ -36,7 +36,7 @@ class Watchman(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def monitor(self) -> Result:
+    def monitor(self) -> [Result]:
         """
         Each watchman must implement this method.
         Otherwise it will cause the following error:

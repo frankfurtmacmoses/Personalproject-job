@@ -242,7 +242,7 @@ class TestManhattan(unittest.TestCase):
         result_dict = manhattan_obj._create_result(summary, self.example_snapshot).to_dict()
         expected = self.example_result_dict
 
-        # since rorschach does not give observed time, we don't test the time here
+        # since manhattan does not give observed time, we don't test the time here
 
         result_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
         result_dict["dt_updated"] = "2018-12-18T00:00:00+00:00"
@@ -309,9 +309,9 @@ class TestManhattan(unittest.TestCase):
         mock_summary.return_value = self.example_summarized_result
         mock_snapshot.return_value = self.example_snapshot
         expected = self.example_result_dict
-        result = manhattan_obj.monitor().to_dict()
+        result = manhattan_obj.monitor()[0].to_dict()
 
-        # since rorschach does not give observed time, we don't test the time here
+        # since manhattan does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
         result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
@@ -329,9 +329,9 @@ class TestManhattan(unittest.TestCase):
         mock_bad_feeds.return_value = None, self.example_bf_tb
         mock_stuck_tasks.return_value = None, self.example_st_tb
         expected = self.example_result_dict_ex
-        result = manhattan_obj.monitor().to_dict()
+        result = manhattan_obj.monitor()[0].to_dict()
 
-        # since rorschach does not give observed time, we don't test the time here
+        # since manhattan does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
         result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 

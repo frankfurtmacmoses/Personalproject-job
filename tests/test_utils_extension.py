@@ -158,6 +158,41 @@ class ExtensionTests(unittest.TestCase):
             result = check_valid_md5(test['input'])
             self.assertEqual(result, test['expected'])
 
+    def test_convert_to_snake_case(self):
+        """
+        test watchmen.utils.extension.convert_to_snake_case
+        @return:
+        """
+        from watchmen.utils.extension import convert_to_snake_case
+
+        tests = [{
+            "input": 'camelCase', "result": 'camel_case',
+        }, {
+            "input": '0_78Y', "result": '0_78_y',
+        }, {
+           "input": 'STRING', "result": 'string'
+        }, {
+            "input": '   STRING  ', "result": '   string  ',
+        }, {
+            "input": 'string', "result": 'string',
+        }, {
+            "input": 365, "result": '365',
+        }, {
+            "input": int, "result": "<class 'int'>",
+        }, {
+            "input": True, "result": 'true',
+        }, {
+            "input": 'C', "result": 'c',
+        }, {
+            "input": None, "result": 'none',
+        }, {
+            "input": ['STRING'], "result": "['string']"
+        }, {
+            "input": '_A', "result": '_a'
+        }]
+        for test in tests:
+            self.assertEqual(test['result'], convert_to_snake_case(test["input"]))
+
     def test_del_attr(self):
         tests = [
             {'attr': None, 'value': None},

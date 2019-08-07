@@ -118,7 +118,7 @@ class TestSpectre(unittest.TestCase):
         mock_details.return_value = self.example_details_chart.get(False)
         mock_found.return_value = False, "string"
         expected = self.example_result_dict
-        result = spectre_obj.monitor().to_dict()
+        result = spectre_obj.monitor()[0].to_dict()
 
         # since spectre does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"

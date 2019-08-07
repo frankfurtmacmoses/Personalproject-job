@@ -90,7 +90,7 @@ class Silhouette(Watchman):
             subject=parameters.get("subject"),
             details=details
         )
-        return result
+        return [result]
 
     def _create_result(self, success, disable_notifier, state, subject, details):
         """

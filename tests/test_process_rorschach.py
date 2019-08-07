@@ -75,7 +75,7 @@ class TestRorschach(unittest.TestCase):
                 "state": "FAILURE",
                 "subject": "some failure subject",
                 "success": False,
-                "target": "Parquet Data",
+                "target": "Farsight Data",
         }
 
         # example result dict with time but not str
@@ -291,7 +291,7 @@ class TestRorschach(unittest.TestCase):
         }
         watcher._get_parquet_result = mock_get_parquet
         expected = self.example_result_dict
-        result = watcher.monitor().to_dict()
+        result = watcher.monitor()[0].to_dict()
 
         # since rorschach does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
