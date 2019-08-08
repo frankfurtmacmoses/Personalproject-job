@@ -86,6 +86,8 @@ class TestManhattan(unittest.TestCase):
             "success": None,
             "target": "Reaper Feeds"
         }
+        self.example_json_file = 'json_file'
+        self.example_loading_error_msg = 'failed loading'
 
     @mock_sns
     @mock_ecs
@@ -117,6 +119,19 @@ class TestManhattan(unittest.TestCase):
             bad_feeds, returned_tb = manhattan_obj._find_bad_feeds()
             self.assertEqual(expected_bad_feeds, bad_feeds)
             self.assertTrue(expected_tb in returned_tb)
+
+    @patch('watchmen.models.manhattan.Manhattan._load_feeds_to_check')
+    def test_find_bad_feeds_fails_loading(self, mock_load_feeds):
+        """
+        test watchmen.models.manhattan :: Manhattan :: _find_bad_feeds
+        test when load feeds returns nothing
+        """
+        manhattan_obj = Manhattan(self.example_event_daily)
+        mock_load_feeds.return_value = None, self.example_loading_error_msg
+        expected, expected_tb = (None, None), self.example_loading_error_msg
+        returned, returned_tb = manhattan_obj._find_bad_feeds()
+        self.assertEqual(expected, returned)
+        self.assertEqual(expected_tb, returned_tb)
 
     @mock_sns
     @patch('watchmen.models.manhattan.get_stuck_ecs_tasks')
@@ -298,6 +313,28 @@ class TestManhattan(unittest.TestCase):
                     expected.get("stuck_tasks").append(stuck.get("taskDefinitionArn"))
             result = manhattan_obj._create_snapshot(stucks, (down, oor))
             self.assertEqual(expected, result)
+
+    @patch('watchmen.models.manhattan.json.load')
+    def test_load_feeds_to_check(self, mock_load):
+        """
+        test watchmen.models.manhattan :: Manhattan :: _load_feeds_to_check
+        """
+        manhattan_obj = Manhattan(self.example_event_daily)
+
+        mock_load.return_value = self.example_json_file
+        expected, expected_msg = self.example_json_file, None
+        returned, returned_msg = manhattan_obj._load_feeds_to_check()
+        self.assertEqual(expected, returned)
+        self.assertEqual(expected_msg, returned_msg)
+
+        # exception occurs
+        ex_tests = [TimeoutError, TypeError, Exception, KeyError, ValueError]
+        for exception in ex_tests:
+            mock_load.side_effect = exception
+            expected, expected_msg = None, exception().__class__.__name__
+            returned, returned_msg = manhattan_obj._load_feeds_to_check()
+            self.assertEqual(expected, returned)
+            self.assertTrue(expected_msg in returned_msg)
 
     @patch('watchmen.models.manhattan.Manhattan._create_summary')
     @patch('watchmen.models.manhattan.Manhattan._create_snapshot')
