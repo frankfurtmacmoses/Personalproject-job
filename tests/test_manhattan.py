@@ -12,7 +12,7 @@ from watchmen.process.manhattan import \
     STUCK_TASKS_MESSAGE, \
     SUBJECT_MESSAGE, \
     SUCCESS_MESSAGE
-from watchmen.process.manhattan import find_bad_feeds, find_stuck_tasks, main, notify, summarize
+from watchmen.process.manhattan import find_bad_feeds, find_stuck_tasks, load_feeds_to_check, main, notify, summarize
 
 
 class TestManhattan(unittest.TestCase):
@@ -36,13 +36,16 @@ class TestManhattan(unittest.TestCase):
         self.example_down_feeds = ["down1", "down2", "down3", "down4"]
         self.example_out_of_range_feeds = ["oor", "more out of range", "extra out of range"]
         self.example_traceback = "line 4: file\n  error msg\n  more errors  \nError!"
+        self.example_json_file = 'json_file'
+        self.example_loading_error_msg = 'failed loading'
 
     @mock_sns
     @mock_ecs
     @patch('watchmen.process.manhattan.raise_alarm')
     @patch('watchmen.process.manhattan.process_feeds_metrics')
     @patch('watchmen.process.manhattan.process_feeds_logs')
-    def test_find_bad_feeds(self, mock_process_logs, mock_process_metrics, mock_alarm):
+    @patch('watchmen.process.manhattan.load_feeds_to_check')
+    def test_find_bad_feeds(self, mock_load_feeds, mock_process_logs, mock_process_metrics, mock_alarm):
         mock_process_logs.return_value = self.example_down_feeds
         mock_process_metrics.return_value = self.example_out_of_range_feeds
 
@@ -58,13 +61,19 @@ class TestManhattan(unittest.TestCase):
         # Exception finding down feeds
         mock_process_logs.side_effect = Exception('failure')
         expected = None
-        returned = find_bad_feeds("Daily")
+        returned = find_bad_feeds(self.example_event_daily.get("type"))
         self.assertEqual(expected, returned)
 
         # Exception finding out of range feeds
         mock_process_metrics.side_effect = Exception('failure')
         expected = None
-        returned = find_bad_feeds("Daily")
+        returned = find_bad_feeds(self.example_event_daily.get("type"))
+        self.assertEqual(expected, returned)
+
+        # Exception fails loading json file
+        mock_load_feeds.return_value = None
+        expected = None
+        returned = find_bad_feeds(self.example_event_daily.get("type"))
         self.assertEqual(expected, returned)
 
     @mock_sns
@@ -83,6 +92,24 @@ class TestManhattan(unittest.TestCase):
         expected = None
         returned = find_stuck_tasks()
         self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.manhattan.json.load')
+    def test_load_feeds_to_check(self, mock_load):
+        """
+        test watchmen.process.manhattan._load_feeds_to_check
+        """
+        mock_load.return_value = self.example_json_file
+        expected = self.example_json_file
+        returned = load_feeds_to_check()
+        self.assertEqual(expected, returned)
+
+        # exception occurs
+        ex_tests = [TimeoutError, TypeError, Exception, KeyError, ValueError]
+        for exception in ex_tests:
+            mock_load.side_effect = exception
+            expected = None
+            returned = load_feeds_to_check()
+            self.assertEqual(expected, returned)
 
     @patch('watchmen.process.manhattan.notify')
     @patch('watchmen.process.manhattan.summarize')

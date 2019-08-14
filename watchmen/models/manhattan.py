@@ -9,9 +9,11 @@ Refactored with Watchman interface on July 18, 2019
 @email: jzhang@infoblox.com
 """
 # Python imports
-import traceback
 from datetime import datetime, timedelta
+import json
+import os
 import pytz
+import traceback
 # Watchmen imports
 from watchmen import const
 from watchmen.utils.ecs import get_stuck_ecs_tasks
@@ -47,73 +49,10 @@ FEED_URL = settings(
     'https://console.aws.amazon.com/ecs/home?region=us-east-1#/'
     'clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services')
 
-FEEDS_TO_CHECK_HOURLY = {
-    'bambenek_c2_ip': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 1, 'max': 20000},
-    'cox_feed': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 1, 'max': 1000000},
-    'Xylitol_CyberCrime': {'metric_name': 'URI', 'min': 1, 'max': 500},
-    'ecrimeX': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 10, 'max': 2000},
-    'G01Pack_DGA': {'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 1, 'max': 1000},
-    'tracker_h3x_eu': {'metric_name': 'URI', 'min': 1, 'max': 2000},
-    'VX_Vault': {'metric_name': 'URI', 'min': 1, 'max': 100},
-    'Ransomware_tracker': {'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 1, 'max': 1000},
-    'Zeus_Tracker': {'metric_name': 'URI_TIDE_SUCCESS', 'min': 1, 'max': 1000}
-}
+JSON_NAME = "feeds_to_check.json"
+FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 
-FEEDS_HOURLY_NAMES = [
-                      'bambenek-ip-scraper', 'cox-feed', 'cybercrime-scraper', 'ecrimex-scraper',
-                      'g01-dga', 'tracker-h3x-eu-scraper', 'vxvault-scraper', 'ransomware-tracker-scraper',
-                      'zeus-tracker-scraper'
-]
-
-FEEDS_TO_CHECK_DAILY = {
-    'bambenek_OSINT_DGA': {
-        'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 40000, 'max': 300000, 'hour_submitted': '11'
-    },
-    'CryptoLocker_DGA': {
-        'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 1, 'max': 10000, 'hour_submitted': '09'
-    },
-    'feodo_tracker': {
-        'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 50, 'max': 200, 'hour_submitted': '21'
-    },
-    'FastFlux_GameoverZeus_DGA': {
-        'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 1, 'max': 40000, 'hour_submitted': '10'
-    },
-    'TI_Locky_DGA': {
-        'metric_name': 'FQDN_TIDE_SUCCESS', 'min': 20000, 'max': 30000, 'hour_submitted': '10'
-    },
-    'MALC0DE': {
-        'metric_name': 'URI_TIDE_SUCCESS', 'min': 300, 'max': 700, 'hour_submitted': '07'
-    },
-    'torstatus.blutmagie.de': {
-        'metric_name': 'IPV4_TIDE_SUCCESS', 'min': 500, 'max': 1500, 'hour_submitted': '10'
-    }
-}
-
-FEEDS_DAILY_NAMES = [
-                     'bambenek-dga', 'feodo-scraper', 'ff-goz-dga', 'locky-dga-scraper', 'malc0de-scraper',
-                     'tor-exit-node-scraper'
-]
-
-
-# IMPORTANT NOTE: This has to run on Friday in order to ensure proper date traversal!
-# How it works:
-#               Monday: 4
-#               Tuesday: 3
-#               Wednesday: 2
-#               Thursday: 1
-#               Friday: 0
-#               To check for monday you subtract 4 days from the run day on Friday.
-#               IE If the date is 08/10/2018 and I want to check feeds running on Monday
-#                  then I subtract 4 days to 08/06/2018 and check the dynamodb metrics table.
-FEEDS_TO_CHECK_WEEKLY = {
-    'c_APT_ure': {'metric_name': 'FQDN', 'min': 250, 'max': 450, 'hour_submitted': '09', 'days_to_subtract': 4}
-}
-
-FEEDS_WEEKLY_NAMES = [
-                      'ponmocup-scraper'
-]
-
-# Watchman profile
+# watchmen profile
 TARGET = "Reaper Feeds"
 
 
@@ -287,6 +226,17 @@ class Manhattan(Watchman):
     def _find_bad_feeds(self):
         """
         Find all the feeds that are down and/or out of range
+        IMPORTANT NOTE: This has to run on Friday in order to ensure proper date traversal!
+        How it works:
+                      Monday: 4
+                      Tuesday: 3
+                      Wednesday: 2
+                      Thursday: 1
+                      Friday: 0
+                      To check for monday you subtract 4 days from the run day on Friday.
+                      IE If the date is 08/10/2018 and I want to check feeds running on Monday
+                    then I subtract 4 days to 08/06/2018 and check the dynamodb metrics table.
+
         @return: <list, list> <str>
         <list, list>: list of all the down feeds, list of out of range feeds, either list can be None upon exception
         <str>: traceback
@@ -295,30 +245,43 @@ class Manhattan(Watchman):
         submitted_out_of_range_feeds = []
         event_type = self.event_type
 
+        feeds_dict, tb = self._load_feeds_to_check()
+        # Make sure data loaded correctly
+        if not feeds_dict:
+            return (None, None), tb
+
+        feeds_to_check_hourly = feeds_dict.get(HOURLY)
+        feeds_to_check_daily = feeds_dict.get(DAILY)
+        feeds_to_check_weekly = feeds_dict.get(WEEKLY)
+
+        feeds_hourly_names = [item.get("name") for item in feeds_to_check_hourly]
+        feeds_daily_names = [item.get("name") for item in feeds_to_check_daily]
+        feeds_weekly_names = [item.get("name") for item in feeds_to_check_weekly]
+
         try:
             end = datetime.now(tz=pytz.utc)
             event_type_content = {
                 HOURLY: {
-                    "feeds_names": FEEDS_HOURLY_NAMES,
+                    "feeds_names": feeds_hourly_names,
                     "start": end - timedelta(hours=1),
                     "end": end,
-                    "feeds_to_check": FEEDS_TO_CHECK_HOURLY,
+                    "feeds_to_check": feeds_to_check_hourly,
                     "table_name": TABLE_NAME,
                     "time_string_choice": 0,
                 },
                 DAILY: {
-                    "feeds_names": FEEDS_DAILY_NAMES,
+                    "feeds_names": feeds_daily_names,
                     "start": end - timedelta(days=1),
                     "end": end,
-                    "feeds_to_check": FEEDS_TO_CHECK_DAILY,
+                    "feeds_to_check": feeds_to_check_daily,
                     "table_name": TABLE_NAME,
                     "time_string_choice": 1,
                 },
                 WEEKLY: {
-                    "feeds_names": FEEDS_WEEKLY_NAMES,
+                    "feeds_names": feeds_weekly_names,
                     "start": end - timedelta(days=7),
                     "end": end,
-                    "feeds_to_check": FEEDS_TO_CHECK_WEEKLY,
+                    "feeds_to_check": feeds_to_check_weekly,
                     "table_name": TABLE_NAME,
                     "time_string_choice": 2,
                 }
@@ -359,6 +322,23 @@ class Manhattan(Watchman):
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
+
+    def _load_feeds_to_check(self):
+        """
+        Load feeds to check from config file
+        @return: <dict> a dictionary including feeds to check
+        @return: <str> error message
+        """
+        json_path = os.path.join(FILE_PATH, JSON_NAME)
+        try:
+            with open(json_path) as file:
+                feeds_dict = json.load(file)
+            return feeds_dict, None
+        except Exception as ex:
+            fmt = "Cannot load feeds to check from file:\n{}\nException: {}"
+            msg = fmt.format(json_path, type(ex).__name__)
+            self.logger.error(msg)
+            return None, msg
 
 
 # the following blocked out code is for local testing in the future
