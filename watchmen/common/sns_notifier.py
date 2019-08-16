@@ -35,4 +35,5 @@ class SnsNotifier(Notifier):
         """
         if not isinstance(topic, str):
             raise TypeError("Topic arn must be string!")
-        raise_alarm(topic_arn=topic, msg=self.details, subject=self.subject)
+        if not self.result.disable_notifier:
+            raise_alarm(topic_arn=topic, msg=self.details, subject=self.subject)

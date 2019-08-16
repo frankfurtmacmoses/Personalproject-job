@@ -418,6 +418,25 @@ class TestS3(unittest.TestCase):
         self.mock_session.client.assert_called_with('s3', config=CONFIG)
         self.assertEqual(result, self.mock_client)
 
+    @patch('watchmen.utils.s3.get_content')
+    def test_get_csv_data(self, mock_get_content):
+        """
+        test watchmen.utils.s3.get_csv_data
+        """
+        tests = [{
+            "content": b'\xef\xbb\xbfprocess,max,min,count'
+                       b'\r\nprocess1,0,10,12\r\nprocess2,0,29,15\r\nsome_process,1000,1060,5',
+            "returned": 'process,max,min,count\nprocess1,0,10,12\nprocess2,0,29,15\nsome_process,1000,1060,5'
+        }, {
+            "content": b'\xef\xbb\xbfex_attribute\r\nex_value_1\r\nex_value_2\r\nex_value_3',
+            "returned": 'ex_attribute\nex_value_1\nex_value_2\nex_value_3'
+        }]
+        for test in tests:
+            mock_get_content.return_value = test["content"]
+            expected = test["returned"]
+            returned = s3.get_csv_data(key_name=self.mock_filename, bucket=self.bucket)
+            self.assertEqual(expected, returned)
+
     @patch('watchmen.utils.s3.boto3_session')
     def test_get_resource(self, mock_boto3):
         """

@@ -40,7 +40,9 @@
   }]
 }
 """
+from watchmen.common.result_svc import ResultSvc
 from watchmen.process import jupiter, manhattan, moloch, ozymandias, rorschach, silhouette, spectre
+from watchmen.process.metropolis import Metropolis
 
 
 def start_jupiter_watcher(event, context):
@@ -57,6 +59,17 @@ def start_manhattan_watcher(event, context):
     :return: The context that the code is being run in.
     """
     return manhattan.main(event, context)
+
+
+def start_metropolis_watcher(event, context):
+    """
+    Start metropolis watcher to monitor metrics and KPI change detection.
+    :return: The context that the code is being run in.
+    """
+    metropolis = Metropolis()
+    results = metropolis.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
 
 
 def start_moloch_watcher(event, context):
