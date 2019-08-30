@@ -43,6 +43,11 @@ manhattan:
   table_name: CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
+metropolis:
+  bucket_name: cyber-intel-test
+  path_prefix: watchmen/metropolis/
+  data_file: domain_summaries_test.csv
+
 moloch:
   bucket_name: deteque-new-observable-data
   domain_path: NewlyObservedDomains

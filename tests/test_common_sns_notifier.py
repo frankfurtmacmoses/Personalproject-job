@@ -81,6 +81,7 @@ class TestSnsNotifier(unittest.TestCase):
         for test in tests:
             mock_result.subject = test.get("subject")
             mock_result.details = test.get("details")
+            mock_result.disable_notifier = False
             arn = test.get("arn")
             called_with = test.get("called_with")
             notifier_obj = SnsNotifier(mock_result)

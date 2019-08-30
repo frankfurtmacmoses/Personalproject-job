@@ -278,6 +278,20 @@ def get_client():
     return s3_client
 
 
+def get_csv_data(key_name, bucket):
+    """
+    Get csv data from S3.
+    Data will be parsed to a string.
+    @param key_name: path of csv file
+    @param bucket: bucket name
+    @return: <str> string representing the csv content
+    """
+    csv_content_str = get_content(key_name, bucket).decode('utf-8')
+    csv_content_str = csv_content_str.replace('\r\n', '\n')
+    csv_content_str = csv_content_str.strip().strip('\n').strip('\ufeff')
+    return csv_content_str
+
+
 def get_resource():
     """
     Get S3 resource
