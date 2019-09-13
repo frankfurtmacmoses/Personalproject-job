@@ -48,7 +48,8 @@ class Ozymandias(Watchman):
     Class of Ozymandias Watchman.
     """
 
-    def __init__(self):
+    # pylint: disable=unused-argument
+    def __init__(self, event, context):
         super().__init__()
         pass
 

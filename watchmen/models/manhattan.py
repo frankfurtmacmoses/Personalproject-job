@@ -60,13 +60,13 @@ class Manhattan(Watchman):
     """
     class of Manhattan
     """
-    def __init__(self, event_type):
+    def __init__(self, event, context):
         """
         constructor of Manhattan
-        @param event_type: <dict> dict containing string of event type including: Daily, Hourly, and Weekly
+        @param event: <dict> dict containing string of event type including: Daily, Hourly, and Weekly
         """
         super().__init__()
-        self.event_type = event_type.get("type")
+        self.event = event.get("type")
 
     def monitor(self) -> Result:
         """
@@ -127,7 +127,7 @@ class Manhattan(Watchman):
         @param tb: <str> traceback, return summary of exception if not None
         @return: <dict> a dict to be readily used for the notification process
         """
-        event_type = self.event_type
+        event = self.event
         # return exception set if tb
         if tb:
             return {
@@ -150,7 +150,7 @@ class Manhattan(Watchman):
             all_range += "- {}\n".format(oor)
 
         # set subject line to success first
-        subject_line = SUCCESS_SUBJECT.format(event_type)
+        subject_line = SUCCESS_SUBJECT.format(event)
         details_body = ""
         success = True
         message = DEFAULT_MESSAGE
@@ -169,7 +169,7 @@ class Manhattan(Watchman):
             subject_line += ' | One or more feeds are down!'
             details_body += "\n{}\n".format('-' * 60) if details_body else ""
             details_body += '{}: {}\n{}\n{}\n{}\n{}\n'.format(
-                self.event_type,
+                event,
                 FAILURE_MESSAGE,
                 ERROR_FEEDS,
                 all_down,
@@ -243,7 +243,7 @@ class Manhattan(Watchman):
         """
         downed_feeds = []
         submitted_out_of_range_feeds = []
-        event_type = self.event_type
+        event = self.event
 
         feeds_dict, tb = self._load_feeds_to_check()
         # Make sure data loaded correctly
@@ -260,7 +260,7 @@ class Manhattan(Watchman):
 
         try:
             end = datetime.now(tz=pytz.utc)
-            event_type_content = {
+            event_content = {
                 HOURLY: {
                     "feeds_names": feeds_hourly_names,
                     "start": end - timedelta(hours=1),
@@ -286,17 +286,17 @@ class Manhattan(Watchman):
                     "time_string_choice": 2,
                 }
             }
-            if event_type in event_type_content:
+            if event in event_content:
                 downed_feeds = process_feeds_logs(
-                    event_type_content.get(event_type).get("feeds_names"),
-                    event_type_content.get(event_type).get("start"),
-                    event_type_content.get(event_type).get("end"),
+                    event_content.get(event).get("feeds_names"),
+                    event_content.get(event).get("start"),
+                    event_content.get(event).get("end"),
                     LOG_GROUP_NAME
                 )
                 submitted_out_of_range_feeds = process_feeds_metrics(
-                    event_type_content.get(event_type).get("feeds_to_check"),
-                    event_type_content.get(event_type).get("table_name"),
-                    event_type_content.get(event_type).get("time_string_choice")
+                    event_content.get(event).get("feeds_to_check"),
+                    event_content.get(event).get("table_name"),
+                    event_content.get(event).get("time_string_choice")
                 )
             return (downed_feeds, submitted_out_of_range_feeds), None
         except Exception as ex:

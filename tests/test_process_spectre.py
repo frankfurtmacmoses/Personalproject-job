@@ -46,7 +46,7 @@ class TestSpectre(unittest.TestCase):
         """
         test watchmen.models.spectre:: Spectre :: _check_if_found_file
         """
-        spectre_obj = Spectre()
+        spectre_obj = Spectre(event=None, context=None)
         tests = [
             {
                 "validate_return_value": True,
@@ -73,7 +73,7 @@ class TestSpectre(unittest.TestCase):
         test watchmen.models.spectre:: Spectre :: _create_details
         """
         file_founds = [True, False, None]
-        spectre_obj = Spectre()
+        spectre_obj = Spectre(event=None, context=None)
         for file_found in file_founds:
             expected = self.example_details_chart.get(file_found)
             result = spectre_obj._create_details(self.example_filename, file_found, {})
@@ -84,7 +84,7 @@ class TestSpectre(unittest.TestCase):
         test watchmen.models.spectre:: Spectre :: _create_result
         """
         expected = self.example_result_dict
-        spectre_obj = Spectre()
+        spectre_obj = Spectre(event=None, context=None)
         result = spectre_obj._create_result(
             False,
             False,
@@ -102,7 +102,7 @@ class TestSpectre(unittest.TestCase):
         """
         test watchmen.models.spectre:: Spectre :: _get_s3_filename
         """
-        spectre_obj = Spectre()
+        spectre_obj = Spectre(event=None, context=None)
         mock_datetime.now.return_value = self.example_today
         expected_result = self.example_filename
         returned_result = spectre_obj._create_s3_filename()
@@ -114,7 +114,7 @@ class TestSpectre(unittest.TestCase):
         """
         test watchmen.models.spectre:: Spectre :: monitor
         """
-        spectre_obj = Spectre()
+        spectre_obj = Spectre(event=None, context=None)
         mock_details.return_value = self.example_details_chart.get(False)
         mock_found.return_value = False, "string"
         expected = self.example_result_dict

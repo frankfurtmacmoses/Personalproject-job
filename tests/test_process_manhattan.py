@@ -105,7 +105,7 @@ class TestManhattan(unittest.TestCase):
                        self.example_event_weekly]
 
         for event in event_types:
-            manhattan_obj = Manhattan(event)
+            manhattan_obj = Manhattan(event=event, context=None)
             expected = (mock_process_logs(), mock_process_metrics()), None
             returned = manhattan_obj._find_bad_feeds()
             self.assertTupleEqual(expected, returned)
@@ -115,7 +115,7 @@ class TestManhattan(unittest.TestCase):
         for test in tests_ex:
             test.side_effect = Exception('failure')
             expected_bad_feeds, expected_tb = (None, None), 'failure'
-            manhattan_obj = Manhattan(self.example_event_daily)
+            manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
             bad_feeds, returned_tb = manhattan_obj._find_bad_feeds()
             self.assertEqual(expected_bad_feeds, bad_feeds)
             self.assertTrue(expected_tb in returned_tb)
@@ -126,7 +126,7 @@ class TestManhattan(unittest.TestCase):
         test watchmen.models.manhattan :: Manhattan :: _find_bad_feeds
         test when load feeds returns nothing
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         mock_load_feeds.return_value = None, self.example_loading_error_msg
         expected, expected_tb = (None, None), self.example_loading_error_msg
         returned, returned_tb = manhattan_obj._find_bad_feeds()
@@ -139,7 +139,7 @@ class TestManhattan(unittest.TestCase):
         """
         test watchmen.models.manhattan :: Manhattan :: _find_stuck_tasks
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
 
         # Everything works well
         mock_get_stuck.return_value = self.example_stuck_tasks
@@ -158,7 +158,7 @@ class TestManhattan(unittest.TestCase):
         """
         test watchmen.models.manhattan :: Manhattan :: _create_summary
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
 
         tests = [{
             "stuck": self.example_stuck_tasks,
@@ -252,7 +252,7 @@ class TestManhattan(unittest.TestCase):
         """
         test watchmen.models.manhattan :: Manhattan :: _create_result
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         summary = self.example_summarized_result
         result_dict = manhattan_obj._create_result(summary, self.example_snapshot).to_dict()
         expected = self.example_result_dict
@@ -268,7 +268,7 @@ class TestManhattan(unittest.TestCase):
         """
         test watchmen.models.manhattan :: Manhattan :: _create_snapshot
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         tests = [{
             "stuck": self.example_stuck_tasks,
             "down": [],
@@ -319,7 +319,7 @@ class TestManhattan(unittest.TestCase):
         """
         test watchmen.models.manhattan :: Manhattan :: _load_feeds_to_check
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
 
         mock_load.return_value = self.example_json_file
         expected, expected_msg = self.example_json_file, None
@@ -342,7 +342,7 @@ class TestManhattan(unittest.TestCase):
         """
         test watchmen.model.manhattan :: Manhattan :: monitor
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         mock_summary.return_value = self.example_summarized_result
         mock_snapshot.return_value = self.example_snapshot
         expected = self.example_result_dict
@@ -362,7 +362,7 @@ class TestManhattan(unittest.TestCase):
         Testing exceptions
         @return:
         """
-        manhattan_obj = Manhattan(self.example_event_daily)
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         mock_bad_feeds.return_value = None, self.example_bf_tb
         mock_stuck_tasks.return_value = None, self.example_st_tb
         expected = self.example_result_dict_ex

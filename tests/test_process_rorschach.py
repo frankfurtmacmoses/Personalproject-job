@@ -120,7 +120,7 @@ class TestRorschach(unittest.TestCase):
         mock_datetime.now.return_value = self.example_now
         mock_timedelta.return_value = self.example_dt_offset
         importlib.reload(rorschach)
-        return rorschach.Rorschach()
+        return rorschach.Rorschach(event=None, context=None)
 
     @staticmethod
     def resetWatcher(watcher):

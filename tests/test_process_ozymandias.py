@@ -42,7 +42,7 @@ class TestOzymandias(unittest.TestCase):
         test watchmen.models.ozymandias :: Ozymandias :: _create_details
         """
         found_file_chart = [True, False, None]
-        ozymandias_obj = Ozymandias()
+        ozymandias_obj = Ozymandias(event=None, context=None)
         for found_file in found_file_chart:
             expected = self.example_details_chart.get(found_file)
             result = ozymandias_obj._create_details(found_file, {})
@@ -54,7 +54,7 @@ class TestOzymandias(unittest.TestCase):
         test watchmen.models.ozymandias:: Ozymandias :: _create_result
         """
         expected = self.example_result_dict
-        ozymandias_obj = Ozymandias()
+        ozymandias_obj = Ozymandias(event=None, context=None)
         result = ozymandias_obj._create_result(
             False,
             False,
@@ -72,7 +72,7 @@ class TestOzymandias(unittest.TestCase):
         """
         test watchmen.models.ozymandias:: Ozymandias :: _check_file_exist
         """
-        ozymandias_obj = Ozymandias()
+        ozymandias_obj = Ozymandias(event=None, context=None)
         tests = [{
             "is_valid": True,
             "result": True,
@@ -102,7 +102,7 @@ class TestOzymandias(unittest.TestCase):
         """
         test watchmen.models.ozymandias:: Ozymandias :: monitor
         """
-        ozymandias_obj = Ozymandias()
+        ozymandias_obj = Ozymandias(event=None, context=None)
         mock_create_details.return_value = self.example_details_chart.get(False)
         mock_check_file_exists.return_value = False, "string"
         expected = self.example_result_dict

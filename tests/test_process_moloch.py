@@ -55,7 +55,7 @@ class TestMoloch(unittest.TestCase):
         """
         test watchmen.models.moloch :: Moloch :: _check_for_existing_files
         """
-        moloch_obj = Moloch()
+        moloch_obj = Moloch(event=None, context=None)
         tests = [{
             "side_effects": [True, False, True, False],
             "result": True,
@@ -90,7 +90,7 @@ class TestMoloch(unittest.TestCase):
         """
         test watchmen.models.moloch :: Moloch :: _get_check_results
         """
-        moloch_obj = Moloch()
+        moloch_obj = Moloch(event=None, context=None)
         test_results = [
             {"domain": True, "hostname": True},
             {"domain": False, "hostname": True},
@@ -116,7 +116,7 @@ class TestMoloch(unittest.TestCase):
         """
         test watchmen.models.moloch :: Moloch :: _create_details
         """
-        moloch_obj = Moloch()
+        moloch_obj = Moloch(event=None, context=None)
         tests = [{
             "hostname_check": True,
             "domain_check": True,
@@ -178,7 +178,7 @@ class TestMoloch(unittest.TestCase):
         test watchmen.models.moloch:: Moloch :: _create_result
         """
         expected = self.example_result_dict
-        moloch_obj = Moloch()
+        moloch_obj = Moloch(event=None, context=None)
         result = moloch_obj._create_result(
             False,
             False,
@@ -197,7 +197,7 @@ class TestMoloch(unittest.TestCase):
         """
         test watchmen.models.moloch:: Moloch :: monitor
         """
-        moloch_obj = Moloch()
+        moloch_obj = Moloch(event=None, context=None)
         mock_create_details.return_value = self.example_details_chart.get("fail_both"), False
         mock_get_check.return_value = False, False, "string"
         expected = self.example_result_dict

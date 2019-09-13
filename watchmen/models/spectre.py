@@ -48,7 +48,8 @@ TARGET = "Georgia Tech S3"
 
 class Spectre(Watchman):
 
-    def __init__(self):
+    # pylint: disable=unused-argument
+    def __init__(self, event, context):
         super().__init__()
         pass
 

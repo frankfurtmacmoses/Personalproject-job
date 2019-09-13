@@ -49,7 +49,7 @@ class TestSilhouette(unittest.TestCase):
         test watchmen.models.silhouette :: Silhouette :: _create_details
         """
         is_valid_chart = [True, False, None]
-        silhouette_obj = Silhouette()
+        silhouette_obj = Silhouette(event=None, context=None)
         for is_valid in is_valid_chart:
             expected = self.example_details_chart.get(is_valid)
             result = silhouette_obj._create_details(self.example_filename, is_valid, {})
@@ -60,7 +60,7 @@ class TestSilhouette(unittest.TestCase):
         """
         test watchmen.models.silhouette :: Silhouette :: _check_process_status
         """
-        silhouette_obj = Silhouette()
+        silhouette_obj = Silhouette(event=None, context=None)
         tests = [{
             "is_valid": True,
             "result": True,
@@ -89,7 +89,7 @@ class TestSilhouette(unittest.TestCase):
         test watchmen.models.silhouette:: Silhouette :: _create_result
         """
         expected = self.example_result_dict
-        silhouette_obj = Silhouette()
+        silhouette_obj = Silhouette(event=None, context=None)
         result = silhouette_obj._create_result(
             False,
             False,
@@ -107,7 +107,7 @@ class TestSilhouette(unittest.TestCase):
         """
         test watchmen.models.silhouette :: Silhouette :: _get_file_name
         """
-        silhouette_obj = Silhouette()
+        silhouette_obj = Silhouette(event=None, context=None)
         mock_datetime.now.return_value = self.example_today
         expected_result = self.example_filename
         returned_result = silhouette_obj._get_file_name()
@@ -119,7 +119,7 @@ class TestSilhouette(unittest.TestCase):
         """
         test watchmen.models.silhouette:: Silhouette :: monitor
         """
-        silhouette_obj = Silhouette()
+        silhouette_obj = Silhouette(event=None, context=None)
         mock_create_details.return_value = self.example_details_chart.get(False)
         mock_check_process_status.return_value = False, "string"
         expected = self.example_result_dict
@@ -137,7 +137,7 @@ class TestSilhouette(unittest.TestCase):
         """
         test watchmen.models.silhouette :: Silhouette :: _process_status
         """
-        silhouette_obj = Silhouette()
+        silhouette_obj = Silhouette(event=None, context=None)
         tests = [{
             "json": self.example_success_json,
             "content": "content",
