@@ -50,7 +50,8 @@ TARGET = "Lookalike Feed S3"
 
 class Silhouette(Watchman):
 
-    def __init__(self):
+    # pylint: disable=unused-argument
+    def __init__(self, event, context):
         super().__init__()
         self.filename = self._get_file_name()
         pass

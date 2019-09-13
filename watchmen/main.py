@@ -66,7 +66,7 @@ def start_metropolis_watcher(event, context):
     Start metropolis watcher to monitor metrics and KPI change detection.
     :return: The context that the code is being run in.
     """
-    metropolis = Metropolis()
+    metropolis = Metropolis(event, context)
     results = metropolis.monitor()
     result_svc = ResultSvc(results)
     result_svc.send_alert()

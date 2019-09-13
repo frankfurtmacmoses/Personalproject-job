@@ -45,7 +45,8 @@ class Metropolis(Watchman):
     Metropolis class
     """
 
-    def __init__(self):
+    # pylint: disable=unused-argument
+    def __init__(self, event, context):
         super().__init__()
 
     def monitor(self) -> [Result]:

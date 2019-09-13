@@ -62,7 +62,8 @@ class Rorschach(Watchman):
     # This is to make sure we don't look for "Tomorrow's" folder, before we're actually in Tomorrow...
     dt_offset = _datetime.timedelta(hours=offset)
 
-    def __init__(self):
+    # pylint: disable=unused-argument
+    def __init__(self, event, context):
         """
         Constructor of Rorschach
         """

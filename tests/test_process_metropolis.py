@@ -162,7 +162,7 @@ class TestMetropolis(unittest.TestCase):
         Create a metropolis object
         @return: <Metropolis> metropolis object
         """
-        return Metropolis()
+        return Metropolis(context=None, event=None)
 
     def test_check_against_threshold_poc(self):
         """
