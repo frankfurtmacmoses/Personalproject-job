@@ -30,6 +30,9 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors Cyber-Intel endpoints.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_jupiter_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
@@ -61,6 +64,9 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors hourly, daily, and weekly reaper feeds.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_manhattan_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
@@ -86,6 +92,9 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors metrics and KPI change detection on S3.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_metropolis_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
@@ -111,6 +120,9 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors NOH/D Feed hourly.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_moloch_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
@@ -136,6 +148,9 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors neustar data coming into S3.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_ozymandias_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
@@ -163,9 +178,7 @@ Resources:
       Description: Monitors parquet data coming into S3 hourly.
       Environment:
         Variables:
-          BUCKET_NAME: bitaa
-          ENVIRONMENT: cyberint-prod
-          PREFIX: parquet/com.farsightsecurity.300021
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_rorschach_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
@@ -191,6 +204,9 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors lookalike feed.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_silhouette_watcher
       MemorySize: 128
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
@@ -216,6 +232,9 @@ Resources:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
       Description: Monitors Georgia Tech data coming into S3.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
       Handler: handler.start_spectre_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn

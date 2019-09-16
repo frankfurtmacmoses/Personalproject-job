@@ -1,0 +1,34 @@
+{
+  "domain_summaries": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Farsight Data": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
+  },
+  "Georgia Tech S3": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
+  },
+  "Lookalike Feed S3": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3"
+  },
+  "Metrics and KPI": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Neustar": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
+  },
+  "Newly Observed Data":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
+  },
+  "Reaper Feeds": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
+  }
+}
