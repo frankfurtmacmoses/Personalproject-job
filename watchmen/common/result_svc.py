@@ -16,11 +16,13 @@ import traceback
 # watchmen imports
 from watchmen import const
 from watchmen.common.result import Result
+from watchmen.config import settings
 from watchmen.utils.extension import convert_to_snake_case, get_class
 from watchmen.utils.logger import get_logger
 
+ENVIRONMENT = settings("ENVIRONMENT")
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
-JSON_FILE_NAME = 'notifiers.json'
+JSON_FILE_NAME = 'notifiers-{}.json'.format(ENVIRONMENT)
 LOGGER = get_logger('watchmen.' + __name__)
 NOTIFIER_MODEL_PREFIX = 'watchmen.common.'
 
