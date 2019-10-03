@@ -154,7 +154,7 @@ class TestRorschach(unittest.TestCase):
         for test in negative_tests:
             rorschach.Rorschach.prefix = test.get("prefix")
             rorschach.Rorschach.bucket = test.get("bucket")
-        self.assertRaises(AssertionError, rorschach.Rorschach)
+            self.assertRaises(AssertionError, rorschach.Rorschach)
 
     @patch('watchmen.utils.s3.generate_pages')
     def test_process_all_files(self, mock_generate_pages):

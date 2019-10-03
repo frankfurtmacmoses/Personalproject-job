@@ -6,7 +6,7 @@ Module containing functions for AWS ECS
 @author Daryan Hanshew
 @email dhanshew@infoblox.com
 
-Refactored on May 28, 2019
+Refactored on October 3, 2019
 @author: Kayla Ramos
 @email: kramos@infoblox.com
 """
@@ -17,24 +17,33 @@ from logging import getLogger
 LOGGER = getLogger(__name__)
 
 
-def select_dynamo_time_string(feeds_to_check, feed, time_string_choice):
+def select_dynamo_time_string(feed_info, time_string_choice):
     """
     Selects the time string to use based off choice.
-    :param feeds_to_check: feeds currently being looked at
-    :param feed: the feed itself being checked
+    :param feed_info: the feed information being checked
+    Example of feed info:
+        {
+             "name": "bambenek-dga",
+             "source_name": "bambenek_OSINT_DGA",
+             "metric_name": "FQDN_TIDE_SUCCESS",
+             "min": 40000,
+             "max": 300000,
+             "hour_submitted": "11",
+             "needs_metric": true
+        }
     :param time_string_choice: the selection for time string by user
             0 = hourly, 1 = daily, 2 = weekly
     :return: time string for dynamo db
     """
     time_string = None
-    feed_item = feeds_to_check.get(feed)
     time_string_chart = {
         0: get_dynamo_hourly_time_string,
         1: get_dynamo_daily_time_string,
         2: get_dynamo_weekly_time_string,
     }
     if time_string_choice in time_string_chart:
-        time_string = time_string_chart.get(time_string_choice)(feed_item)
+        # This pulls the get_dyanmo_EVENT_time_string and adds () to make it a method
+        time_string = time_string_chart.get(time_string_choice)()
     return time_string
 
 
@@ -47,7 +56,7 @@ def get_dynamo_daily_time_string(feed):
     return (datetime.now(pytz.utc) - timedelta(days=1)).strftime("%Y-%m-%dT") + hour
 
 
-def get_dynamo_hourly_time_string(feed):
+def get_dynamo_hourly_time_string():
     """
     Retrieves previous hour dynamo db time string.
     :return: previous hour dynamo db time string
