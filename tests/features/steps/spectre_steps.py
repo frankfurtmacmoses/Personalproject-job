@@ -6,7 +6,7 @@
 
 from behave import given, when, then
 from watchmen.common.watchman import Watchman
-from watchmen.models.spectre import Spectre
+from watchmen.process.spectre import Spectre
 
 @given('the Spectre Watchman')
 def step_impl(context):

@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 
 from mock import patch
-from watchmen.models.silhouette import Silhouette
+from watchmen.process.silhouette import Silhouette
 
 
 class TestSilhouette(unittest.TestCase):
@@ -46,7 +46,7 @@ class TestSilhouette(unittest.TestCase):
 
     def test_create_details(self):
         """
-        test watchmen.models.silhouette :: Silhouette :: _create_details
+        test watchmen.process.silhouette :: Silhouette :: _create_details
         """
         is_valid_chart = [True, False, None]
         silhouette_obj = Silhouette(event=None, context=None)
@@ -55,10 +55,10 @@ class TestSilhouette(unittest.TestCase):
             result = silhouette_obj._create_details(self.example_filename, is_valid, {})
             self.assertEqual(expected, result)
 
-    @patch('watchmen.models.silhouette.Silhouette._process_status')
+    @patch('watchmen.process.silhouette.Silhouette._process_status')
     def test_check_process_status(self, mock_process_status):
         """
-        test watchmen.models.silhouette :: Silhouette :: _check_process_status
+        test watchmen.process.silhouette :: Silhouette :: _check_process_status
         """
         silhouette_obj = Silhouette(event=None, context=None)
         tests = [{
@@ -86,7 +86,7 @@ class TestSilhouette(unittest.TestCase):
 
     def test_create_result(self):
         """
-        test watchmen.models.silhouette:: Silhouette :: _create_result
+        test watchmen.process.silhouette:: Silhouette :: _create_result
         """
         expected = self.example_result_dict
         silhouette_obj = Silhouette(event=None, context=None)
@@ -102,10 +102,10 @@ class TestSilhouette(unittest.TestCase):
 
         self.assertEqual(expected, result)
 
-    @patch('watchmen.models.silhouette.datetime')
+    @patch('watchmen.process.silhouette.datetime')
     def test_get_file_name(self, mock_datetime):
         """
-        test watchmen.models.silhouette :: Silhouette :: _get_file_name
+        test watchmen.process.silhouette :: Silhouette :: _get_file_name
         """
         silhouette_obj = Silhouette(event=None, context=None)
         mock_datetime.now.return_value = self.example_today
@@ -113,11 +113,11 @@ class TestSilhouette(unittest.TestCase):
         returned_result = silhouette_obj._get_file_name()
         self.assertEqual(expected_result, returned_result)
 
-    @patch('watchmen.models.silhouette.Silhouette._check_process_status')
-    @patch('watchmen.models.silhouette.Silhouette._create_details')
+    @patch('watchmen.process.silhouette.Silhouette._check_process_status')
+    @patch('watchmen.process.silhouette.Silhouette._create_details')
     def test_monitor(self, mock_create_details, mock_check_process_status):
         """
-        test watchmen.models.silhouette:: Silhouette :: monitor
+        test watchmen.process.silhouette:: Silhouette :: monitor
         """
         silhouette_obj = Silhouette(event=None, context=None)
         mock_create_details.return_value = self.example_details_chart.get(False)
@@ -131,11 +131,11 @@ class TestSilhouette(unittest.TestCase):
 
         self.assertDictEqual(result, expected)
 
-    @patch('watchmen.models.silhouette.json.loads')
-    @patch('watchmen.models.silhouette.get_file_contents_s3')
+    @patch('watchmen.process.silhouette.json.loads')
+    @patch('watchmen.process.silhouette.get_file_contents_s3')
     def test_process_status(self, mock_get_contents, mock_json_loads):
         """
-        test watchmen.models.silhouette :: Silhouette :: _process_status
+        test watchmen.process.silhouette :: Silhouette :: _process_status
         """
         silhouette_obj = Silhouette(event=None, context=None)
         tests = [{

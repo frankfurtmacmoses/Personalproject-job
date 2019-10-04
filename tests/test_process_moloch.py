@@ -3,7 +3,7 @@ from datetime import datetime
 from mock import patch
 import pytz
 
-from watchmen.models.moloch import Moloch
+from watchmen.process.moloch import Moloch
 
 
 class TestMoloch(unittest.TestCase):
@@ -50,10 +50,10 @@ class TestMoloch(unittest.TestCase):
         }
 
     # @mock_s3
-    @patch('watchmen.models.moloch.validate_file_on_s3')
+    @patch('watchmen.process.moloch.validate_file_on_s3')
     def test_check_for_existing_files(self, mock_validate_file):
         """
-        test watchmen.models.moloch :: Moloch :: _check_for_existing_files
+        test watchmen.process.moloch :: Moloch :: _check_for_existing_files
         """
         moloch_obj = Moloch(event=None, context=None)
         tests = [{
@@ -85,10 +85,10 @@ class TestMoloch(unittest.TestCase):
             self.assertEqual(expected, result)
         pass
 
-    @patch('watchmen.models.moloch.Moloch._check_for_existing_files')
+    @patch('watchmen.process.moloch.Moloch._check_for_existing_files')
     def test_get_check_results(self, mock_check):
         """
-        test watchmen.models.moloch :: Moloch :: _get_check_results
+        test watchmen.process.moloch :: Moloch :: _get_check_results
         """
         moloch_obj = Moloch(event=None, context=None)
         test_results = [
@@ -114,7 +114,7 @@ class TestMoloch(unittest.TestCase):
 
     def test_create_details(self):
         """
-        test watchmen.models.moloch :: Moloch :: _create_details
+        test watchmen.process.moloch :: Moloch :: _create_details
         """
         moloch_obj = Moloch(event=None, context=None)
         tests = [{
@@ -175,7 +175,7 @@ class TestMoloch(unittest.TestCase):
 
     def test_create_result(self):
         """
-        test watchmen.models.moloch:: Moloch :: _create_result
+        test watchmen.process.moloch:: Moloch :: _create_result
         """
         expected = self.example_result_dict
         moloch_obj = Moloch(event=None, context=None)
@@ -191,11 +191,11 @@ class TestMoloch(unittest.TestCase):
 
         self.assertEqual(expected, result)
 
-    @patch('watchmen.models.moloch.Moloch._get_check_results')
-    @patch('watchmen.models.moloch.Moloch._create_details')
+    @patch('watchmen.process.moloch.Moloch._get_check_results')
+    @patch('watchmen.process.moloch.Moloch._create_details')
     def test_monitor(self, mock_create_details, mock_get_check):
         """
-        test watchmen.models.moloch:: Moloch :: monitor
+        test watchmen.process.moloch:: Moloch :: monitor
         """
         moloch_obj = Moloch(event=None, context=None)
         mock_create_details.return_value = self.example_details_chart.get("fail_both"), False

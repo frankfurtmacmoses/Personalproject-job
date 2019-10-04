@@ -39,15 +39,16 @@ class ResultSvc:
         """
         self.result_list = result_list
 
-    @staticmethod
-    def _load_notifiers():
+    def create_lambda_message(self):
         """
-        Load json file from JSON_FILE_NAME.
-        @return: <dict> Dictionary of target names mapping to names of notifiers.
+        Makes the message that is returned to the lambda. The lambda message contains all of the messages
+        within the list of result objects.
+        :return: Formatted message of all "message" attributes in the list of result objects.
         """
-        json_path = os.path.join(FILE_PATH, JSON_FILE_NAME)
-        with open(json_path, 'r') as file:
-            return json.load(file)
+        lambda_message = ""
+        for result in self.result_list:
+            lambda_message += result.message + "\n"
+        return lambda_message
 
     def _get_notifier(self, result):
         """
@@ -77,6 +78,16 @@ class ResultSvc:
             return notifiers_dict[target].get("sns")
         except KeyError:
             LOGGER.error('Target, {}, not found in {}!'.format(target, JSON_FILE_NAME))
+
+    @staticmethod
+    def _load_notifiers():
+        """
+        Load json file from JSON_FILE_NAME.
+        @return: <dict> Dictionary of target names mapping to names of notifiers.
+        """
+        json_path = os.path.join(FILE_PATH, JSON_FILE_NAME)
+        with open(json_path, 'r') as file:
+            return json.load(file)
 
     def send_alert(self):
         """

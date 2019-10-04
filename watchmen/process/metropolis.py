@@ -117,14 +117,6 @@ class Metropolis(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
-    # TODO once poc is over and Laura and ready to use dynamic files
-    def _check_against_threshold_dynamic(self):
-        """
-        Check if count is in the threshold
-        @return: <bool>
-        """
-        pass
-
     def _check_outlier(self, threshold_check, attr_dict):
         """
         Check if the process has an outlier,
@@ -328,22 +320,3 @@ class Metropolis(Watchman):
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
-
-# Local testing, please uncomment to run
-#
-# from watchmen.common.result_svc import ResultSvc
-# from mock import patch
-#
-#
-# @patch('watchmen.process.metropolis.Metropolis._get_date_today')
-# def run(mock_get_date):
-#     mock_get_date.return_value = '2019-04-01'
-#     Metropolis._get_date_today = mock_get_date
-#     metropolis_obj = Metropolis()
-#     results = metropolis_obj.monitor()
-#     result_svc = ResultSvc(results)
-#     result_svc.send_alert()
-#
-#
-# if __name__ == "__main__":
-#     run()

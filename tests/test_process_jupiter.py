@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime
 from mock import patch
 
-from watchmen.models.jupiter import Jupiter
+from watchmen.process.jupiter import Jupiter
 
 
 class TestJupiter(unittest.TestCase):
@@ -118,7 +118,7 @@ class TestJupiter(unittest.TestCase):
             {"key": "bad endpoint"}
         ]
 
-    @patch('watchmen.models.jupiter.get_content')
+    @patch('watchmen.process.jupiter.get_content')
     def test_check_last_failure(self, mock_get_content):
         jupiter_obj = Jupiter(event=None, context=None)
         test_results = [
@@ -133,11 +133,11 @@ class TestJupiter(unittest.TestCase):
             returned = jupiter_obj._check_last_failure()
             self.assertEqual(expected, returned)
 
-    @patch('watchmen.models.jupiter.get_boolean')
-    @patch('watchmen.models.jupiter.raise_alarm')
-    @patch('watchmen.models.jupiter.Jupiter._check_last_failure')
-    @patch('watchmen.models.jupiter.Jupiter._check_time')
-    @patch('watchmen.models.jupiter.datetime')
+    @patch('watchmen.process.jupiter.get_boolean')
+    @patch('watchmen.process.jupiter.raise_alarm')
+    @patch('watchmen.process.jupiter.Jupiter._check_last_failure')
+    @patch('watchmen.process.jupiter.Jupiter._check_time')
+    @patch('watchmen.process.jupiter.datetime')
     def test_check_skip_notification(self, mock_datetime, mock_time, mock_last_fail, mock_alarm, mock_boolean):
         jupiter_obj = Jupiter(event=None, context=None)
         success = {
@@ -193,11 +193,11 @@ class TestJupiter(unittest.TestCase):
         returned = jupiter_obj._get_result_parameters(True)
         self.assertEquals(expected, returned)
 
-    @patch('watchmen.models.jupiter.raise_alarm')
-    @patch('watchmen.models.jupiter.ENDPOINTS_DATA')
-    @patch('watchmen.models.jupiter.json.loads')
-    @patch('watchmen.models.jupiter.get_content')
-    @patch('watchmen.models.jupiter.settings')
+    @patch('watchmen.process.jupiter.raise_alarm')
+    @patch('watchmen.process.jupiter.ENDPOINTS_DATA')
+    @patch('watchmen.process.jupiter.json.loads')
+    @patch('watchmen.process.jupiter.get_content')
+    @patch('watchmen.process.jupiter.settings')
     def test_load_endpoints(self, mock_settings, mock_get_content, mock_loads, mock_endpoints, mock_alarm):
         jupiter_obj = Jupiter(event=None, context=None)
         # set default endpoints and content
@@ -216,8 +216,8 @@ class TestJupiter(unittest.TestCase):
         result_endpoints, result_message = jupiter_obj.load_endpoints()
         self.assertIn(self.s3_fail_load_message, result_message)
 
-    @patch('watchmen.models.jupiter.copy_contents_to_bucket')
-    @patch('watchmen.models.jupiter.json.dumps')
+    @patch('watchmen.process.jupiter.copy_contents_to_bucket')
+    @patch('watchmen.process.jupiter.json.dumps')
     def test_log_result(self, mock_dumps, mock_content):
         jupiter_obj = Jupiter(event=None, context=None)
         mock_dumps.return_value = self.example_results_mix
@@ -238,9 +238,9 @@ class TestJupiter(unittest.TestCase):
         returned = jupiter_obj.log_result(results)
         self.assertIn(expected, returned)
 
-    @patch('watchmen.models.jupiter.mv_key')
-    @patch('watchmen.models.jupiter.copy_contents_to_bucket')
-    @patch('watchmen.models.jupiter.json.dumps')
+    @patch('watchmen.process.jupiter.mv_key')
+    @patch('watchmen.process.jupiter.copy_contents_to_bucket')
+    @patch('watchmen.process.jupiter.json.dumps')
     def test_log_state(self, mock_dumps, mock_content, mock_mv_key):
         jupiter_obj = Jupiter(event=None, context=None)
         mock_dumps.return_value = self.example_summarized_results
@@ -260,8 +260,8 @@ class TestJupiter(unittest.TestCase):
         returned = jupiter_obj.log_state(results, self.example_prefix)
         self.assertEqual(expected, returned)
 
-    @patch('watchmen.models.jupiter.Jupiter._check_last_failure')
-    @patch('watchmen.models.jupiter.raise_alarm')
+    @patch('watchmen.process.jupiter.Jupiter._check_last_failure')
+    @patch('watchmen.process.jupiter.raise_alarm')
     def test_summarize(self, mock_alarm, mock_fail):
         jupiter_obj = Jupiter(event=None, context=None)
         # Failure setup

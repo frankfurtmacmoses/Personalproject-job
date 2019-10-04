@@ -1,97 +1,167 @@
 """
-Created on January 22, 2019
+watchmen.process/spectre.py
 
-This script monitors S3 ensuring data from Georgia Tech Feed is properly transferred.
+This class monitors S3 ensuring data from Georgia Tech Feed is properly transferred.
 If data is not found or has a value of 0, an alert is sent out.
 
 @author: Kayla Ramos
 @email: kramos@infoblox.com
-"""
-import traceback
-from datetime import datetime, timedelta
-from watchmen.utils.sns_alerts import raise_alarm
-from watchmen.utils.logger import get_logger
-from watchmen.utils.s3 import validate_file_on_s3
-from watchmen.config import settings
-import pytz
+@created: January 22, 2019
+@updated: July 1, 2019
 
-LOGGER = get_logger("Spectre", settings('logging.level', 'INFO'))
+Refactored on July 2nd, 2019
+@author: Jinchi Zhang
+@email: jzhang@infoblox.com
+"""
+
+from datetime import datetime, timedelta
+import pytz
+import traceback
+from typing import Tuple
+
+from watchmen import const
+from watchmen.common.result import Result
+from watchmen.config import settings
+from watchmen.utils.s3 import validate_file_on_s3
+from watchmen.common.watchman import Watchman
 
 # Filepath Strings
-BUCKET_NAME = "cyber-intel"
-PATH_TO_FILES = "hancock/georgia_tech/"
+BUCKET_NAME = settings("spectre.bucket_name", "cyber-intel")
+PATH_PREFIX = settings("spectre.path_prefix", "hancock/georgia_tech/")
 SNS_TOPIC_ARN = settings('spectre.sns_topic', "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 
 # Message Strings
-SUCCESS_MESSAGE = "Georgia Tech Feed data found on S3! File found: "
-FAILURE_MESSAGE = "could not be found in hancock/georgia_tech! Please check S3 and Georgia Tech logs!"
+SUCCESS_MESSAGE = "Georgia Tech Feed data found on S3!"
+FAILURE_MESSAGE = "could not be found in {}/{}! " \
+                  "Please check S3 and Georgia Tech logs!".format(BUCKET_NAME, PATH_PREFIX)
+SUCCESS_SUBJECT = "Spectre Georgia Tech data monitor found everything alright. "
 FAIL_SUBJECT_MESSAGE = "Spectre Georgia Tech data monitor detected a failure!"
-FILE_NOT_FOUND_ERROR = " not found on S3 in cyber-intel/hancock/georgia_tech! Georgia Tech data is missing, " \
-                       "please view the logs!"
-EXCEPTION_MESSAGE = "Spectre monitor for Georgia Tech data failed due to an exception!"
-EXCEPTION_BODY_MESSAGE = "Spectre failed due to the following:\n\n{}\n\nPlease check the logs!"
+FILE_NOT_FOUND_ERROR = " not found on S3 in {}/{}! Georgia Tech data is missing, " \
+                       "please view the logs!".format(BUCKET_NAME, PATH_PREFIX)
+EXCEPTION_SUBJECT = "Spectre for Georgia Tech had an exception!"
+EXCEPTION_MESSAGE = 'Spectre for Georgia Tech failed on \n\t"{}" \ndue to ' \
+                    'the Exception:\n\n{}\n\nPlease check the logs!'
+
+# Watchman profile
+TARGET = "Georgia Tech S3"
 
 
-def check_if_found_file(filename):
-    """
-    Check if the file for yesterday is found on the Georgia Tech feed
-    @param filename: name of the file to check
-    @return: whether or not the file was found; otherwise, None upon exception
-    """
-    file_path = '{}{}'.format(PATH_TO_FILES, filename)
+class Spectre(Watchman):
 
-    try:
-        found_file = validate_file_on_s3(BUCKET_NAME, file_path)
-        return found_file
-    except Exception as ex:
-        LOGGER.exception(traceback.extract_stack())
-        LOGGER.info('*' * 80)
-        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
-        return None
+    # pylint: disable=unused-argument
+    def __init__(self, event, context):
+        super().__init__()
+        pass
 
+    def monitor(self) -> [Result]:
+        """
+        Checks whether or not the file is on S3.
+        @return: <result> Result Object
+        """
+        filename = self._create_s3_filename()
+        file_found, tb = self._check_if_found_file(filename)
+        details = self._create_details(filename, file_found, tb)
+        parameter_chart = {
+            None: {
+                "success": False,
+                "disable_notifier": False,
+                "state": Watchman.STATE.get("exception"),
+                "subject": EXCEPTION_SUBJECT,
+            },
+            True: {
+                "success": True,
+                "disable_notifier": True,
+                "state": Watchman.STATE.get("success"),
+                "subject": SUCCESS_SUBJECT,
+            },
+            False: {
+                "success": False,
+                "disable_notifier": False,
+                "state": Watchman.STATE.get("failure"),
+                "subject": FAIL_SUBJECT_MESSAGE,
+            },
+        }
+        parameters = parameter_chart.get(file_found)
+        result = self._create_result(
+            success=parameters.get("success"),
+            disable_notifier=parameters.get("disable_notifier"),
+            state=parameters.get("state"),
+            subject=parameters.get("subject"),
+            details=details
+        )
+        return [result]
 
-def get_s3_filename():
-    """
-    Gets yesterday's s3 filename
-    :return: filename
-    """
-    now = datetime.now(pytz.utc)
-    yesterday = now - timedelta(days=1)
-    filename = yesterday.strftime('%Y') + "/" + yesterday.strftime('%m') + \
-        "/gt_mpdns_" + yesterday.strftime("%Y%m%d") + ".zip"
-    return filename
+    def _check_if_found_file(self, filename) -> Tuple[bool, str]:
+        """
+        Check if the file for yesterday is found on the Georgia Tech feed
+        @param filename: name of the file to check
+        @return: whether or not the file was found; otherwise, None upon exception
+        """
+        file_path = '{}{}'.format(PATH_PREFIX, filename)
 
+        try:
+            found_file = validate_file_on_s3(BUCKET_NAME, file_path)
+            return found_file, None
+        except Exception as ex:
+            self.logger.exception(traceback.extract_stack())
+            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
 
-# pylint: disable=unused-argument
-def main(event, context):
-    """
-    Checks that Georgia Tech adds a file daily
-    :return: Whether or not that file exists
-    """
-    filename = get_s3_filename()
-    file_found = check_if_found_file(filename)
-    message = notify(file_found, filename)
+    def _create_details(self, filename, found_file, tb):
+        """
+        Depending if the file was found or not, send an email alert if it was not or an error occurred
+        @param found_file: whether or not the file was found (boolean) or None if there was an exception
+        @param filename: name of the file that was checked (used for notification purposes)
+        @return: the status of the check
+        """
+        FILE_STATUS = {
+            None: {
+                'details': EXCEPTION_MESSAGE.format(filename, tb),
+                'log_details': EXCEPTION_MESSAGE.format(filename, tb),
+            },
+            False: {
+                'details': 'ERROR: {} {}'.format(filename, FAILURE_MESSAGE),
+                'log_details': 'File: {} {}'.format(filename, FILE_NOT_FOUND_ERROR),
+            },
+            True: {
+                'details': SUCCESS_MESSAGE,
+                'log_details': SUCCESS_MESSAGE,
+            }
+        }
+        status = FILE_STATUS.get(found_file)
+        details = status.get('details')
+        if status.get('log_details'):
+            self.logger.info(status.get('log_details'))
+        return details
 
-    LOGGER.info(message)
-    return message
+    def _create_result(self, success, disable_notifier, state, subject, details):
+        """
+        Create the result object
+        @param success: <bool> whether the file was found, false upon exception, othrewise false
+        @param state: <str> state of the monitor check
+        @param subject: <str> subject for the notification
+        @param details: <str> content for the notification
+        @return: <Result> result based on the parameters
+        """
+        result = Result(
+            success=success,
+            disable_notifier=disable_notifier,
+            state=state,
+            subject=subject,
+            source=self.source,
+            target=TARGET,
+            details=details)
+        return result
 
-
-def notify(file_found, filename):
-    """
-    Depending if the file was found or not, send an email alert if it was not or an error occurred
-    @param file_found: whether or not the file was found (boolean) or None if there was an exception
-    @param filename: name of the file that was checked (used for notification purposes)
-    @return: the status of the check
-    """
-    if file_found is None:
-        LOGGER.info(EXCEPTION_MESSAGE)
-        message = 'ERROR: {}-{}'.format(EXCEPTION_MESSAGE, filename)
-        return message
-
-    if not file_found:
-        LOGGER.info('File: {}{}'.format(filename, FILE_NOT_FOUND_ERROR))
-        message = 'ERROR: {}{}'.format(filename, FAILURE_MESSAGE)
-        raise_alarm(SNS_TOPIC_ARN, 'File: {}{}'.format(filename, FILE_NOT_FOUND_ERROR), FAIL_SUBJECT_MESSAGE)
-        return message
-
-    return SUCCESS_MESSAGE
+    def _create_s3_filename(self):
+        """
+        Creates yesterday's s3 filename
+        :return: filename
+        """
+        now = datetime.now(pytz.utc)
+        yesterday = now - timedelta(days=1)
+        filename = yesterday.strftime('%Y') + "/" + \
+            yesterday.strftime('%m') + "/gt_mpdns_" + yesterday.strftime("%Y%m%d") + ".zip"
+        return filename
