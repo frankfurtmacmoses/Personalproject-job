@@ -4,9 +4,9 @@ This script is designed to monitor Reaper's daily, hourly, and weekly feeds and 
 @author: Daryan Hanshew
 @email: dhanshew@infoblox.com
 
-Refactored with Watchman interface on July 18, 2019
-@author: Jinchi Zhang
-@email: jzhang@infoblox.com
+Refactored with Watchman interface on October 3, 2019
+@author: Kayla Ramos
+@email: kramos@infoblox.com
 """
 # Python imports
 from datetime import datetime, timedelta
@@ -14,46 +14,52 @@ import json
 import os
 import pytz
 import traceback
+
 # Watchmen imports
 from watchmen import const
+from watchmen.common.result import Result
+from watchmen.common.watchman import Watchman
+from watchmen.config import settings
 from watchmen.utils.ecs import get_stuck_ecs_tasks
 from watchmen.utils.feeds import process_feeds_metrics, process_feeds_logs
-from watchmen.common.result import DEFAULT_MESSAGE, Result
-from watchmen.config import settings
-from watchmen.common.watchman import Watchman
 
-DAILY = "Daily"
+# Event Types
 HOURLY = "Hourly"
+DAILY = "Daily"
 WEEKLY = "Weekly"
 
+# Messages
 ABNORMAL_SUBMISSIONS_MESSAGE = "Abnormal submission amount from these feeds: "
+CHECK_EMAIL_MESSAGE = "\nPlease check the email for more details!"
+ERROR_FEEDS = "\nDowned feeds: "
+EXCEPTION_MESSAGE = "EXCEPTION occurred while checking feeds!\nPlease check the email for more details!"
 EXCEPTION_DETAILS_START = "Manhattan failed due to the following:"
 EXCEPTION_DETAILS_END = "Please check the logs!"
 FAILURE_MESSAGE = "One or more feeds are down or submitting abnormal amounts of domains!"
+FAILURE_SUBJECT = "Manhattan detected an issue"
+NO_METRICS_MESSAGE = 'One or more feeds do not have metrics:\n{}\n'
 STUCK_TASKS_MESSAGE = 'One or more feeds have been running longer than a day:\n{}\nThese feeds must be manually ' \
                       'stopped within AWS console here: {}\n'
 SUBJECT_EXCEPTION_MESSAGE = "Manhattan watchmen failed due to an exception!"
-FAILURE_SUBJECT = "Manhattan detected an issue"
+SUCCESS_MESSAGE = "SUCCESS: Feeds are up and running normally!"
 SUCCESS_SUBJECT = "{} feeds works for Manhattan watchmen are up and running!"
-SUCCESS_MESSAGE = "Feeds are up and running normally!"
-ERROR_FEEDS = "\nDowned feeds: "
-LOG_GROUP_NAME = settings('manhattan.log_group_name', 'feed-eaters-prod')
-PAGER_MESSAGE = 'One or more feeds have been running longer than a day! See details in email!'
-TABLE_NAME = settings(
-    'manhattan.table_name',
-    'CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ')
 
+# DynamoDB and Files
 CLUSTER_NAME = settings('ecs.feeds.cluster', 'cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8')
 FEED_URL = settings(
     'ecs.feeds.url',
     'https://console.aws.amazon.com/ecs/home?region=us-east-1#/'
     'clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services')
-
-JSON_NAME = "feeds_to_check.json"
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
+JSON_NAME = "feeds_to_check.json"
+LOG_GROUP_NAME = settings('manhattan.log_group_name', 'feed-eaters-prod')
+TABLE_NAME = settings(
+    'manhattan.table_name',
+    'CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ')
 
-# watchmen profile
+# Manhattan profile
 TARGET = "Reaper Feeds"
+PAGER_TARGET = "Pager Duty"
 
 
 class Manhattan(Watchman):
@@ -66,20 +72,20 @@ class Manhattan(Watchman):
         @param event: <dict> dict containing string of event type including: Daily, Hourly, and Weekly
         """
         super().__init__()
-        self.event = event.get("type")
+        self.event = event.get("Type")
 
-    def monitor(self) -> Result:
+    def monitor(self) -> [Result]:
         """
         Monitors the Reaper feeds hourly, daily, or weekly.
-        @return: <Result> Result object
+        @return: <Result> List of Result objects
         """
         stuck_tasks, find_st_tb = self._find_stuck_tasks()
         bad_feeds, find_bf_tb = self._find_bad_feeds()
         snapshot = self._create_snapshot(stuck_tasks, bad_feeds)
         tb = self._create_tb_details(find_bf_tb, find_st_tb)
         summary = self._create_summary(stuck_tasks, bad_feeds, tb)
-        result = self._create_result(summary, snapshot)
-        return [result]
+        results = self._create_result(summary, snapshot)
+        return results
 
     def _create_result(self, summary, snapshot):
         """
@@ -102,12 +108,15 @@ class Manhattan(Watchman):
                 "state": Watchman.STATE.get("exception"),
             }
         }
+        results = []
+
+        # Result for email SNS
         check_result = summary.get("success")
         subject = summary.get("subject")
         details = summary.get("details")
         message = summary.get("message")
         parameters = parameter_chart.get(check_result)
-        result = Result(
+        results.append(Result(
             **parameters,
             success=check_result,
             subject=subject,
@@ -116,15 +125,29 @@ class Manhattan(Watchman):
             details=details,
             snapshot=snapshot,
             message=message,
-        )
-        return result
+        ))
+
+        # result for Pager Duty SNS
+        results.append(Result(
+            **parameters,
+            success=check_result,
+            subject=subject,
+            source=self.source,
+            target=PAGER_TARGET,
+            # Pager Duty requires a short message
+            details=message,
+            snapshot=snapshot,
+            message=message,
+        ))
+
+        return results
 
     def _create_summary(self, stuck_tasks, bad_feeds, tb):
         """
         Summarizes the results from feed checks and creates a dict ready for email notifications
         @param stuck_tasks: <list> list of all the stuck tasks or None upon exception
         @param bad_feeds: <tuple> tuple of lists of the down feeds and the out of range feeds
-        @param tb: <str> traceback, return summary of exception if not None
+        @param tb: <str> traceback, return summary of exception otherwise None
         @return: <dict> a dict to be readily used for the notification process
         """
         event = self.event
@@ -134,38 +157,45 @@ class Manhattan(Watchman):
                 "subject": SUBJECT_EXCEPTION_MESSAGE,
                 "details": tb,
                 "success": None,
-                "message": DEFAULT_MESSAGE,
+                "message": EXCEPTION_MESSAGE,
             }
+
         down = bad_feeds[0]
         out_of_range = bad_feeds[1]
+        no_metrics = bad_feeds[2]
 
         all_stuck = ""
         all_down = ""
         all_range = ""
+        all_no = ""
+
         for stuck in stuck_tasks:
             all_stuck += "{}\n".format(stuck)
         for down_feeds in down:
             all_down += "- {}\n".format(down_feeds)
         for oor in out_of_range:
             all_range += "- {}\n".format(oor)
+        for no_met in no_metrics:
+            all_no += "{}\n".format(no_met)
 
-        # set subject line to success first
+        # If success, return success information
         subject_line = SUCCESS_SUBJECT.format(event)
         details_body = ""
         success = True
-        message = DEFAULT_MESSAGE
+        message = SUCCESS_MESSAGE
         # Check for stuck tasks
         if stuck_tasks:
             # once there is one problem happening, change the subject line to failure
             subject_line = FAILURE_SUBJECT + ' | Feeds ECS Cluster Has Hung Tasks'
             details_body += STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL)
-            message = PAGER_MESSAGE
+            message = "FAILURE: Stuck Tasks"
             success = False
 
         # Check if any feeds are down or out of range
         if down or out_of_range:
             if success:
                 subject_line = FAILURE_SUBJECT
+                message = "FAILURE: "
             subject_line += ' | One or more feeds are down!'
             details_body += "\n{}\n".format('-' * 60) if details_body else ""
             details_body += '{}: {}\n{}\n{}\n{}\n{}\n'.format(
@@ -175,7 +205,23 @@ class Manhattan(Watchman):
                 all_down,
                 ABNORMAL_SUBMISSIONS_MESSAGE,
                 all_range)
+            message += "- Down or Out of Range feeds"
             success = False
+
+        # Check if any feeds have no metrics
+        if no_metrics:
+            if success:
+                subject_line = FAILURE_SUBJECT
+                message = "FAILURE: "
+            subject_line += ' | One or more feeds have NO metrics!'
+            details_body += "\n\n\n{}\n".format('-' * 60) if details_body else ""
+            details_body += NO_METRICS_MESSAGE.format(all_no)
+            message += "- Feeds with no metrics"
+            success = False
+
+        # If check was not a success, need to add extra line to message for Pager Duty
+        if not success:
+            message += CHECK_EMAIL_MESSAGE
 
         return {
             "subject": subject_line,
@@ -200,10 +246,13 @@ class Manhattan(Watchman):
         if bad_feeds:
             down = bad_feeds[0]
             out_of_range = bad_feeds[1]
+            no_metrics = bad_feeds[2]
             if down:
                 result["down_feeds"] = down
             if out_of_range:
                 result["out_of_range_feeds"] = out_of_range
+            if no_metrics:
+                result["no_metrics_feeds"] = no_metrics
         return result
 
     @staticmethod
@@ -243,6 +292,7 @@ class Manhattan(Watchman):
         """
         downed_feeds = []
         submitted_out_of_range_feeds = []
+        no_metrics_feeds = []
         event = self.event
 
         feeds_dict, tb = self._load_feeds_to_check()
@@ -254,9 +304,10 @@ class Manhattan(Watchman):
         feeds_to_check_daily = feeds_dict.get(DAILY)
         feeds_to_check_weekly = feeds_dict.get(WEEKLY)
 
-        feeds_hourly_names = [item.get("name") for item in feeds_to_check_hourly]
-        feeds_daily_names = [item.get("name") for item in feeds_to_check_daily]
-        feeds_weekly_names = [item.get("name") for item in feeds_to_check_weekly]
+        # Only adding names for each feed if it has a 'name' key; Doesn't add None to list
+        feeds_hourly_names = [item.get("name") for item in feeds_to_check_hourly if item.get("name")]
+        feeds_daily_names = [item.get("name") for item in feeds_to_check_daily if item.get("name")]
+        feeds_weekly_names = [item.get("name") for item in feeds_to_check_weekly if item.get("name")]
 
         try:
             end = datetime.now(tz=pytz.utc)
@@ -293,12 +344,12 @@ class Manhattan(Watchman):
                     event_content.get(event).get("end"),
                     LOG_GROUP_NAME
                 )
-                submitted_out_of_range_feeds = process_feeds_metrics(
+                submitted_out_of_range_feeds, no_metrics_feeds = process_feeds_metrics(
                     event_content.get(event).get("feeds_to_check"),
                     event_content.get(event).get("table_name"),
                     event_content.get(event).get("time_string_choice")
                 )
-            return (downed_feeds, submitted_out_of_range_feeds), None
+            return (downed_feeds, submitted_out_of_range_feeds, no_metrics_feeds), None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
             self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
@@ -339,35 +390,3 @@ class Manhattan(Watchman):
             msg = fmt.format(json_path, type(ex).__name__)
             self.logger.error(msg)
             return None, msg
-
-
-# the following blocked out code is for local testing in the future
-
-
-# from mock import patch
-#
-#
-# @patch('watchmen.models.manhattan.Manhattan._find_stuck_tasks')
-# @patch('watchmen.models.manhattan.Manhattan._find_bad_feeds')
-# def run(mock_bf, mock_st):
-#     manhattan_obj = Manhattan({"type": "Hourly"})
-#     down_feeds = ["down1", "down2", "down3", "down4"]
-#     oor_feeds = [
-#         "feodo_tracker 1:\n  Amount Submitted: 30, Min Submission Amount: 50, Max Submission Amount: 200",
-#         "feodo_tracker 2:\n  Amount Submitted: 30, Min Submission Amount: 50, Max Submission Amount: 200",
-#         "feodo_tracker 3:\n  Amount Submitted: 30, Min Submission Amount: 50, Max Submission Amount: 200",
-#         "feodo_tracker 4:\n  Amount Submitted: 30, Min Submission Amount: 50, Max Submission Amount: 200"
-#     ]
-#     mock_bf.return_value = (down_feeds, oor_feeds), None
-#     mock_st.return_value = [{"taskDefinitionArn": "example arn topic yeah"}], None
-#     manhattan_obj._find_bad_feeds = mock_bf
-#     manhattan_obj._find_stuck_tasks = mock_st
-#     results = manhattan_obj.monitor()
-#     print("Result: ", results[0])
-#     from watchmen.common.result_svc import ResultSvc
-#     result_svc = ResultSvc(results)
-#     result_svc.send_alert()
-#
-#
-# if __name__ == "__main__":
-#     run()

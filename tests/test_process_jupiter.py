@@ -4,7 +4,6 @@ import unittest
 from datetime import datetime
 from mock import patch
 
-from watchmen.common.svc_checker import ServiceChecker
 from watchmen.models.jupiter import Jupiter
 
 
@@ -76,7 +75,8 @@ class TestJupiter(unittest.TestCase):
         self.example_passed_endpoints = [
             {"name": "good endpoint", "path": "good/path"}
         ]
-        self.example_prefix = "watchmen/jupiter/{}/{}".format("2019", self.check_time_utc.strftime(self.example_date_format))
+        self.example_prefix = "watchmen/jupiter/{}/{}".format("2019",
+                                                              self.check_time_utc.strftime(self.example_date_format))
         self.example_results_mix = {
             'failure': [{
                 'name': 'failed'

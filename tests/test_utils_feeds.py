@@ -15,10 +15,19 @@ class TestFeeds(unittest.TestCase):
         self.example_empty_metric = {}
         self.example_failed_metric = {'Items': [{'source': 'No feed', 'metric': {'who': 2}}]}
         self.example_feed_name = 'test_feed'
-        self.example_feeds_to_check = {'test_feed': {'metric_name': 'success', 'min': 4, 'max': 50}}
-        self.example_get_metric_return = {'success': 40}
-        self.example_get_metric_return_low = {'success': 3}
-        self.example_get_metric_return_high = {'success': 500}
+        self.example_feeds_to_check = \
+            [{
+                "name": "test_feed",
+                "source_name": "test_feed_source",
+                "metric_name": "metric_name",
+                "min": 4,
+                "max": 50,
+                "hour_submitted": "11",
+                "needs_metric": True
+            }]
+        self.example_get_metric_return = {'metric_name': 40}
+        self.example_get_metric_return_low = {'metric_name': 3}
+        self.example_get_metric_return_high = {'metric_name': 500}
         # The first lastEventTimestamp set exactly between 4-5 and the second at 3:30 which succeeds.
         self.example_log_response = {
             'logStreams': [
@@ -119,22 +128,31 @@ class TestFeeds(unittest.TestCase):
                                start_greater_than_end.get('end'))
         self.assertEqual(VALUE_ERROR_MESSAGE, str(error.exception))
 
+    @patch('watchmen.utils.feeds.datetime')
     @patch('watchmen.utils.feeds.get_feed_metrics')
     @patch('watchmen.utils.dynamo.select_dynamo_time_string')
-    def test_process_feeds_metrics(self, mock_time_string, mock_get_feed_metrics):
-        mock_get_feed_metrics.return_value = self.example_get_metric_return
-        expected_result = []
-        returned_result = process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
-        self.assertEqual(expected_result, returned_result)
-        mock_get_feed_metrics.return_value = self.example_get_metric_return_low
-        expected_result = ['test_feed:\n  Amount Submitted: 3, Min Submission Amount: 4, Max Submission Amount: 50']
-        returned_result = process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
-        self.assertEqual(expected_result, returned_result)
-        mock_get_feed_metrics.return_value = self.example_get_metric_return_high
-        expected_result = ['test_feed:\n  Amount Submitted: 500, Min Submission Amount: 4, Max Submission Amount: 50']
-        returned_result = process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
-        self.assertEqual(expected_result, returned_result)
-        mock_get_feed_metrics.return_value = None
-        expected_result = []
-        returned_result = process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
-        self.assertEqual(expected_result, returned_result)
+    def test_process_feeds_metrics(self, mock_time_string, mock_get_feed_metrics, mock_datetime):
+        mock_datetime.utcnow.return_value = self.example_now
+
+        tests = [{
+            "get_met": self.example_get_metric_return,
+            "expected": ([], [])
+        }, {
+            "get_met": self.example_get_metric_return_low,
+            "expected":
+                (['test_feed_source:\n  Amount Submitted: 3, Min Submission Amount: 4, Max Submission Amount: 50'], [])
+        }, {
+            "get_met": self.example_get_metric_return_high,
+            "expected":
+                (['test_feed_source:\n  Amount Submitted: 500, Min Submission Amount: 4, Max Submission Amount: 50'],
+                 [])
+        }, {
+            "get_met": None,
+            "expected": ([], ["{}: {}".format(self.example_feed_name, self.example_now)])
+        }]
+
+        for test in tests:
+            mock_get_feed_metrics.return_value = test.get("get_met")
+            expected_result = test.get("expected")
+            returned_result = process_feeds_metrics(self.example_feeds_to_check, self.example_table_name, 0)
+            self.assertEqual(expected_result, returned_result)

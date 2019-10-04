@@ -63,7 +63,7 @@ class Rorschach(Watchman):
     dt_offset = _datetime.timedelta(hours=offset)
 
     # pylint: disable=unused-argument
-    def __init__(self, event, context):
+    def __init__(self, event=None, context=None):
         """
         Constructor of Rorschach
         """
