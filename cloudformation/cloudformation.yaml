@@ -84,34 +84,6 @@ Resources:
           Value: watchmen-manhattan
         - Key: Env
           Value: !Ref Env
-  WatchmenMetropolisLambda:
-    Type: 'AWS::Lambda::Function'
-    Properties:
-      Runtime: python3.7
-      Code:
-        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
-        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-      Description: Monitors metrics and KPI change detection on S3.
-      Environment:
-        Variables:
-          ENVIRONMENT: !Ref Env
-      Handler: handler.start_metropolis_watcher
-      MemorySize: 256
-      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
-      Timeout: 30
-      Tags:
-        - Key: Owner
-          Value: CyberIntel
-        - Key: Product
-          Value: watchmen
-        - Key: Protected
-          Value: 'TRUE'
-        - Key: Component
-          Value: lambda
-        - Key: Name
-          Value: watchmen-metropolis
-        - Key: Env
-          Value: !Ref Env
   WatchmenMolochLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -138,34 +110,6 @@ Resources:
           Value: lambda
         - Key: Name
           Value: watchmen-moloch
-        - Key: Env
-          Value: !Ref Env
-  WatchmenOzymandiasLambda:
-    Type: 'AWS::Lambda::Function'
-    Properties:
-      Runtime: python3.7
-      Code:
-        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
-        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-      Description: Monitors neustar data coming into S3.
-      Environment:
-        Variables:
-          ENVIRONMENT: !Ref Env
-      Handler: handler.start_ozymandias_watcher
-      MemorySize: 256
-      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
-      Timeout: 30
-      Tags:
-        - Key: Owner
-          Value: CyberIntel
-        - Key: Product
-          Value: watchmen
-        - Key: Protected
-          Value: 'TRUE'
-        - Key: Component
-          Value: lambda
-        - Key: Name
-          Value: watchmen-ozymandias
         - Key: Env
           Value: !Ref Env
   WatchmenRorschachLambda:
@@ -292,16 +236,6 @@ Resources:
         - Id: ManhattanWeeklyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
           Input: '{"type": "Weekly"}'
-  MetropolisScheduledEvent:
-    Type: 'AWS::Events::Rule'
-    Properties:
-      Description: A daily event that kicks off Metropolis Watchmen
-      ScheduleExpression: cron(0 14 * * ? *)
-      State: ENABLED
-      Targets:
-        - Id: MetropolisScheduler
-          Arn: !GetAtt WatchmenMetropolisLambda.Arn
-          Input: '{"type": "Daily"}'
   MolochScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -311,15 +245,6 @@ Resources:
       Targets:
         - Id: MolochScheduler
           Arn: !GetAtt WatchmenMolochLambda.Arn
-  OzymandiasScheduledEvent:
-    Type: 'AWS::Events::Rule'
-    Properties:
-      Description: A daily event that kicks off OzymandiasWatchmen
-      ScheduleExpression: cron(40 11 * * ? *)
-      State: ENABLED
-      Targets:
-        - Id: OzymandiasScheduler
-          Arn: !GetAtt WatchmenOzymandiasLambda.Arn
   RorschachScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -375,13 +300,6 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt ManhattanWeeklyScheduledEvent.Arn
-  InvokeMetropolisLambdaPermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      FunctionName: !GetAtt WatchmenMetropolisLambda.Arn
-      Action: 'lambda:InvokeFunction'
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt MetropolisScheduledEvent.Arn
   InvokeMolochLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -389,13 +307,6 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt MolochScheduledEvent.Arn
-  InvokeOzymandiasLambdaPermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      FunctionName: !GetAtt WatchmenOzymandiasLambda.Arn
-      Action: 'lambda:InvokeFunction'
-      Principal: events.amazonaws.com
-      SourceArn: !GetAtt OzymandiasScheduledEvent.Arn
   InvokeRorschachLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:

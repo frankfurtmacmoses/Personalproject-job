@@ -43,16 +43,16 @@ manhattan:
   table_name: CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
 
+metropolis:
+  bucket_name: cyber-intel
+  path_prefix: watchmen/metropolis/
+  data_file: domain_summaries_test.csv
+
 moloch:
   bucket_name: deteque-new-observable-data
   domain_path: NewlyObservedDomains
   hostname_path: NewlyObservedHostname
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod
-
-ozymandias:
-  bucket_name: cyber-intel
-  path_prefix: hancock/neustar/
-  sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
 
 rorschach:
   bucket_name: bitaa

@@ -3,6 +3,7 @@
 """
 from mock import patch
 from watchmen import main
+from watchmen.common.result import Result
 import logging
 import unittest
 
@@ -21,41 +22,82 @@ class MainTester(unittest.TestCase):
         self.event = {}
         self.context = {}
 
-    def tearDown(self):
-        """tearing down at the end of the test"""
-        pass
+        self.example_lambda_message = "Messages that are in the list of results."
+        self.example_result_list = [Result(
+            message=self.example_lambda_message,
+            success=True,
+            state="SUCCESS",
+            subject="Success subject.",
+            source="Example source",
+            target="Fake target",
+        )]
 
-    @patch('watchmen.main.jupiter')
-    def test_start_jupiter_watcher(self, mock_jupiter):
-        main.start_jupiter_watcher(self.event, self.context)
-        mock_jupiter.main.assert_called_once()
+    @patch('watchmen.process.jupiter.Jupiter')
+    @patch('watchmen.process.jupiter.Jupiter.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_jupiter_watcher(self, mock_alert, mock_monitor, mock_jupiter):
+        mock_monitor.return_value = self.example_result_list
 
-    @patch('watchmen.main.manhattan')
-    def test_start_manhattan_watcher(self, mock_manhattan):
-        main.start_manhattan_watcher(self.event, self.context)
-        mock_manhattan.main.assert_called_once()
+        expected = self.example_lambda_message + "\n"
+        returned = main.start_jupiter_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
 
-    @patch('watchmen.main.moloch')
-    def test_start_moloch_watcher(self, mock_moloch):
-        main.start_moloch_watcher(self.event, self.context)
-        mock_moloch.main.assert_called_once()
+    @patch('watchmen.process.manhattan.Manhattan')
+    @patch('watchmen.process.manhattan.Manhattan.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_manhattan_watcher(self, mock_alert, mock_monitor, mock_manhattan):
+        mock_monitor.return_value = self.example_result_list
 
-    @patch('watchmen.main.ozymandias')
-    def test_start_ozymandias_watcher(self, mock_ozymandias):
-        main.start_ozymandias_watcher(self.event, self.context)
-        mock_ozymandias.main.assert_called_once()
+        expected = self.example_lambda_message + "\n"
+        returned = main.start_manhattan_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
 
-    @patch('watchmen.main.rorschach')
-    def test_start_rorschach_watcher(self, mock_rorschach):
-        main.start_rorschach_watcher(self.event, self.context)
-        mock_rorschach.main.assert_called_once()
+    @patch('watchmen.process.metropolis.Metropolis')
+    @patch('watchmen.process.metropolis.Metropolis.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_metropolis_watcher(self, mock_alert, mock_monitor, mock_moloch):
+        mock_monitor.return_value = self.example_result_list
 
-    @patch('watchmen.main.silhouette')
-    def test_start_silhouette_watcher(self, mock_silhouette):
-        main.start_silhouette_watcher(self.event, self.context)
-        mock_silhouette.main.assert_called_once()
+        expected = self.example_lambda_message + "\n"
+        returned = main.start_metropolis_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
 
-    @patch('watchmen.main.spectre')
-    def test_start_spectre_watcher(self, mock_spectre):
-        main.start_spectre_watcher(self.event, self.context)
-        mock_spectre.main.assert_called_once()
+    @patch('watchmen.process.moloch.Moloch')
+    @patch('watchmen.process.moloch.Moloch.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_moloch_watcher(self, mock_alert, mock_monitor, mock_moloch):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + "\n"
+        returned = main.start_moloch_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.rorschach.Rorschach')
+    @patch('watchmen.process.rorschach.Rorschach.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_rorschach_watcher(self, mock_alert, mock_monitor, mock_rorschach):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + "\n"
+        returned = main.start_rorschach_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.silhouette.Silhouette')
+    @patch('watchmen.process.silhouette.Silhouette.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_silhouette_watcher(self, mock_alert, mock_monitor, mock_silhouette):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + "\n"
+        returned = main.start_silhouette_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.spectre.Spectre')
+    @patch('watchmen.process.spectre.Spectre.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_spectre_watcher(self, mock_alert, mock_monitor, mock_spectre):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + "\n"
+        returned = main.start_spectre_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)

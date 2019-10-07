@@ -41,16 +41,25 @@
 }
 """
 from watchmen.common.result_svc import ResultSvc
-from watchmen.process import jupiter, manhattan, moloch, ozymandias, rorschach, silhouette, spectre
+from watchmen.process.jupiter import Jupiter
+from watchmen.process.manhattan import Manhattan
 from watchmen.process.metropolis import Metropolis
+from watchmen.process.moloch import Moloch
+from watchmen.process.rorschach import Rorschach
+from watchmen.process.silhouette import Silhouette
+from watchmen.process.spectre import Spectre
 
 
 def start_jupiter_watcher(event, context):
     """
-        Start the Jupiter watcher for the Sockeye endpoints.
-        :return: The context that the code is being run in.
-        """
-    return jupiter.main(event, context)
+    Start the Jupiter watcher for the CyberIntel endpoints.
+    :return: The context that the code is being run in.
+    """
+    jupiter = Jupiter(event, context)
+    results = jupiter.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_manhattan_watcher(event, context):
@@ -58,7 +67,11 @@ def start_manhattan_watcher(event, context):
     Start manhattan watcher to monitor hourly, daily and weekly Reaper feeds.
     :return: The context that the code is being run in.
     """
-    return manhattan.main(event, context)
+    manhattan = Manhattan(event, context)
+    results = manhattan.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_metropolis_watcher(event, context):
@@ -70,6 +83,7 @@ def start_metropolis_watcher(event, context):
     results = metropolis.monitor()
     result_svc = ResultSvc(results)
     result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_moloch_watcher(event, context):
@@ -77,15 +91,11 @@ def start_moloch_watcher(event, context):
     Start the moloch watcher for NOH/D feeds.
     :return: The context that the code is being run in.
     """
-    return moloch.main(event, context)
-
-
-def start_ozymandias_watcher(event, context):
-    """
-    Start the ozymandias watcher for Neustar data.
-    :return: The context that the code is being run in.
-    """
-    return ozymandias.main(event, context)
+    moloch = Moloch(event, context)
+    results = moloch.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_rorschach_watcher(event, context):
@@ -93,7 +103,11 @@ def start_rorschach_watcher(event, context):
     Start the rorschach watcher for parquet data in S3.
     :return: The context that the code is being run in.
     """
-    return rorschach.main(event, context)
+    rorschach = Rorschach(event, context)
+    results = rorschach.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_silhouette_watcher(event, context):
@@ -101,7 +115,11 @@ def start_silhouette_watcher(event, context):
     Start the silhouette watcher for lookalike feed.
     :return: The context that the code is being run in.
     """
-    return silhouette.main(event, context)
+    silhouette = Silhouette(event, context)
+    results = silhouette.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_spectre_watcher(event, context):
@@ -109,4 +127,8 @@ def start_spectre_watcher(event, context):
     Start the spectre watcher for Georgia Tech Feed.
     :return: The context that the code is being run in.
     """
-    return spectre.main(event, context)
+    spectre = Spectre(event, context)
+    results = spectre.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()

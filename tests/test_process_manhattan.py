@@ -2,9 +2,9 @@ import unittest
 from moto import mock_sns, mock_ecs
 from mock import patch
 
-from watchmen.models.manhattan import Manhattan
+from watchmen.process.manhattan import Manhattan
 
-from watchmen.models.manhattan import \
+from watchmen.process.manhattan import \
     ABNORMAL_SUBMISSIONS_MESSAGE, \
     CHECK_EMAIL_MESSAGE, \
     ERROR_FEEDS, \
@@ -148,11 +148,11 @@ class TestManhattan(unittest.TestCase):
 
     @mock_sns
     @mock_ecs
-    @patch('watchmen.models.manhattan.process_feeds_metrics')
-    @patch('watchmen.models.manhattan.process_feeds_logs')
+    @patch('watchmen.process.manhattan.process_feeds_metrics')
+    @patch('watchmen.process.manhattan.process_feeds_logs')
     def test_find_bad_feeds(self, mock_process_logs, mock_process_metrics):
         """
-        test watchmen.models.manhattan :: Manhattan :: _find_bad_feeds
+        test watchmen.process.manhattan :: Manhattan :: _find_bad_feeds
         """
         mock_process_logs.return_value = self.example_down_feeds
         mock_process_metrics.return_value = self.example_out_of_range_feeds, self.example_no_metrics_feeds
@@ -178,10 +178,10 @@ class TestManhattan(unittest.TestCase):
             self.assertEqual(expected_bad_feeds, bad_feeds)
             self.assertTrue(expected_tb in returned_tb)
 
-    @patch('watchmen.models.manhattan.Manhattan._load_feeds_to_check')
+    @patch('watchmen.process.manhattan.Manhattan._load_feeds_to_check')
     def test_find_bad_feeds_fails_loading(self, mock_load_feeds):
         """
-        test watchmen.models.manhattan :: Manhattan :: _find_bad_feeds
+        test watchmen.process.manhattan :: Manhattan :: _find_bad_feeds
         test when load feeds returns nothing
         """
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
@@ -192,10 +192,10 @@ class TestManhattan(unittest.TestCase):
         self.assertEqual(expected_tb, returned_tb)
 
     @mock_sns
-    @patch('watchmen.models.manhattan.get_stuck_ecs_tasks')
+    @patch('watchmen.process.manhattan.get_stuck_ecs_tasks')
     def test_find_stuck_tasks(self, mock_get_stuck):
         """
-        test watchmen.models.manhattan :: Manhattan :: _find_stuck_tasks
+        test watchmen.process.manhattan :: Manhattan :: _find_stuck_tasks
         """
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
 
@@ -214,7 +214,7 @@ class TestManhattan(unittest.TestCase):
 
     def test_create_summary(self):
         """
-        test watchmen.models.manhattan :: Manhattan :: _create_summary
+        test watchmen.process.manhattan :: Manhattan :: _create_summary
         """
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         event = manhattan_obj.event
@@ -354,7 +354,7 @@ class TestManhattan(unittest.TestCase):
 
     def test_create_result(self):
         """
-        test watchmen.models.manhattan :: Manhattan :: _create_result
+        test watchmen.process.manhattan :: Manhattan :: _create_result
         """
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         summary = self.example_summarized_result
@@ -410,7 +410,7 @@ class TestManhattan(unittest.TestCase):
 
     def test_create_snapshot(self):
         """
-        test watchmen.models.manhattan :: Manhattan :: _create_snapshot
+        test watchmen.process.manhattan :: Manhattan :: _create_snapshot
         """
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         tests = [{
@@ -479,10 +479,10 @@ class TestManhattan(unittest.TestCase):
             result = manhattan_obj._create_snapshot(stucks, (down, oor, no_metrics))
             self.assertEqual(expected, result)
 
-    @patch('watchmen.models.manhattan.json.load')
+    @patch('watchmen.process.manhattan.json.load')
     def test_load_feeds_to_check(self, mock_load):
         """
-        test watchmen.models.manhattan :: Manhattan :: _load_feeds_to_check
+        test watchmen.process.manhattan :: Manhattan :: _load_feeds_to_check
         """
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
 
@@ -501,12 +501,12 @@ class TestManhattan(unittest.TestCase):
             self.assertEqual(expected, returned)
             self.assertTrue(expected_msg in returned_msg)
 
-    @patch('watchmen.models.manhattan.Manhattan._create_result')
-    @patch('watchmen.models.manhattan.Manhattan._create_summary')
-    @patch('watchmen.models.manhattan.Manhattan._create_tb_details')
-    @patch('watchmen.models.manhattan.Manhattan._create_snapshot')
-    @patch('watchmen.models.manhattan.Manhattan._find_bad_feeds')
-    @patch('watchmen.models.manhattan.Manhattan._find_stuck_tasks')
+    @patch('watchmen.process.manhattan.Manhattan._create_result')
+    @patch('watchmen.process.manhattan.Manhattan._create_summary')
+    @patch('watchmen.process.manhattan.Manhattan._create_tb_details')
+    @patch('watchmen.process.manhattan.Manhattan._create_snapshot')
+    @patch('watchmen.process.manhattan.Manhattan._find_bad_feeds')
+    @patch('watchmen.process.manhattan.Manhattan._find_stuck_tasks')
     def test_monitor(self, mock_stuck, mock_bad, mock_snapshot, mock_tb_details, mock_summary, mock_result):
         """
         test watchmen.model.manhattan :: Manhattan :: monitor

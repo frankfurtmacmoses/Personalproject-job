@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 
 from mock import patch
-from watchmen.models.spectre import Spectre
+from watchmen.process.spectre import Spectre
 
 
 class TestSpectre(unittest.TestCase):
@@ -41,10 +41,10 @@ class TestSpectre(unittest.TestCase):
             "target": "Georgia Tech S3",
         }
 
-    @patch('watchmen.models.spectre.validate_file_on_s3')
+    @patch('watchmen.process.spectre.validate_file_on_s3')
     def test_check_if_found_file(self, mock_validate):
         """
-        test watchmen.models.spectre:: Spectre :: _check_if_found_file
+        test watchmen.process.spectre:: Spectre :: _check_if_found_file
         """
         spectre_obj = Spectre(event=None, context=None)
         tests = [
@@ -70,7 +70,7 @@ class TestSpectre(unittest.TestCase):
 
     def test_create_details(self):
         """
-        test watchmen.models.spectre:: Spectre :: _create_details
+        test watchmen.process.spectre:: Spectre :: _create_details
         """
         file_founds = [True, False, None]
         spectre_obj = Spectre(event=None, context=None)
@@ -81,7 +81,7 @@ class TestSpectre(unittest.TestCase):
 
     def test_create_result(self):
         """
-        test watchmen.models.spectre:: Spectre :: _create_result
+        test watchmen.process.spectre:: Spectre :: _create_result
         """
         expected = self.example_result_dict
         spectre_obj = Spectre(event=None, context=None)
@@ -97,10 +97,10 @@ class TestSpectre(unittest.TestCase):
 
         self.assertEqual(result, expected)
 
-    @patch('watchmen.models.spectre.datetime')
+    @patch('watchmen.process.spectre.datetime')
     def test_get_s3_filename(self, mock_datetime):
         """
-        test watchmen.models.spectre:: Spectre :: _get_s3_filename
+        test watchmen.process.spectre:: Spectre :: _get_s3_filename
         """
         spectre_obj = Spectre(event=None, context=None)
         mock_datetime.now.return_value = self.example_today
@@ -108,11 +108,11 @@ class TestSpectre(unittest.TestCase):
         returned_result = spectre_obj._create_s3_filename()
         self.assertEqual(expected_result, returned_result)
 
-    @patch('watchmen.models.spectre.Spectre._check_if_found_file')
-    @patch('watchmen.models.spectre.Spectre._create_details')
+    @patch('watchmen.process.spectre.Spectre._check_if_found_file')
+    @patch('watchmen.process.spectre.Spectre._create_details')
     def test_monitor(self, mock_details, mock_found):
         """
-        test watchmen.models.spectre:: Spectre :: monitor
+        test watchmen.process.spectre:: Spectre :: monitor
         """
         spectre_obj = Spectre(event=None, context=None)
         mock_details.return_value = self.example_details_chart.get(False)

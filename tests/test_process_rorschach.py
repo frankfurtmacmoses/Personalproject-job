@@ -6,8 +6,8 @@ import pytz
 import unittest
 
 from watchmen.common.result import Result
-import watchmen.models.rorschach as rorschach
-from watchmen.models.rorschach import \
+import watchmen.process.rorschach as rorschach
+from watchmen.process.rorschach import \
     _EVERYTHING_ZERO_SIZE_MESSAGE, \
     _NOTHING_PARQUET_MESSAGE, \
     _NOTHING_RECENT_MESSAGE, \
@@ -57,8 +57,7 @@ class TestRorschach(unittest.TestCase):
             rorschach._NOTHING_PARQUET_MESSAGE + \
             rorschach._EVERYTHING_ZERO_SIZE_MESSAGE + \
             self.msg_format
-        self.all_zero = rorschach._EVERYTHING_ZERO_SIZE_MESSAGE + \
-            self.msg_format
+        self.all_zero = rorschach._EVERYTHING_ZERO_SIZE_MESSAGE + self.msg_format
         self.example_fail_details = "some failure details"
         self.example_fail_subject = "some failure subject"
         self.example_result_dict = {
@@ -131,7 +130,7 @@ class TestRorschach(unittest.TestCase):
 
     def test_init_(self):
         """
-        test watchmen.models.rorschach :: Rorschach :: __init__
+        test watchmen.process.rorschach :: Rorschach :: __init__
         """
 
         # Positive test, test with Good prefix, bucket, check full path
@@ -159,7 +158,7 @@ class TestRorschach(unittest.TestCase):
     @patch('watchmen.utils.s3.generate_pages')
     def test_process_all_files(self, mock_generate_pages):
         """
-        test watchmen.models.rorschach :: Rorschach :: _process_all_files
+        test watchmen.process.rorschach :: Rorschach :: _process_all_files
         """
         expected = {
             'FFF': [False, False, False],
@@ -186,11 +185,11 @@ class TestRorschach(unittest.TestCase):
             self.assertEqual(b[1], watcher.everything_zero_size, msg)
             self.assertEqual(b[2], watcher.nothing_parquet, msg)
 
-    @patch('watchmen.models.rorschach.Rorschach._process_all_files')
+    @patch('watchmen.process.rorschach.Rorschach._process_all_files')
     @patch('watchmen.utils.s3.check_empty_folder')
     def test_summarize_parquet_stream(self, mock_check_empty_folder, mock_process_all_files):
         """
-        test watchmen.models.rorschach :: Rorschach :: _summarize_parquet_stream
+        test watchmen.process.rorschach :: Rorschach :: _summarize_parquet_stream
         """
         # Test with Empty Response!
         mock_check_empty_folder.return_value = (True, None)
@@ -237,11 +236,11 @@ class TestRorschach(unittest.TestCase):
         }
         self.assertEqual(expected_result, return_result)
 
-    @patch('watchmen.models.rorschach._traceback.format_exc')
-    @patch('watchmen.models.rorschach.Rorschach._summarize_parquet_stream')
+    @patch('watchmen.process.rorschach._traceback.format_exc')
+    @patch('watchmen.process.rorschach.Rorschach._summarize_parquet_stream')
     def test_get_parquet_result(self, mock_check, mock_trace):
         """
-        test watchmen.models.rorschach :: Rorschach :: _get_parquet_result
+        test watchmen.process.rorschach :: Rorschach :: _get_parquet_result
         """
         mock_trace.return_value = self.example_traceback
         mock_check.return_value = self.example_parquet_result
@@ -264,7 +263,7 @@ class TestRorschach(unittest.TestCase):
 
     def test_create_result(self):
         """
-        test watchmen.models.rorschach :: Rorschach :: _create_result
+        test watchmen.process.rorschach :: Rorschach :: _create_result
         """
         watcher = self.createWatcher()
         summary = {"success": False, "details": self.example_fail_details, "subject": self.example_fail_subject}
@@ -278,10 +277,10 @@ class TestRorschach(unittest.TestCase):
 
         self.assertDictEqual(expected, result_dict)
 
-    @patch('watchmen.models.rorschach.Rorschach._get_parquet_result')
+    @patch('watchmen.process.rorschach.Rorschach._get_parquet_result')
     def test_monitor(self, mock_get_parquet):
         """
-        test watchmen.models.rorschach :: Rorschach :: monitor
+        test watchmen.process.rorschach :: Rorschach :: monitor
         """
         watcher = self.createWatcher()
         mock_get_parquet.return_value = {
