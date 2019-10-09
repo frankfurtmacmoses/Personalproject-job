@@ -47,7 +47,7 @@ class ResultSvc:
         """
         lambda_message = ""
         for result in self.result_list:
-            lambda_message += result.message + "\n"
+            lambda_message += result.message + " ---- "
         return lambda_message
 
     def _get_notifier(self, result):

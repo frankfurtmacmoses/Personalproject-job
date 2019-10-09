@@ -39,7 +39,7 @@ class TestMoloch(unittest.TestCase):
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": "NO MESSAGE",
+            "message": "Moloch: A Feed has gone down, please check logs in CloudWatch!",
             "result_id": 0,
             "snapshot": None,
             "source": "Moloch",
@@ -180,12 +180,13 @@ class TestMoloch(unittest.TestCase):
         expected = self.example_result_dict
         moloch_obj = Moloch(event=None, context=None)
         result = moloch_obj._create_result(
+            "Moloch: A Feed has gone down, please check logs in CloudWatch!",
             False,
             False,
             "FAILURE",
             "Moloch watchmen detected an issue with NOH/D feed!",
             self.example_details_chart.get("fail_both")).to_dict()
-        # since moloch does not give observed time, we don"t test the time here
+        # since moloch does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
         result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
@@ -203,8 +204,9 @@ class TestMoloch(unittest.TestCase):
         expected = self.example_result_dict
         result = moloch_obj.monitor()[0].to_dict()
 
-        # since moloch does not give observed time, we don"t test the time here
+        # since moloch does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
         result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
+        self.maxDiff = None
         self.assertDictEqual(result, expected)

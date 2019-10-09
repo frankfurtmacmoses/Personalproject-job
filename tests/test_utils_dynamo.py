@@ -69,7 +69,7 @@ class TestDynamo(unittest.TestCase):
         mock_datetime.now.return_value = self.example_now
         # Test for a time string for dynamo db setup one hour ago
         expected_result = self.example_time_string
-        returned_result = get_dynamo_hourly_time_string()
+        returned_result = get_dynamo_hourly_time_string(None)
         self.assertEqual(expected_result, returned_result)
 
     @patch('watchmen.utils.dynamo.datetime')

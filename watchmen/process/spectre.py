@@ -34,6 +34,7 @@ SNS_TOPIC_ARN = settings('spectre.sns_topic', "arn:aws:sns:us-east-1:40509358075
 SUCCESS_MESSAGE = "Georgia Tech Feed data found on S3!"
 FAILURE_MESSAGE = "could not be found in {}/{}! " \
                   "Please check S3 and Georgia Tech logs!".format(BUCKET_NAME, PATH_PREFIX)
+FAILURE_SHORT_MESSAGE = "Spectre monitor failed, please check S3 and Georgia Tech logs!"
 SUCCESS_SUBJECT = "Spectre Georgia Tech data monitor found everything alright. "
 FAIL_SUBJECT_MESSAGE = "Spectre Georgia Tech data monitor detected a failure!"
 FILE_NOT_FOUND_ERROR = " not found on S3 in {}/{}! Georgia Tech data is missing, " \
@@ -41,6 +42,7 @@ FILE_NOT_FOUND_ERROR = " not found on S3 in {}/{}! Georgia Tech data is missing,
 EXCEPTION_SUBJECT = "Spectre for Georgia Tech had an exception!"
 EXCEPTION_MESSAGE = 'Spectre for Georgia Tech failed on \n\t"{}" \ndue to ' \
                     'the Exception:\n\n{}\n\nPlease check the logs!'
+EXCEPTION_SHORT_MESSAGE = "Spectre monitor failed due to an exception, check S3 and Georgia Tech logs!"
 
 # Watchman profile
 TARGET = "Georgia Tech S3"
@@ -63,18 +65,21 @@ class Spectre(Watchman):
         details = self._create_details(filename, file_found, tb)
         parameter_chart = {
             None: {
+                "message": EXCEPTION_SHORT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
                 "subject": EXCEPTION_SUBJECT,
             },
             True: {
+                "message": SUCCESS_MESSAGE,
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
                 "subject": SUCCESS_SUBJECT,
             },
             False: {
+                "message": FAILURE_SHORT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
@@ -83,6 +88,7 @@ class Spectre(Watchman):
         }
         parameters = parameter_chart.get(file_found)
         result = self._create_result(
+            message=parameters.get("message"),
             success=parameters.get("success"),
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
@@ -136,7 +142,7 @@ class Spectre(Watchman):
             self.logger.info(status.get('log_details'))
         return details
 
-    def _create_result(self, success, disable_notifier, state, subject, details):
+    def _create_result(self, message, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, othrewise false
@@ -146,6 +152,7 @@ class Spectre(Watchman):
         @return: <Result> result based on the parameters
         """
         result = Result(
+            message=message,
             success=success,
             disable_notifier=disable_notifier,
             state=state,

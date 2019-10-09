@@ -50,6 +50,7 @@ S3_PREFIX_JUPITER = settings('jupiter.s3_prefix')
 S3_PREFIX_STATE = '{}/{}/LATEST'.format(S3_PREFIX, S3_PREFIX_JUPITER)
 
 # Messages
+BAD_ENDPOINTS_MESSAGE = "There are endpoints with no path variable, please check the endpoints files locally and in S3!"
 CHECK_LOGS = "Please check logs for more details!"
 ERROR_JUPITER = "Jupiter: Failure in runtime"
 ERROR_SUBJECT = "Jupiter: Failure in checking endpoint"
@@ -83,7 +84,7 @@ class Jupiter(Watchman):
 
         endpoints, s3_error_message = self.load_endpoints()
         endpoints_with_path, bad_endpoints_message = self.check_endpoints_path(endpoints)
-        result_message = s3_error_message + "\n" + bad_endpoints_message
+        result_message = s3_error_message + " ---- " + bad_endpoints_message
 
         # There is no need to run the rest of the code if there are no valid endpoints.
         if endpoints_with_path is None:
@@ -99,6 +100,10 @@ class Jupiter(Watchman):
 
         date_check_result, details = self._check_skip_notification_(summarized_result)
         parameters = self._get_result_parameters(date_check_result)
+
+        # The result_message is empty if the load_endpoints and check_endpoints path were both successful.
+        if result_message is " ---- ":
+            result_message = SUCCESS_MESSAGE
 
         result = Result(
             success=parameters.get("success"),
@@ -140,8 +145,9 @@ class Jupiter(Watchman):
                 msg = 'There is not a path to check for: {}'.format(item.get('name', "There is not a name available"))
                 messages.append(msg)
                 self.logger.error('Notify failure:\n%s', msg)
-            bad_endpoints_message = '\n'.join(messages)
-            raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=bad_endpoints_message)
+            alarm_message = '\n'.join(messages)
+            bad_endpoints_message = BAD_ENDPOINTS_MESSAGE
+            raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=alarm_message)
 
         if len(validated) < MIN_ITEMS:
             self.logger.warning(NOT_ENOUGH_EPS_MESSAGE)
@@ -207,6 +213,8 @@ class Jupiter(Watchman):
 
     def _create_invalid_endpoints_result(self, result_message):
         parameters = self._get_result_parameters(None)
+        if result_message is " ---- ":
+            result_message = NOT_ENOUGH_EPS_MESSAGE
 
         result = Result(
             disable_notifier=parameters.get("disable_notifier"),

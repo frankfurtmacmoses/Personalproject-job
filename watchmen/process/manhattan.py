@@ -29,20 +29,19 @@ DAILY = "Daily"
 WEEKLY = "Weekly"
 
 # Messages
-ABNORMAL_SUBMISSIONS_MESSAGE = "Abnormal submission amount from these feeds: "
-CHECK_EMAIL_MESSAGE = "\nPlease check the email for more details!"
-ERROR_FEEDS = "\nDowned feeds: "
-EXCEPTION_MESSAGE = "EXCEPTION occurred while checking feeds!\nPlease check the email for more details!"
-EXCEPTION_DETAILS_START = "Manhattan failed due to the following:"
-EXCEPTION_DETAILS_END = "Please check the logs!"
-FAILURE_MESSAGE = "One or more feeds are down or submitting abnormal amounts of domains!"
-FAILURE_SUBJECT = "Manhattan detected an issue"
-NO_METRICS_MESSAGE = 'One or more feeds do not have metrics:\n{}\n'
-STUCK_TASKS_MESSAGE = 'One or more feeds have been running longer than a day:\n{}\nThese feeds must be manually ' \
-                      'stopped within AWS console here: {}\n'
+CHECK_EMAIL_MESSAGE = "Please check the email for more details!"
+EXCEPTION_MESSAGE = "EXCEPTION occurred while checking feeds! Please check the email for more details!"
+EXCEPTION_DETAILS_START = "Manhattan failed due to the following: "
+FAILURE_ABNORMAL_MESSAGE = "One or more feeds are submitting abnormal amounts of domains:"
+FAILURE_DOWN_MESSAGE = "One or more feeds are down:"
+FAILURE_SUBJECT = "Manhattan Feeds Failure"
+MESSAGE_SEPARATOR = '*' * 80
+NO_METRICS_MESSAGE = 'One or more feeds do not have metrics:{}'
+STUCK_TASKS_MESSAGE = 'One or more feeds have been running longer than a day:{}\n\n' \
+                      'These feeds must be manually stopped within AWS console here: \n{}'
 SUBJECT_EXCEPTION_MESSAGE = "Manhattan watchmen failed due to an exception!"
 SUCCESS_MESSAGE = "SUCCESS: Feeds are up and running normally!"
-SUCCESS_SUBJECT = "{} feeds works for Manhattan watchmen are up and running!"
+SUCCESS_SUBJECT = "{} feeds monitored by Manhattan are up and running!"
 
 # DynamoDB and Files
 CLUSTER_NAME = settings('ecs.feeds.cluster', 'cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8')
@@ -84,12 +83,12 @@ class Manhattan(Watchman):
         snapshot = self._create_snapshot(stuck_tasks, bad_feeds)
         tb = self._create_tb_details(find_bf_tb, find_st_tb)
         summary = self._create_summary(stuck_tasks, bad_feeds, tb)
-        results = self._create_result(summary, snapshot)
+        results = self._create_results(summary, snapshot)
         return results
 
-    def _create_result(self, summary, snapshot):
+    def _create_results(self, summary, snapshot):
         """
-        Create Result object.
+        Create [Result] list.
         @param: <dict> summary that includes subject, details, success, stuck_tasks
         @param: <dict> snapshot including stuck_task, bad feeds
         @return: <Result> Result object
@@ -176,6 +175,7 @@ class Manhattan(Watchman):
         @return: <dict> a dict to be readily used for the notification process
         """
         event = self.event
+
         # return exception set if tb
         if tb:
             return {
@@ -195,53 +195,78 @@ class Manhattan(Watchman):
         all_no = ""
 
         for stuck in stuck_tasks:
-            all_stuck += "{}\n".format(stuck)
+            all_stuck += "\n\t- {}".format(stuck)
         for down_feeds in down:
-            all_down += "- {}\n".format(down_feeds)
+            all_down += "\n\t- {}".format(down_feeds)
         for oor in out_of_range:
-            all_range += "- {}\n".format(oor)
+            all_range += "\n\t- {}".format(oor)
         for no_met in no_metrics:
-            all_no += "{}\n".format(no_met)
+            all_no += "\n\t- {}".format(no_met)
 
         # If success, return success information
         subject_line = SUCCESS_SUBJECT.format(event)
         details_body = ""
         success = True
         message = SUCCESS_MESSAGE
+
         # Check for stuck tasks
         if stuck_tasks:
-            # once there is one problem happening, change the subject line to failure
-            subject_line = FAILURE_SUBJECT + ' | Feeds ECS Cluster Has Hung Tasks'
-            details_body += STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL)
-            message = "FAILURE: Stuck Tasks"
+            subject_line = "{} {}{}".format(
+                event,
+                FAILURE_SUBJECT,
+                " | Stuck Tasks"
+            )
+            details_body = "{}\n\n{}\n\n".format(
+                STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL),
+                MESSAGE_SEPARATOR
+            )
+            message = "FAILURE: Stuck Tasks ---- "
             success = False
 
-        # Check if any feeds are down or out of range
-        if down or out_of_range:
+        # Check if any feeds are down.
+        if down:
             if success:
-                subject_line = FAILURE_SUBJECT
+                subject_line = "{} {}".format(
+                    event,
+                    FAILURE_SUBJECT,
+                )
                 message = "FAILURE: "
-            subject_line += ' | One or more feeds are down!'
-            details_body += "\n{}\n".format('-' * 60) if details_body else ""
-            details_body += '{}: {}\n{}\n{}\n{}\n{}\n'.format(
-                event,
-                FAILURE_MESSAGE,
-                ERROR_FEEDS,
+            subject_line += ' | Down'
+            details_body += '{}{}\n\n{}\n\n'.format(
+                FAILURE_DOWN_MESSAGE,
                 all_down,
-                ABNORMAL_SUBMISSIONS_MESSAGE,
-                all_range)
-            message += "- Down or Out of Range feeds"
+                MESSAGE_SEPARATOR
+            )
+            message += "Down feeds ---- "
             success = False
+
+        # Check if any feeds are out of threshold range.
+        if out_of_range:
+            if success:
+                subject_line = "{} {}".format(
+                    event,
+                    FAILURE_SUBJECT,
+                )
+                message = "FAILURE: "
+            subject_line += " | Out of Range"
+            details_body += '{}{}\n\n{}\n\n'.format(
+                FAILURE_ABNORMAL_MESSAGE,
+                all_range,
+                MESSAGE_SEPARATOR
+            )
+            message += "Out of range feeds ---- "
 
         # Check if any feeds have no metrics
         if no_metrics:
             if success:
-                subject_line = FAILURE_SUBJECT
+                subject_line = "{} {}".format(
+                    event,
+                    FAILURE_SUBJECT,
+                )
                 message = "FAILURE: "
-            subject_line += ' | One or more feeds have NO metrics!'
-            details_body += "\n\n\n{}\n".format('-' * 60) if details_body else ""
-            details_body += NO_METRICS_MESSAGE.format(all_no)
-            message += "- Feeds with no metrics"
+            subject_line += ' | No Metrics'
+            details_body += "{}".format(NO_METRICS_MESSAGE.format(all_no))
+            message += "Feeds with no metrics ---- "
             success = False
 
         # If check was not a success, need to add extra line to message for Pager Duty
@@ -298,7 +323,7 @@ class Manhattan(Watchman):
         feeds_dict, tb = self._load_feeds_to_check()
         # Make sure data loaded correctly
         if not feeds_dict:
-            return (None, None), tb
+            return (None, None, None), tb
 
         feeds_to_check_hourly = feeds_dict.get(HOURLY)
         feeds_to_check_daily = feeds_dict.get(DAILY)
@@ -390,3 +415,23 @@ class Manhattan(Watchman):
             msg = fmt.format(json_path, type(ex).__name__)
             self.logger.error(msg)
             return None, msg
+# from watchmen.common.result_svc import ResultSvc
+#
+#
+# def run(event, context):
+#     manhattan_obj = Manhattan(event, context)
+#     results = manhattan_obj.monitor()
+#     for result in results:
+#         print(result.to_dict())
+#
+#     result_svc = ResultSvc(results)
+#     result_svc.send_alert()
+#     return result_svc.create_lambda_message()
+#
+#
+# if __name__ == "__main__":
+#     event_type = \
+#         {
+#             "Type": "Hourly"
+#         }
+#     run(event_type, None)

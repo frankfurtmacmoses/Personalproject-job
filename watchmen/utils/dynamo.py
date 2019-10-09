@@ -43,7 +43,7 @@ def select_dynamo_time_string(feed_info, time_string_choice):
     }
     if time_string_choice in time_string_chart:
         # This pulls the get_dyanmo_EVENT_time_string and adds () to make it a method
-        time_string = time_string_chart.get(time_string_choice)()
+        time_string = time_string_chart.get(time_string_choice)(feed_info)
     return time_string
 
 
@@ -56,7 +56,7 @@ def get_dynamo_daily_time_string(feed):
     return (datetime.now(pytz.utc) - timedelta(days=1)).strftime("%Y-%m-%dT") + hour
 
 
-def get_dynamo_hourly_time_string():
+def get_dynamo_hourly_time_string(feed):
     """
     Retrieves previous hour dynamo db time string.
     :return: previous hour dynamo db time string

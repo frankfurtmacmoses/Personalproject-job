@@ -31,13 +31,14 @@ from watchmen.common.watchman import Watchman
 SUCCESS_MESSAGE = "Lookalike feed is up and running!"
 FAILURE_MESSAGE = "Lookalike feed never added files from 2 days ago! " \
                   "The feed may be down or simply did not complete!"
-SUCCESS_SUBJECT = "Silhouette watchman found lookalike feed works okay!"
+SUCCESS_SUBJECT = "Silhouette: Lookalike files have been successfully detected in S3!"
 FAILURE_SUBJECT = "Silhouette watchman detected an issue with lookalike feed!"
 SNS_TOPIC_ARN = settings("silhouette.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 
 EXCEPTION_SUBJECT = "Silhouette watchmen for the lookalike feed failed due to an exception!"
 EXCEPTION_MESSAGE = 'Silhouette for lookalike feeds failed on \n\t"{}" \ndue to ' \
                     'the Exception:\n\n{}\n\nPlease check the logs!'
+EXCEPTION_SHORT_MESSAGE = "Silhouette for lookalike feeds failed due to an exception, please check the logs!"
 COMPLETED_STATUS = "COMPLETED"
 
 BUCKET_NAME = settings("silhouette.bucket_name", "cyber-intel")
@@ -65,18 +66,21 @@ class Silhouette(Watchman):
         details = self._create_details(self.filename, is_status_valid, tb)
         parameter_chart = {
             None: {
+                "message": EXCEPTION_SHORT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
                 "subject": EXCEPTION_SUBJECT,
             },
             True: {
+                "message": SUCCESS_MESSAGE,
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
                 "subject": SUCCESS_SUBJECT,
             },
             False: {
+                "message": FAILURE_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
@@ -85,6 +89,7 @@ class Silhouette(Watchman):
         }
         parameters = parameter_chart.get(is_status_valid)
         result = self._create_result(
+            message=parameters.get("message"),
             success=parameters.get("success"),
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
@@ -138,7 +143,7 @@ class Silhouette(Watchman):
             self.logger.info(status.get('log_details'))
         return details
 
-    def _create_result(self, success, disable_notifier, state, subject, details):
+    def _create_result(self, message, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, otherwise false
@@ -148,6 +153,7 @@ class Silhouette(Watchman):
         @return: <Result> result based on the parameters
         """
         result = Result(
+            message=message,
             success=success,
             disable_notifier=disable_notifier,
             state=state,
