@@ -38,6 +38,7 @@ FAILURE_GENERAL_MESSAGE = "{}\nPlease check the Response Guide for Moloch in wat
 FAILURE_DOMAIN = FAILURE_GENERAL_MESSAGE.format(FAILURE_DOMAIN_START)
 FAILURE_HOSTNAME = FAILURE_GENERAL_MESSAGE.format(FAILURE_HOSTNAME_START)
 FAILURE_BOTH = FAILURE_GENERAL_MESSAGE.format(FAILURE_BOTH_START)
+FAILURE_SHORT_MESSAGE = "Moloch: A Feed has gone down, please check logs in CloudWatch!"
 
 SUCCESS_SUBJECT = "Moloch watchman found Hostnames and Domains feeds works okay!"
 FAILURE_SUBJECT = "Moloch watchmen detected an issue with NOH/D feed!"
@@ -45,7 +46,7 @@ FAILURE_SUBJECT = "Moloch watchmen detected an issue with NOH/D feed!"
 EXCEPTION_SUBJECT = "Moloch watchmen reached an exception!"
 EXCEPTION_MESSAGE = "The newly observed domain feeds and hostname feeds reached an exception during the file checking" \
                     " process due to the following:\n\n{}\n\nPlease look at the logs for more insight."
-
+EXCEPTION_SHORT_MESSAGE = "Moloch: Feeds failed due to an exception, please look at the logs!"
 BUCKET_NAME = settings('moloch.bucket_name', "deteque-new-observable-data")
 DOMAINS_PATH = settings('moloch.domain_name', "NewlyObservedDomains")
 HOSTNAME_PATH = settings('moloch.hostname_path', "NewlyObservedHostname")
@@ -78,18 +79,21 @@ class Moloch(Watchman):
         details, msg_type = self._create_details(host_check, domain_check, tb)
         parameter_chart = {
             None: {
+                "message": EXCEPTION_SHORT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
                 "subject": EXCEPTION_SUBJECT,
             },
             True: {
+                "message": SUCCESS_MESSAGE,
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
                 "subject": SUCCESS_SUBJECT,
             },
             False: {
+                "message": FAILURE_SHORT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
@@ -98,6 +102,7 @@ class Moloch(Watchman):
         }
         parameters = parameter_chart.get(msg_type)
         result = self._create_result(
+            message=parameters.get("message"),
             success=parameters.get("success"),
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
@@ -154,7 +159,7 @@ class Moloch(Watchman):
                 status, details_type = FAILURE_HOSTNAME, False
         return status, details_type
 
-    def _create_result(self, success, disable_notifier, state, subject, details):
+    def _create_result(self, message, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, otherwise false
@@ -164,6 +169,7 @@ class Moloch(Watchman):
         @return: <Result> result based on the parameters
         """
         result = Result(
+            message=message,
             success=success,
             disable_notifier=disable_notifier,
             state=state,
@@ -193,7 +199,7 @@ class Moloch(Watchman):
             return domain_check, hostname_check, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, None, tb

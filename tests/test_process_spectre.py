@@ -31,7 +31,7 @@ class TestSpectre(unittest.TestCase):
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": "NO MESSAGE",
+            "message": "Spectre monitor failed, please check S3 and Georgia Tech logs!",
             "result_id": 0,
             "snapshot": None,
             "source": "Spectre",
@@ -86,6 +86,7 @@ class TestSpectre(unittest.TestCase):
         expected = self.example_result_dict
         spectre_obj = Spectre(event=None, context=None)
         result = spectre_obj._create_result(
+            "Spectre monitor failed, please check S3 and Georgia Tech logs!",
             False,
             False,
             "FAILURE",

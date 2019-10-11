@@ -4,6 +4,8 @@ import unittest
 from datetime import datetime
 from mock import patch
 
+from watchmen import const
+from watchmen.process.endpoints import DATA as LOCAL_ENDPOINTS
 from watchmen.process.jupiter import Jupiter
 
 
@@ -194,27 +196,26 @@ class TestJupiter(unittest.TestCase):
         self.assertEquals(expected, returned)
 
     @patch('watchmen.process.jupiter.raise_alarm')
-    @patch('watchmen.process.jupiter.ENDPOINTS_DATA')
     @patch('watchmen.process.jupiter.json.loads')
     @patch('watchmen.process.jupiter.get_content')
     @patch('watchmen.process.jupiter.settings')
-    def test_load_endpoints(self, mock_settings, mock_get_content, mock_loads, mock_endpoints, mock_alarm):
+    def test_load_endpoints(self, mock_settings, mock_get_content, mock_loads, mock_alarm):
         jupiter_obj = Jupiter(event=None, context=None)
         # set default endpoints and content
-        mock_endpoints.return_value = self.example_local_endpoints
         mock_get_content.return_value = self.example_data
 
         # load succeeds
         mock_loads.return_value = self.example_valid_paths
         self.assertIsInstance(mock_loads.return_value, list)
-        expected_result = self.example_valid_paths, ""
+        expected_result = self.example_valid_paths
         returned_result = jupiter_obj.load_endpoints()
         self.assertEqual(expected_result, returned_result)
 
         # load fails
         mock_loads.side_effect = Exception(self.example_exception_message)
-        result_endpoints, result_message = jupiter_obj.load_endpoints()
-        self.assertIn(self.s3_fail_load_message, result_message)
+        expected = LOCAL_ENDPOINTS
+        returned = jupiter_obj.load_endpoints()
+        self.assertEqual(expected, returned)
 
     @patch('watchmen.process.jupiter.copy_contents_to_bucket')
     @patch('watchmen.process.jupiter.json.dumps')
@@ -279,12 +280,11 @@ class TestJupiter(unittest.TestCase):
         failed_subject = '{}{}'.format(self.error_subject, first_failure)
 
         #  Empty results setup
-        split_line = '*' * 80
         empty_message = 'Empty result:\n{}\n{}\nEndpoints:\n{}\n{}\n{}'.format(
             json.dumps(self.example_empty, sort_keys=True, indent=2),
-            split_line,
+            const.MESSAGE_SEPARATOR,
             json.dumps(self.example_endpoints, indent=2),
-            split_line,
+            const.MESSAGE_SEPARATOR,
             json.dumps(self.example_validated, indent=2)
         )
         empty_message = "{}\n\n\n{}".format(empty_message, self.no_results)

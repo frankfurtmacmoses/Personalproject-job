@@ -99,16 +99,19 @@ class Rorschach(Watchman):
         """
         state_chart = {
             True: {
+                "message": _SUCCESS_MESSAGE,
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
             },
             False: {
+                "message": _SUBJECT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
             },
             None: {
+                "message": _SUBJECT_EXCEPTION_MESSAGE,
                 "success": None,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),

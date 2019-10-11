@@ -12,6 +12,8 @@ class TestSilhouette(unittest.TestCase):
         self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
         self.example_filename = "analytics/lookalike/prod/results/2018/12/16/status.json"
         self.example_exception_details = "Something is not working"
+        self.example_failure_message = "Lookalike feed never added files from 2 days ago! " \
+                                       "The feed may be down or simply did not complete!"
         self.example_details_chart = {
             None: 'Silhouette for lookalike feeds failed '
                   'on \n\t"analytics/lookalike/prod/results/2018/12/16/status.json" \ndue to '
@@ -33,7 +35,7 @@ class TestSilhouette(unittest.TestCase):
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": "NO MESSAGE",
+            "message": self.example_failure_message,
             "result_id": 0,
             "snapshot": None,
             "source": "Silhouette",
@@ -91,6 +93,7 @@ class TestSilhouette(unittest.TestCase):
         expected = self.example_result_dict
         silhouette_obj = Silhouette(event=None, context=None)
         result = silhouette_obj._create_result(
+            self.example_failure_message,
             False,
             False,
             "FAILURE",
@@ -128,7 +131,7 @@ class TestSilhouette(unittest.TestCase):
         # since silhouette does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"
         result['dt_updated'] = "2018-12-18T00:00:00+00:00"
-
+        self.maxDiff = None
         self.assertDictEqual(result, expected)
 
     @patch('watchmen.process.silhouette.json.loads')

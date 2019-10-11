@@ -36,19 +36,19 @@ class TestDynamo(unittest.TestCase):
         # Test Hourly
         mock_hourly.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = select_dynamo_time_string(self.example_feed_info, 0)
+        returned_result = select_dynamo_time_string(self.example_feed_info, "hourly")
         self.assertEqual(expected_result, returned_result)
 
         # Test Daily
         mock_daily.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = select_dynamo_time_string(self.example_feed_info, 1)
+        returned_result = select_dynamo_time_string(self.example_feed_info, "daily")
         self.assertEqual(expected_result, returned_result)
 
         # Test Weekly
         mock_weekly.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = select_dynamo_time_string(self.example_feed_info, 2)
+        returned_result = select_dynamo_time_string(self.example_feed_info, "weekly")
         self.assertEqual(expected_result, returned_result)
 
         # Test when user doesn't pick correct feed
@@ -69,7 +69,7 @@ class TestDynamo(unittest.TestCase):
         mock_datetime.now.return_value = self.example_now
         # Test for a time string for dynamo db setup one hour ago
         expected_result = self.example_time_string
-        returned_result = get_dynamo_hourly_time_string()
+        returned_result = get_dynamo_hourly_time_string(None)
         self.assertEqual(expected_result, returned_result)
 
     @patch('watchmen.utils.dynamo.datetime')

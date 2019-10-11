@@ -67,7 +67,7 @@ class TestRorschach(unittest.TestCase):
                 "dt_updated": "2018-12-18T00:00:00+00:00",
                 "is_ack": False,
                 "is_notified": False,
-                "message": "NO MESSAGE",
+                "message": "Rorschach Detected: Farsight S3 Service Outage!",
                 "result_id": 0,
                 "snapshot": None,
                 "source": "Rorschach",
