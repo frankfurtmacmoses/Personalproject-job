@@ -2,6 +2,7 @@ import unittest
 from moto import mock_sns, mock_ecs
 from mock import patch
 
+from watchmen import const
 from watchmen.process.manhattan import Manhattan
 
 from watchmen.process.manhattan import \
@@ -11,7 +12,6 @@ from watchmen.process.manhattan import \
     FAILURE_DOWN_MESSAGE, \
     FAILURE_SUBJECT, \
     FEED_URL, \
-    MESSAGE_SEPARATOR, \
     NO_METRICS_MESSAGE, \
     STUCK_TASKS_MESSAGE, \
     SUBJECT_EXCEPTION_MESSAGE, \
@@ -145,6 +145,57 @@ class TestManhattan(unittest.TestCase):
         }
         self.example_json_file = 'json_file'
         self.example_loading_error_msg = 'failed loading'
+        self.example_tests = [{
+            "stuck": self.example_stuck_tasks,
+            "down": [],
+            "oor": [],
+            "no_metrics": []
+        }, {
+            "stuck": [],
+            "down": self.example_down_feeds,
+            "oor": [],
+            "no_metrics": []
+        }, {
+            "stuck": [],
+            "down": [],
+            "oor": self.example_out_of_range_feeds,
+            "no_metrics": []
+        }, {
+            "stuck": [],
+            "down": [],
+            "oor": [],
+            "no_metrics": self.example_no_metrics_feeds
+        }, {
+            "stuck": self.example_stuck_tasks,
+            "down": self.example_down_feeds,
+            "oor": [],
+            "no_metrics": []
+        }, {
+            "stuck": self.example_stuck_tasks,
+            "down": [],
+            "oor": self.example_out_of_range_feeds,
+            "no_metrics": []
+        }, {
+            "stuck": [self.example_stuck_tasks],
+            "down": [],
+            "oor": [],
+            "no_metrics": self.example_no_metrics_feeds
+        }, {
+            "stuck": [],
+            "down": self.example_down_feeds,
+            "oor": self.example_out_of_range_feeds,
+            "no_metrics": []
+        }, {
+            "stuck": self.example_stuck_tasks,
+            "down": self.example_down_feeds,
+            "oor": self.example_out_of_range_feeds,
+            "no_metrics": []
+        }, {
+            "stuck": self.example_stuck_tasks,
+            "down": self.example_down_feeds,
+            "oor": self.example_out_of_range_feeds,
+            "no_metrics": self.example_no_metrics_feeds
+        }]
 
     @mock_sns
     @mock_ecs
@@ -219,77 +270,16 @@ class TestManhattan(unittest.TestCase):
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
         event = manhattan_obj.event
 
-        tests = [{
-            "stuck": self.example_stuck_tasks,
-            "down": [],
-            "oor": [],
-            "no_metrics": []
-        }, {
-            "stuck": [],
-            "down": self.example_down_feeds,
-            "oor": [],
-            "no_metrics": []
-        }, {
-            "stuck": [],
-            "down": [],
-            "oor": self.example_out_of_range_feeds,
-            "no_metrics": []
-        }, {
-            "stuck": [],
-            "down": [],
-            "oor": [],
-            "no_metrics": self.example_no_metrics_feeds
-        }, {
-            "stuck": self.example_stuck_tasks,
-            "down": self.example_down_feeds,
-            "oor": [],
-            "no_metrics": []
-        }, {
-            "stuck": self.example_stuck_tasks,
-            "down": [],
-            "oor": self.example_out_of_range_feeds,
-            "no_metrics": []
-        }, {
-            "stuck": [self.example_stuck_tasks],
-            "down": [],
-            "oor": [],
-            "no_metrics": self.example_no_metrics_feeds
-        }, {
-            "stuck": [],
-            "down": self.example_down_feeds,
-            "oor": self.example_out_of_range_feeds,
-            "no_metrics": []
-        }, {
-            "stuck": self.example_stuck_tasks,
-            "down": self.example_down_feeds,
-            "oor": self.example_out_of_range_feeds,
-            "no_metrics": []
-        }, {
-            "stuck": self.example_stuck_tasks,
-            "down": self.example_down_feeds,
-            "oor": self.example_out_of_range_feeds,
-            "no_metrics": self.example_no_metrics_feeds
-        }]
-
-        for test in tests:
+        for test in self.example_tests:
             stuck_tasks = test.get("stuck")
             down = test.get("down")
             out_of_range = test.get("oor")
             no_metrics = test.get("no_metrics")
 
-            all_stuck = ""
-            all_down = ""
-            all_range = ""
-            all_no = ""
-
-            for stuck in stuck_tasks:
-                all_stuck += "\n\t- {}".format(stuck)
-            for down_feeds in down:
-                all_down += "\n\t- {}".format(down_feeds)
-            for oor in out_of_range:
-                all_range += "\n\t- {}".format(oor)
-            for no_met in no_metrics:
-                all_no += "\n\t- {}".format(no_met)
+            all_stuck = manhattan_obj._build_bad_tasks_message(stuck_tasks)
+            all_down = manhattan_obj._build_bad_tasks_message(down)
+            all_range = manhattan_obj._build_bad_tasks_message(out_of_range)
+            all_no = manhattan_obj._build_bad_tasks_message(no_metrics)
 
             # If success, return success information
             subject_line = SUCCESS_SUBJECT.format(event)
@@ -306,7 +296,7 @@ class TestManhattan(unittest.TestCase):
                 )
                 details_body = "{}\n\n{}\n\n".format(
                     STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL),
-                    MESSAGE_SEPARATOR
+                    const.LINE_SEPARATOR
                 )
                 message = "FAILURE: Stuck Tasks ---- "
                 success = False
@@ -323,7 +313,7 @@ class TestManhattan(unittest.TestCase):
                 details_body += '{}{}\n\n{}\n\n'.format(
                     FAILURE_DOWN_MESSAGE,
                     all_down,
-                    MESSAGE_SEPARATOR
+                    const.LINE_SEPARATOR
                 )
                 message += "Down feeds ---- "
                 success = False
@@ -340,7 +330,7 @@ class TestManhattan(unittest.TestCase):
                 details_body += '{}{}\n\n{}\n\n'.format(
                     FAILURE_ABNORMAL_MESSAGE,
                     all_range,
-                    MESSAGE_SEPARATOR
+                    const.LINE_SEPARATOR
                 )
                 message += "Out of range feeds ---- "
 

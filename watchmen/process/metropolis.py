@@ -75,7 +75,7 @@ class Metropolis(Watchman):
             )
             # append details in False or None checks to generic details
             if not threshold_check:
-                generic_details = generic_details + details + '\n' + '-' * const.LENGTH_OF_PRINT_LINE + '\n'
+                generic_details = generic_details + details + '\n' + const.MESSAGE_SEPARATOR + '\n'
             parameters = self._create_summary_parameters(threshold_check, process_name)
             # notice: snapshot for Metropolis is same with the data dictionary at each row,
             # and target is process name at each row
@@ -112,7 +112,7 @@ class Metropolis(Watchman):
             return False, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
@@ -132,7 +132,7 @@ class Metropolis(Watchman):
             return threshold_check == is_outlier, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
@@ -316,7 +316,7 @@ class Metropolis(Watchman):
             return data, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb

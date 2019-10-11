@@ -8,4 +8,5 @@ Constants for Watchmen project.
 """
 
 
-LENGTH_OF_PRINT_LINE = 80
+MESSAGE_SEPARATOR = "*" * 80
+LINE_SEPARATOR = " ---- "

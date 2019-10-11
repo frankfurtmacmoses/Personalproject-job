@@ -3,6 +3,7 @@
 """
 from mock import patch
 from watchmen import main
+from watchmen import const
 from watchmen.common.result import Result
 import logging
 import unittest
@@ -38,7 +39,7 @@ class MainTester(unittest.TestCase):
     def test_start_jupiter_watcher(self, mock_alert, mock_monitor, mock_jupiter):
         mock_monitor.return_value = self.example_result_list
 
-        expected = self.example_lambda_message + " ---- "
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_jupiter_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
@@ -48,7 +49,7 @@ class MainTester(unittest.TestCase):
     def test_start_manhattan_watcher(self, mock_alert, mock_monitor, mock_manhattan):
         mock_monitor.return_value = self.example_result_list
 
-        expected = self.example_lambda_message + " ---- "
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_manhattan_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
@@ -58,7 +59,7 @@ class MainTester(unittest.TestCase):
     def test_start_metropolis_watcher(self, mock_alert, mock_monitor, mock_moloch):
         mock_monitor.return_value = self.example_result_list
 
-        expected = self.example_lambda_message + " ---- "
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_metropolis_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
@@ -68,7 +69,7 @@ class MainTester(unittest.TestCase):
     def test_start_moloch_watcher(self, mock_alert, mock_monitor, mock_moloch):
         mock_monitor.return_value = self.example_result_list
 
-        expected = self.example_lambda_message + " ---- "
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_moloch_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
@@ -78,7 +79,7 @@ class MainTester(unittest.TestCase):
     def test_start_rorschach_watcher(self, mock_alert, mock_monitor, mock_rorschach):
         mock_monitor.return_value = self.example_result_list
 
-        expected = self.example_lambda_message + " ---- "
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_rorschach_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
@@ -88,7 +89,7 @@ class MainTester(unittest.TestCase):
     def test_start_silhouette_watcher(self, mock_alert, mock_monitor, mock_silhouette):
         mock_monitor.return_value = self.example_result_list
 
-        expected = self.example_lambda_message + " ---- "
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_silhouette_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
@@ -98,6 +99,6 @@ class MainTester(unittest.TestCase):
     def test_start_spectre_watcher(self, mock_alert, mock_monitor, mock_spectre):
         mock_monitor.return_value = self.example_result_list
 
-        expected = self.example_lambda_message + " ---- "
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_spectre_watcher(self.event, self.context)
         self.assertEqual(expected, returned)

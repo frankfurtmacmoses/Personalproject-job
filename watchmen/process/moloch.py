@@ -199,7 +199,7 @@ class Moloch(Watchman):
             return domain_check, hostname_check, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, None, tb

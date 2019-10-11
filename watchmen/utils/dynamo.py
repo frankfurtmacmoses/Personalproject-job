@@ -31,15 +31,14 @@ def select_dynamo_time_string(feed_info, time_string_choice):
              "hour_submitted": "11",
              "needs_metric": true
         }
-    :param time_string_choice: the selection for time string by user
-            0 = hourly, 1 = daily, 2 = weekly
+    :param time_string_choice: the selection for time string by user (hourly, daily, or weekly)
     :return: time string for dynamo db
     """
     time_string = None
     time_string_chart = {
-        0: get_dynamo_hourly_time_string,
-        1: get_dynamo_daily_time_string,
-        2: get_dynamo_weekly_time_string,
+        "Hourly": get_dynamo_hourly_time_string,
+        "Daily": get_dynamo_daily_time_string,
+        "Weekly": get_dynamo_weekly_time_string,
     }
     if time_string_choice in time_string_chart:
         # This pulls the get_dyanmo_EVENT_time_string and adds () to make it a method

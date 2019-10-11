@@ -35,7 +35,6 @@ EXCEPTION_DETAILS_START = "Manhattan failed due to the following: "
 FAILURE_ABNORMAL_MESSAGE = "One or more feeds are submitting abnormal amounts of domains:"
 FAILURE_DOWN_MESSAGE = "One or more feeds are down:"
 FAILURE_SUBJECT = "Manhattan Feeds Failure"
-MESSAGE_SEPARATOR = '*' * 80
 NO_METRICS_MESSAGE = 'One or more feeds do not have metrics:{}'
 STUCK_TASKS_MESSAGE = 'One or more feeds have been running longer than a day:{}\n\n' \
                       'These feeds must be manually stopped within AWS console here: \n{}'
@@ -85,6 +84,12 @@ class Manhattan(Watchman):
         summary = self._create_summary(stuck_tasks, bad_feeds, tb)
         results = self._create_results(summary, snapshot)
         return results
+
+    def _build_bad_tasks_message(self, task_list):
+        message = ""
+        for task in task_list:
+            message += "\n\t- {}".format(task)
+        return message
 
     def _create_results(self, summary, snapshot):
         """
@@ -189,19 +194,10 @@ class Manhattan(Watchman):
         out_of_range = bad_feeds[1]
         no_metrics = bad_feeds[2]
 
-        all_stuck = ""
-        all_down = ""
-        all_range = ""
-        all_no = ""
-
-        for stuck in stuck_tasks:
-            all_stuck += "\n\t- {}".format(stuck)
-        for down_feeds in down:
-            all_down += "\n\t- {}".format(down_feeds)
-        for oor in out_of_range:
-            all_range += "\n\t- {}".format(oor)
-        for no_met in no_metrics:
-            all_no += "\n\t- {}".format(no_met)
+        all_stuck = self._build_bad_tasks_message(stuck_tasks)
+        all_down = self._build_bad_tasks_message(down)
+        all_range = self._build_bad_tasks_message(out_of_range)
+        all_no = self._build_bad_tasks_message(no_metrics)
 
         # If success, return success information
         subject_line = SUCCESS_SUBJECT.format(event)
@@ -218,7 +214,7 @@ class Manhattan(Watchman):
             )
             details_body = "{}\n\n{}\n\n".format(
                 STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL),
-                MESSAGE_SEPARATOR
+                const.LINE_SEPARATOR
             )
             message = "FAILURE: Stuck Tasks ---- "
             success = False
@@ -235,7 +231,7 @@ class Manhattan(Watchman):
             details_body += '{}{}\n\n{}\n\n'.format(
                 FAILURE_DOWN_MESSAGE,
                 all_down,
-                MESSAGE_SEPARATOR
+                const.LINE_SEPARATOR
             )
             message += "Down feeds ---- "
             success = False
@@ -252,7 +248,7 @@ class Manhattan(Watchman):
             details_body += '{}{}\n\n{}\n\n'.format(
                 FAILURE_ABNORMAL_MESSAGE,
                 all_range,
-                MESSAGE_SEPARATOR
+                const.LINE_SEPARATOR
             )
             message += "Out of range feeds ---- "
 
@@ -342,24 +338,21 @@ class Manhattan(Watchman):
                     "start": end - timedelta(hours=1),
                     "end": end,
                     "feeds_to_check": feeds_to_check_hourly,
-                    "table_name": TABLE_NAME,
-                    "time_string_choice": 0,
+                    "table_name": TABLE_NAME
                 },
                 DAILY: {
                     "feeds_names": feeds_daily_names,
                     "start": end - timedelta(days=1),
                     "end": end,
                     "feeds_to_check": feeds_to_check_daily,
-                    "table_name": TABLE_NAME,
-                    "time_string_choice": 1,
+                    "table_name": TABLE_NAME
                 },
                 WEEKLY: {
                     "feeds_names": feeds_weekly_names,
                     "start": end - timedelta(days=7),
                     "end": end,
                     "feeds_to_check": feeds_to_check_weekly,
-                    "table_name": TABLE_NAME,
-                    "time_string_choice": 2,
+                    "table_name": TABLE_NAME
                 }
             }
             if event in event_content:
@@ -372,12 +365,12 @@ class Manhattan(Watchman):
                 submitted_out_of_range_feeds, no_metrics_feeds = process_feeds_metrics(
                     event_content.get(event).get("feeds_to_check"),
                     event_content.get(event).get("table_name"),
-                    event_content.get(event).get("time_string_choice")
+                    event
                 )
             return (downed_feeds, submitted_out_of_range_feeds, no_metrics_feeds), None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return (None, None), tb
@@ -394,7 +387,7 @@ class Manhattan(Watchman):
             return stuck_tasks, None
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
-            self.logger.info('*' * const.LENGTH_OF_PRINT_LINE)
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
@@ -415,23 +408,3 @@ class Manhattan(Watchman):
             msg = fmt.format(json_path, type(ex).__name__)
             self.logger.error(msg)
             return None, msg
-# from watchmen.common.result_svc import ResultSvc
-#
-#
-# def run(event, context):
-#     manhattan_obj = Manhattan(event, context)
-#     results = manhattan_obj.monitor()
-#     for result in results:
-#         print(result.to_dict())
-#
-#     result_svc = ResultSvc(results)
-#     result_svc.send_alert()
-#     return result_svc.create_lambda_message()
-#
-#
-# if __name__ == "__main__":
-#     event_type = \
-#         {
-#             "Type": "Hourly"
-#         }
-#     run(event_type, None)

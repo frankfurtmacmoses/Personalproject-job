@@ -19,14 +19,13 @@ import json
 import pytz
 
 from datetime import datetime
+from watchmen import const
 from watchmen.common.cal import InfobloxCalendar
 from watchmen.common.result import Result
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.common.watchman import Watchman
 from watchmen.config import get_boolean
-from watchmen.config import get_uint
 from watchmen.config import settings
-from watchmen.const import LENGTH_OF_PRINT_LINE
 from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import copy_contents_to_bucket
@@ -36,7 +35,6 @@ from watchmen.utils.s3 import mv_key
 CHECK_TIME_UTC = datetime.utcnow()
 CHECK_TIME_PDT = pytz.utc.localize(CHECK_TIME_UTC).astimezone(pytz.timezone('US/Pacific'))
 DATETIME_FORMAT = '%Y%m%d_%H%M%S'
-MIN_ITEMS = get_uint('jupiter.min_items', 1)
 SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 TARGET = "Cyber-Intel Endpoints"
 
@@ -58,8 +56,7 @@ FAILURE_SUBJECT = "Jupiter: Cyber Intel endpoints monitor detected a failure!"
 NO_RESULTS = "There are no results! Endpoint file might be empty or Service Checker may not be working correctly. " \
              "Please check logs and endpoint file to help identify the issue."
 NOT_ENOUGH_EPS = "Jupiter: Too Few Endpoints"
-NOT_ENOUGH_EPS_MESSAGE = "Valid endpoint count is below minimum. There are no valid endpoints or something is wrong" \
-                         " with endpoint file."
+NOT_ENOUGH_EPS_MESSAGE = "There are no valid endpoints to check or something is wrong with endpoint file."
 RESULTS_DNE = "Results do not exist! There is nothing to check. Service Checker may not be working correctly. " \
               "Please check logs and endpoint file to help identify the issue."
 SKIP_MESSAGE_FORMAT = "Notification is skipped at {}"
@@ -72,6 +69,7 @@ class Jupiter(Watchman):
     # pylint: disable=unused-argument
     def __init__(self, event, context):
         super().__init__()
+        self.result_message = ""
         pass
 
     def monitor(self) -> [Result]:
@@ -82,13 +80,12 @@ class Jupiter(Watchman):
         # This method is only used when updating the endpoints on S3.
         # _update_endpoints()
 
-        endpoints, s3_error_message = self.load_endpoints()
-        endpoints_with_path, bad_endpoints_message = self.check_endpoints_path(endpoints)
-        result_message = s3_error_message + " ---- " + bad_endpoints_message
+        endpoints = self.load_endpoints()
+        endpoints_with_path = self.check_endpoints_path(endpoints)
 
         # There is no need to run the rest of the code if there are no valid endpoints.
         if endpoints_with_path is None:
-            result = self._create_invalid_endpoints_result(result_message)
+            result = self._create_invalid_endpoints_result()
             return [result]
 
         checker = ServiceChecker(endpoints_with_path)
@@ -101,14 +98,14 @@ class Jupiter(Watchman):
         date_check_result, details = self._check_skip_notification_(summarized_result)
         parameters = self._get_result_parameters(date_check_result)
 
-        # The result_message is empty if the load_endpoints and check_endpoints path were both successful.
-        if result_message is " ---- ":
-            result_message = SUCCESS_MESSAGE
+        # The result_message is empty if the load_endpoints and check_endpoints_path were both successful.
+        if not self.result_message:
+            self.result_message = SUCCESS_MESSAGE
 
         result = Result(
             success=parameters.get("success"),
             disable_notifier=parameters.get("disable_notifier"),
-            message=result_message,
+            message=self.result_message,
             state=parameters.get("state"),
             subject=parameters.get("subject"),
             source=self.source,
@@ -116,6 +113,9 @@ class Jupiter(Watchman):
             details=details
         )
         return [result]
+
+    def _append_to_message(self, message_to_append):
+        self.result_message += message_to_append + const.LINE_SEPARATOR
 
     def check_endpoints_path(self, endpoints):
         """
@@ -130,7 +130,6 @@ class Jupiter(Watchman):
         """
         bad_list = []
         validated = []
-        bad_endpoints_message = ""
 
         for endpoint in endpoints:
             if endpoint.get('path'):
@@ -146,14 +145,14 @@ class Jupiter(Watchman):
                 messages.append(msg)
                 self.logger.error('Notify failure:\n%s', msg)
             alarm_message = '\n'.join(messages)
-            bad_endpoints_message = BAD_ENDPOINTS_MESSAGE
+            self._append_to_message(BAD_ENDPOINTS_MESSAGE)
             raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=alarm_message)
 
-        if len(validated) < MIN_ITEMS:
+        if not validated:
             self.logger.warning(NOT_ENOUGH_EPS_MESSAGE)
-            return None, bad_endpoints_message
+            return None
 
-        return validated, bad_endpoints_message
+        return validated
 
     def _check_last_failure(self):
         """
@@ -211,15 +210,20 @@ class Jupiter(Watchman):
 
         return to_skip
 
-    def _create_invalid_endpoints_result(self, result_message):
+    def _create_invalid_endpoints_result(self):
+        """
+        This method is called when there are no endpoints with the "path" variable, so
+        the rest of the code can not be run.
+        :return: Result object.
+        """
         parameters = self._get_result_parameters(None)
-        if result_message is " ---- ":
-            result_message = NOT_ENOUGH_EPS_MESSAGE
+        if not self.result_message:
+            message = NOT_ENOUGH_EPS_MESSAGE
 
         result = Result(
             disable_notifier=parameters.get("disable_notifier"),
             details=NOT_ENOUGH_EPS_MESSAGE,
-            message=result_message,
+            message=message,
             success=parameters.get("success"),
             state=parameters.get("state"),
             subject=parameters.get("subject"),
@@ -272,7 +276,7 @@ class Jupiter(Watchman):
             data = get_content(key_name=data_file, bucket=bucket)
             endpoints = json.loads(data)
             if endpoints and isinstance(endpoints, list):
-                return endpoints, ""
+                return endpoints
         except Exception as ex:
             formatted_data = ""
 
@@ -281,11 +285,12 @@ class Jupiter(Watchman):
                 formatted_data += "\tPath: " + endpoint.get('path') + "\n\n"
 
             message = S3_FAIL_LOAD_MESSAGE.format(bucket, data_file, formatted_data, ex)
+            self._append_to_message(message)
             self.logger.warning(message)
             raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=S3_FAIL_LOAD_SUBJECT, msg=message)
 
         endpoints = ENDPOINTS_DATA
-        return endpoints, message
+        return endpoints
 
     def log_result(self, results):
         """
@@ -348,12 +353,11 @@ class Jupiter(Watchman):
 
         # Checking if results is empty
         if not failure and not success:
-            split_line = '*'*LENGTH_OF_PRINT_LINE
             message = 'Empty result:\n{}\n{}\nEndpoints:\n{}\n{}\n{}'.format(
                 json.dumps(results, sort_keys=True, indent=2),
-                split_line,
+                const.MESSAGE_SEPARATOR,
                 json.dumps(endpoints, indent=2),
-                split_line,
+                const.MESSAGE_SEPARATOR,
                 json.dumps(validated_paths, indent=2)
             )
             self.logger.error(message)
