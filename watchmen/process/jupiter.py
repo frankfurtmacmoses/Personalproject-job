@@ -39,13 +39,12 @@ SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:40509358075
 TARGET = "Cyber-Intel Endpoints"
 
 # S3
-S3_BUCKET = settings('aws.s3.bucket')
+S3_BUCKET = settings('jupiter.bucket')
 S3_FAIL_LOAD_MESSAGE = "Cannot load endpoints from the following S3 resource:\n\tBucket: {}\n\tKey: {} \n\n" \
                        "Local endpoints being monitored: \n{} \nException that caused failure: {}"
 S3_FAIL_LOAD_SUBJECT = "Jupiter endpoints - S3 load error"
-S3_PREFIX = settings('aws.s3.prefix')
 S3_PREFIX_JUPITER = settings('jupiter.s3_prefix')
-S3_PREFIX_STATE = '{}/{}/LATEST'.format(S3_PREFIX, S3_PREFIX_JUPITER)
+S3_PREFIX_STATE = '{}/LATEST'.format(S3_PREFIX_JUPITER)
 
 # Messages
 BAD_ENDPOINTS_MESSAGE = "There are endpoints with no path variable, please check the endpoints files locally and in S3!"
@@ -138,7 +137,6 @@ class Jupiter(Watchman):
                 bad_list.append(endpoint)
 
         if bad_list:
-            subject = ERROR_SUBJECT
             messages = []
             for item in bad_list:
                 msg = 'There is not a path to check for: {}'.format(item.get('name', "There is not a name available"))
@@ -146,7 +144,7 @@ class Jupiter(Watchman):
                 self.logger.error('Notify failure:\n%s', msg)
             alarm_message = '\n'.join(messages)
             self._append_to_message(BAD_ENDPOINTS_MESSAGE)
-            raise_alarm(SNS_TOPIC_ARN, subject=subject, msg=alarm_message)
+            raise_alarm(SNS_TOPIC_ARN, subject=ERROR_SUBJECT, msg=alarm_message)
 
         if not validated:
             self.logger.warning(NOT_ENOUGH_EPS_MESSAGE)
@@ -217,7 +215,8 @@ class Jupiter(Watchman):
         :return: Result object.
         """
         parameters = self._get_result_parameters(None)
-        if not self.result_message:
+        message = self.result_message
+        if not message:
             message = NOT_ENOUGH_EPS_MESSAGE
 
         result = Result(
@@ -264,13 +263,13 @@ class Jupiter(Watchman):
         an sns will be sent to the Sockeye Topic
         :return: the endpoints or exits upon exception
         """
-        data_path = settings("aws.s3.prefix")
+        data_path = settings("jupiter.s3_prefix")
         data_file = settings("jupiter.endpoints")
 
         if data_path:
             data_file = '{}/{}'.format(data_path, data_file)
 
-        bucket = settings("aws.s3.bucket")
+        bucket = settings("jupiter.bucket")
 
         try:
             data = get_content(key_name=data_file, bucket=bucket)
@@ -299,7 +298,7 @@ class Jupiter(Watchman):
         """
         try:
             prefix_datetime = CHECK_TIME_UTC.strftime(DATETIME_FORMAT)
-            prefix_result = '{}/{}/{}/{}'.format(S3_PREFIX, S3_PREFIX_JUPITER, CHECK_TIME_UTC.year, prefix_datetime)
+            prefix_result = '{}/{}/{}'.format(S3_PREFIX_JUPITER, CHECK_TIME_UTC.year, prefix_datetime)
             self.logger.info("Jupiter Watchmen results:\n{}".format(results))
             # save result to s3
             content = json.dumps(results, indent=4, sort_keys=True)
@@ -321,8 +320,7 @@ class Jupiter(Watchman):
         try:
             success = summarized_result.get('success')
             content = '' if success else json.dumps(summarized_result, indent=4, sort_keys=True)
-            prefix_state = '{}/{}/LATEST'.format(S3_PREFIX, S3_PREFIX_JUPITER)
-            copy_contents_to_bucket(content, prefix_state, S3_BUCKET)
+            copy_contents_to_bucket(content, S3_PREFIX_STATE, S3_BUCKET)
             state = 'SUCCESS' if success else 'FAILURE'
             mv_key(prefix, '{}_{}.json'.format(prefix, state), bucket=S3_BUCKET)
         except Exception as ex:
@@ -403,5 +401,5 @@ class Jupiter(Watchman):
         to update endpoints.
         """
         content = json.dumps(ENDPOINTS_DATA, indent=4, sort_keys=True)
-        key = '{}/{}/endpoints.json'.format(S3_PREFIX, S3_PREFIX_JUPITER)
+        key = '{}/endpoints.json'.format(S3_PREFIX_JUPITER)
         copy_contents_to_bucket(content, key, S3_BUCKET)

@@ -84,6 +84,34 @@ Resources:
           Value: watchmen-manhattan
         - Key: Env
           Value: !Ref Env
+  WatchmenMetropolisLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors metrics and KPI change detection on S3.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
+      Handler: handler.start_metropolis_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-metropolis
+        - Key: Env
+          Value: !Ref Env
   WatchmenMolochLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -209,7 +237,7 @@ Resources:
   ManhattanDailyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: A daily event that kicks off ManhattanDailyWatchmen
+      Description: A daily event that kicks off daily Manhattan Watchman
       ScheduleExpression: cron(0 15 * * ? *)
       State: ENABLED
       Targets:
@@ -219,7 +247,7 @@ Resources:
   ManhattanHourlyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: A hourly event that kicks off ManhattanHourlyWatchmen
+      Description: A hourly event that kicks off hourly Manhattan Watchman
       ScheduleExpression: cron(0 * * * ? *)
       State: ENABLED
       Targets:
@@ -229,13 +257,23 @@ Resources:
   ManhattanWeeklyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: A weekly event that kicks off ManhattanWeeklyWatchmen
+      Description: A weekly event that kicks off weekly Manhattan Watchman
       ScheduleExpression: cron(0 15 ? * FRI *)
       State: ENABLED
       Targets:
         - Id: ManhattanWeeklyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
           Input: '{"type": "Weekly"}'
+  MetropolisScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A daily event that kicks off Metropolis Watchman
+      ScheduleExpression: cron(0 14 * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: MetropolisScheduler
+          Arn: !GetAtt WatchmenMetropolisLambda.Arn
+          Input: '{"type": "Daily"}'
   MolochScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -248,7 +286,7 @@ Resources:
   RorschachScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: A hourly event that kicks off Rorschach watchmen
+      Description: A hourly event that kicks off Rorschach Watchman
       ScheduleExpression: cron(0 * * * ? *)
       State: ENABLED
       Targets:
@@ -300,6 +338,13 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt ManhattanWeeklyScheduledEvent.Arn
+  InvokeMetropolisLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenMetropolisLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MetropolisScheduledEvent.Arn
   InvokeMolochLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:

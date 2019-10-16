@@ -12,11 +12,6 @@ mysql:
 api:
   timeout: 7
 
-aws:
-  s3:
-    bucket: cyber-intel-test
-    prefix: watchmen
-
 ecs:
   feeds:
     cluster: cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8
@@ -27,10 +22,11 @@ holiday:
   day_b4_xmas_eve: true
 
 jupiter:
+  bucket: cyber-intel-test
   enable_calendar: true
   endpoints: jupiter/endpoints.json
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
-  s3_prefix: jupiter
+  s3_prefix: watchmen/jupiter
   hr_start_pdt: 6
   hr_end_pdt: 18
 
@@ -43,9 +39,9 @@ manhattan:
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
 metropolis:
-  bucket_name: cyber-intel-test
-  path_prefix: watchmen/metropolis/
-  data_file: domain_summaries_test.csv
+  bucket_name: cyber-intel
+  path_prefix: analytics/change_detection/prod/
+  data_file: watchmenResults.csv
 
 moloch:
   bucket_name: deteque-new-observable-data
@@ -70,4 +66,3 @@ spectre:
 
 sns:
   pager: arn:aws:sns:us-east-1:405093580753:PagerDuty
-
