@@ -24,7 +24,7 @@ holiday:
 jupiter:
   bucket: cyber-intel-test
   enable_calendar: true
-  endpoints: jupiter/endpoints.json
+  endpoints: endpoints.json
   sns_topic: arn:aws:sns:us-east-1:405093580753:Sockeye
   s3_prefix: watchmen/jupiter
   hr_start_pdt: 6
