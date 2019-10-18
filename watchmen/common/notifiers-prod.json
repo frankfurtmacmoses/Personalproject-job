@@ -3,9 +3,9 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Sockeye"
   },
-  "domain_summaries": {
+  "Domain Counts Metrics":{
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": "arn:aws:sns:us-east-1:405093580753:Domain_Counts_Metrics"
   },
   "Farsight Data": {
     "notifier": "SnsNotifier",
@@ -38,5 +38,13 @@
   "Reaper Feeds": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
+  },
+  "Reaper Metrics":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Reaper_Metrics"
+  },
+  "Slowdrip Metrics":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Slowdrip_Metrics"
   }
 }

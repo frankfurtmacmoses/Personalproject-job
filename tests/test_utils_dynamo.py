@@ -36,19 +36,19 @@ class TestDynamo(unittest.TestCase):
         # Test Hourly
         mock_hourly.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = select_dynamo_time_string(self.example_feed_info, "hourly")
+        returned_result = select_dynamo_time_string(self.example_feed_info, "Hourly")
         self.assertEqual(expected_result, returned_result)
 
         # Test Daily
         mock_daily.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = select_dynamo_time_string(self.example_feed_info, "daily")
+        returned_result = select_dynamo_time_string(self.example_feed_info, "Daily")
         self.assertEqual(expected_result, returned_result)
 
         # Test Weekly
         mock_weekly.return_value = self.example_time_string
         expected_result = self.example_time_string
-        returned_result = select_dynamo_time_string(self.example_feed_info, "weekly")
+        returned_result = select_dynamo_time_string(self.example_feed_info, "Weekly")
         self.assertEqual(expected_result, returned_result)
 
         # Test when user doesn't pick correct feed

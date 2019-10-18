@@ -37,7 +37,7 @@ _NOTHING_RECENT_MESSAGE = _ERROR_MESSAGE + "No files found created recently.\n"
 _NOTHING_PARQUET_MESSAGE = _ERROR_MESSAGE + "No files founding containing .parquet extensions.\n"
 _EVERYTHING_ZERO_SIZE_MESSAGE = _ERROR_MESSAGE + "No .parquet files found with file sizes great than zero.\n"
 _SUCCESS_SUBJECT = "Rorschach: Farsight data found on S3!"
-_SUCCESS_MESSAGE = "Farsight data in S3 has no issue."
+_SUCCESS_MESSAGE = "Farsight data in S3 ran with no issues!"
 # Option Help Strings (Private, Global, Constant)
 _DEBUGHELP = "Used to enable debug level logging."
 _LOCALHELP = "Used to enable local spark mode, no parallelization."

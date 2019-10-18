@@ -216,7 +216,7 @@ class Manhattan(Watchman):
                 STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL),
                 const.LINE_SEPARATOR
             )
-            message = "FAILURE: Stuck Tasks ---- "
+            message = "FAILURE: Stuck Tasks" + const.LINE_SEPARATOR
             success = False
 
         # Check if any feeds are down.
@@ -233,7 +233,7 @@ class Manhattan(Watchman):
                 all_down,
                 const.LINE_SEPARATOR
             )
-            message += "Down feeds ---- "
+            message += "Down feeds" + const.LINE_SEPARATOR
             success = False
 
         # Check if any feeds are out of threshold range.
@@ -250,7 +250,7 @@ class Manhattan(Watchman):
                 all_range,
                 const.LINE_SEPARATOR
             )
-            message += "Out of range feeds ---- "
+            message += "Out of range feeds" + const.LINE_SEPARATOR
 
         # Check if any feeds have no metrics
         if no_metrics:
@@ -262,7 +262,7 @@ class Manhattan(Watchman):
                 message = "FAILURE: "
             subject_line += ' | No Metrics'
             details_body += "{}".format(NO_METRICS_MESSAGE.format(all_no))
-            message += "Feeds with no metrics ---- "
+            message += "Feeds with no metrics" + const.LINE_SEPARATOR
             success = False
 
         # If check was not a success, need to add extra line to message for Pager Duty

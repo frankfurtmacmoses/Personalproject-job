@@ -5,6 +5,11 @@
 @email: dhanshew@infoblox.com
 @created: 2018-07-23
 
+Refactored on 2019-10-18:
+@author: Michael Garcia
+@email: garciam@infoblox.com
+
+
 @note: this module includes entry points for AWS lambda functions.
        the Lambda functions are configured by cron schedules; however
        it can be triggered by e.g. RDS and/or S3 event.
