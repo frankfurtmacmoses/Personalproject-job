@@ -25,6 +25,7 @@ Resources:
   WatchmenJupiterLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Jupiter]]
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
@@ -59,6 +60,7 @@ Resources:
   WatchmenManhattanLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Manhattan]]
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
@@ -87,6 +89,7 @@ Resources:
   WatchmenMetropolisLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Metropolis]]
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
@@ -115,6 +118,7 @@ Resources:
   WatchmenMolochLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Moloch]]
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
@@ -143,6 +147,7 @@ Resources:
   WatchmenRorschachLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Rorschach]]
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
@@ -171,6 +176,7 @@ Resources:
   WatchmenSilhouetteLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Silhouette]]
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
@@ -199,6 +205,7 @@ Resources:
   WatchmenSpectreLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Spectre]]
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
