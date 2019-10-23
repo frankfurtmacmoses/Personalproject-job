@@ -10,8 +10,7 @@ If an endpoint is not working correctly or key check fails its conditions, an SN
 @author: Kayla Ramos
 @email: kramos@infoblox.com
 
-Refactored on September 30, 2019
-
+Refactored on October 30, 2019
 @author Michael Garcia
 @email garciam@infoblox.com
 """
@@ -78,7 +77,6 @@ class Jupiter(Watchman):
         """
         # This method is only used when updating the endpoints on S3.
         # _update_endpoints()
-
         endpoints = self.load_endpoints()
         endpoints_with_path = self.check_endpoints_path(endpoints)
 
@@ -105,6 +103,7 @@ class Jupiter(Watchman):
             success=parameters.get("success"),
             disable_notifier=parameters.get("disable_notifier"),
             message=self.result_message,
+            snapshot={},
             state=parameters.get("state"),
             subject=parameters.get("subject"),
             source=self.source,
@@ -152,15 +151,37 @@ class Jupiter(Watchman):
 
         return validated
 
-    def _check_last_failure(self):
+    def _check_failure(self):
         """
-        Use key, e.g. bucket/prefix/LATEST to check if last check failed.
-        LATEST key contains result (non-empty) if last result has failure; empty indicates success.
+        Use key, e.g. bucket/prefix/LATEST to check if the current check failed.
+        LATEST key contains result (non-empty) if current result has failure; empty indicates success.
 
-        @return: True if last check failed; otherwise, False.
+        @return: True if current check failed; otherwise, False.
         """
         data = get_content(S3_PREFIX_STATE, bucket=S3_BUCKET)
         return data != '' and data is not None
+
+    def _check_notification_time(self):
+        """
+        Checks if the current day & hour fall under the desired notification times. If the check returns
+        false, there is no need to send a notification.
+        @return: True if it is the correct time to send a notification, False if it is not the correct time.
+        """
+        now = self._get_time_pdt()
+        hour = now.hour
+        year = now.year
+        notification_time = False
+        # Create a calendar for last year, current year, and next year
+        cal = InfobloxCalendar(year - 1, year + 1)
+
+        if not cal.is_workday():
+            notification_time = hour != 0 and hour % 8 == 0
+        elif cal.is_workhour(hour):
+            notification_time = hour % 4 == 0
+
+        self.logger.debug("The current hour is %s and notification_time = %s", hour, notification_time)
+
+        return notification_time
 
     def _check_skip_notification_(self, summarized_result):
         """
@@ -180,33 +201,14 @@ class Jupiter(Watchman):
             return True, details
 
         enable_calendar = get_boolean('jupiter.enable_calendar')
-        last_failed = summarized_result.get('last_failed')
-        # Skip if last check in state file is not a failure and it is not time to send a notification
-        is_skipping = enable_calendar and last_failed and self._check_time()
+        failed = summarized_result.get('last_failed')
+        notification_time = self._check_notification_time()
+        # Skip if last check in state file is a failure and it is not time to send a notification
+        is_skipping = enable_calendar and failed and not notification_time
         if is_skipping:
             return True, SKIP_MESSAGE_FORMAT.format(CHECK_TIME_UTC)
 
         return False, details
-
-    def _check_time(self):
-        """
-        If current day & hour do not fall under the desired notification times, there is no need to send a notification
-        @return: True if a notification can be sent at this time, false if not.
-        """
-        now = CHECK_TIME_PDT
-        hour = now.hour
-        year = now.year
-        # Create a calendar for last year, current year, and next year
-        cal = InfobloxCalendar(year - 1, year + 1)
-        to_skip = False
-        if not cal.is_workday():
-            to_skip = hour % 8 != 0
-        elif not cal.is_workhour(hour):
-            to_skip = hour % 4 != 0
-
-        self.logger.debug("The current hour is %s and to_skip = %s", hour, to_skip)
-
-        return to_skip
 
     def _create_invalid_endpoints_result(self):
         """
@@ -220,19 +222,25 @@ class Jupiter(Watchman):
             message = NOT_ENOUGH_EPS_MESSAGE
 
         result = Result(
-            disable_notifier=parameters.get("disable_notifier"),
             details=NOT_ENOUGH_EPS_MESSAGE,
+            disable_notifier=parameters.get("disable_notifier"),
             message=message,
-            success=parameters.get("success"),
+            snapshot={},
+            source=self.source,
             state=parameters.get("state"),
             subject=parameters.get("subject"),
-            source=self.source,
+            success=parameters.get("success"),
             target=TARGET,
         )
         raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=NOT_ENOUGH_EPS_MESSAGE, subject=parameters.get('subject'))
         return result
 
     def _get_result_parameters(self, endpoint_check):
+        """
+        Returns the dictionary with the correct values for the Result object, based on the result of checking endpoints.
+        :param endpoint_check: The result of checking endpoints.
+        :return: Dictionary with the correct values for the Result object.
+        """
         parameter_chart = {
             False: {
                 "success": False,
@@ -255,6 +263,9 @@ class Jupiter(Watchman):
         }
 
         return parameter_chart.get(endpoint_check)
+
+    def _get_time_pdt(self):
+        return pytz.utc.localize(CHECK_TIME_UTC).astimezone(pytz.timezone('US/Pacific'))
 
     def load_endpoints(self):
         """
@@ -335,12 +346,12 @@ class Jupiter(Watchman):
         @param validated_paths: validated endpoints
         @return: the notification message
         """
-        last_failed = self._check_last_failure()
+        is_failure = self._check_failure()
 
         if not results or not isinstance(results, dict):
             message = RESULTS_DNE
             return {
-                "last_failed": last_failed,
+                "last_failed": is_failure,
                 "message": message,
                 "subject": ERROR_JUPITER,
                 "success": False,
@@ -361,7 +372,7 @@ class Jupiter(Watchman):
             self.logger.error(message)
             message = "{}\n\n\n{}".format(message, NO_RESULTS)
             return {
-                "last_failed": last_failed,
+                "last_failed": is_failure,
                 "message": message,
                 "subject": ERROR_JUPITER,
                 "success": False,
@@ -381,7 +392,7 @@ class Jupiter(Watchman):
             first_failure = 's' if len(failure) > 1 else ' - {}'.format(failure[0].get('name'))
             subject = '{}{}'.format(ERROR_SUBJECT, first_failure)
             return {
-                "last_failed": last_failed,
+                "last_failed": is_failure,
                 "message": message,
                 "subject": subject,
                 "success": False,
