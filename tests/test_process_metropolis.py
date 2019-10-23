@@ -260,12 +260,17 @@ class TestMetropolis(unittest.TestCase):
             threshold_check = test.get("threshold_check")
             tb = test.get("tb")
             message_type = test.get("message_type")
-            date, source_name, met_type, met_desc, met_val = \
+            date, source_name, met_type, met_desc, met_val, process_name = \
                 row.get("date"), row.get("source"), row.get("metric_type"), \
-                row.get("metric_description"), row.get("metric_value")
+                row.get("metric_description"), row.get("metric_value"), row.get("process")
 
-            expected = DETAILS_FORMAT.format(message_type.format(source_name, date, tb), met_type, met_desc, met_val,
-                                             self.example_threshold_msg)
+            if message_type == EXCEPTION_DETAILS:
+                expected = DETAILS_FORMAT.format(message_type.format(process_name, source_name, date, tb), met_type,
+                                                 met_desc, met_val, self.example_threshold_msg)
+            else:
+                expected = DETAILS_FORMAT.format(message_type.format(process_name, source_name, date), met_type,
+                                                 met_desc, met_val, self.example_threshold_msg)
+
             returned = self._create_metropolis()._create_details(
                 row=row,
                 threshold_check=threshold_check,
@@ -384,13 +389,13 @@ class TestMetropolis(unittest.TestCase):
         """
         tests = [{
             "attr": self.example_row_dict_in_range_1,
-            "returned": "Minimum: 5 || Maximum: 10 || Moving Mean: 7",
+            "returned": "Moving Mean: 7 || Minimum: 5 || Maximum: 10",
         }, {
             "attr": self.example_row_dict_in_range_2,
-            "returned": "Minimum: 5 || Maximum: 5 || Moving Mean: 5",
+            "returned": "Moving Mean: 5 || Minimum: 5 || Maximum: 5",
         }, {
             "attr": self.example_row_dict_wrong_value,
-            "returned": "Minimum: s || Maximum: 3 || Moving Mean: 15",
+            "returned": "Moving Mean: 15 || Minimum: s || Maximum: 3",
         }]
         for test in tests:
             attr_dict = test.get("attr")

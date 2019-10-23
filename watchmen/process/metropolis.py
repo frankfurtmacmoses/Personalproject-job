@@ -24,12 +24,12 @@ DATA_FILE = settings("metropolis.data_file", "watchmenResults.csv")
 PATH_PREFIX = settings("metropolis.path_prefix", "analytics/change_detection/prod/")
 
 # MESSAGES
-DETAILS_FORMAT = "{}\nMetric_type: {}\nMetric_description: {}\nMetric_value: {}\n{}"
-EXCEPTION_DETAILS = "{} reached an exception on {} trying to get " + DATA_FILE + " from s3" \
+DETAILS_FORMAT = "{}\n\nMetric_type: {}\nMetric_description: {}\nMetric_value: {}\n{}\n"
+EXCEPTION_DETAILS = "Process: {}, Source: {} reached an exception on {} trying to get " + DATA_FILE + " from s3" \
                     " due to the following:\n\n{}\n\nPlease look at the logs for more insight."
 EXCEPTION_MESSAGE = "Metropolis failed due to an exception!"
 EXCEPTION_SUBJECT = "Metropolis: EXCEPTION Checking Process: {}"
-FAILURE_DETAILS = "{} source is down for {}!"
+FAILURE_DETAILS = "Process: {}, Source: {} is down for {}!"
 FAILURE_EXCEPTION_MESSAGE = "Failure and exception checking process metrics."
 FAILURE_MESSAGE = "There were moving_mean values outside of the threshold!"
 FAILURE_SUBJECT = "Metropolis: OUTLIER DETECTED! - Process: {}"
@@ -38,14 +38,14 @@ GENERIC_EXCEPTION_SUBJECT = "Metropolis: EXCEPTION Checking Process Metrics"
 GENERIC_FAIL_SUBJECT = "Metropolis: FAILURE Checking Process Metrics"
 GENERIC_FAIL_AND_EXCEPTION_SUBJECT = "Metropolis: FAILURE AND EXCEPTION Checking Process Metrics"
 GENERIC_SUCCESS_SUBJECT = "Metropolis: No Outliers!"
-MIN_AND_MAX_MESSAGE = "Minimum: {} || Maximum: {} || Moving Mean: {}"
+MIN_AND_MAX_MESSAGE = "Moving Mean: {} || Minimum: {} || Maximum: {}"
 MIN_AND_MAX_ERROR_MESSAGE = "Error: Minimum is larger than maximum."
 NOT_LOADED_DETAILS = "Failed to find rows with date of {} in {} due to the following:\n{}\n\nPlease look at the " \
                      "logs or check the CSV file for more insight."
 NOT_LOADED_MESSAGE = "Failed to load data from the CSV file, please check logs."
 NOT_LOADED_SUBJECT = "Metropolis: ERROR Loading Data File!"
 PROCESS_NOT_IN_FILE = "{} process is missing from the CSV file."
-SUCCESS_DETAILS = "{} source is up and running for {}!"
+SUCCESS_DETAILS = "Process: {}, Source: {} is up and running for {}!"
 SUCCESS_MESSAGE = "All moving_mean values were inside the threshold!"
 SUCCESS_SUBJECT = "Metropolis: No Outliers! - {}"
 
@@ -174,18 +174,18 @@ class Metropolis(Watchman):
         :param tb: <str> traceback
         :return: <str> details
         """
-        date, source_name, met_type, met_desc, met_val = \
-            row.get("date"), row.get("source"), row.get("metric_type"), \
-            row.get("metric_description"), row.get("metric_value")
+        date, met_desc, met_type, met_val, process_name, source_name = \
+            row.get("date"), row.get("metric_description"), row.get("metric_type"), \
+            row.get("metric_value"), row.get("process"), row.get("source")
 
         if threshold_check is None:
-            return DETAILS_FORMAT.format(EXCEPTION_DETAILS.format(source_name, date, tb),
+            return DETAILS_FORMAT.format(EXCEPTION_DETAILS.format(process_name, source_name, date, tb),
                                          met_type, met_desc, met_val, threshold_message)
         if threshold_check is True:
-            return DETAILS_FORMAT.format(SUCCESS_DETAILS.format(source_name, date),
+            return DETAILS_FORMAT.format(SUCCESS_DETAILS.format(process_name, source_name, date),
                                          met_type, met_desc, met_val, threshold_message)
         else:
-            return DETAILS_FORMAT.format(FAILURE_DETAILS.format(source_name, date),
+            return DETAILS_FORMAT.format(FAILURE_DETAILS.format(process_name, source_name, date),
                                          met_type, met_desc, met_val, threshold_message)
 
     def _create_generic_result(self, generic_checks, generic_details, generic_snapshot):
@@ -367,7 +367,7 @@ class Metropolis(Watchman):
         :return: <str> constructed message
         """
         maximum, minimum, moving_mean = row.get("3UCL"), row.get("3LCL"), row.get("moving_mean")
-        return MIN_AND_MAX_MESSAGE.format(minimum, maximum, moving_mean)
+        return MIN_AND_MAX_MESSAGE.format(moving_mean, minimum, maximum)
 
     def _fill_sources_per_process(self, sources_per_process, row_dicts_today):
         """
