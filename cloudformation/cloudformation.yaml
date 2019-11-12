@@ -144,6 +144,35 @@ Resources:
           Value: watchmen-moloch
         - Key: Env
           Value: !Ref Env
+  WatchmenMothmanLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Join ["-", [ !Ref "AWS::StackName", Mothman]]
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors the Malspam MTA EC2 instance.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
+      Handler: handler.start_mothman_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 30
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-mothman
+        - Key: Env
+          Value: !Ref Env
   WatchmenRorschachLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -290,6 +319,15 @@ Resources:
       Targets:
         - Id: MolochScheduler
           Arn: !GetAtt WatchmenMolochLambda.Arn
+  MothmanScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: An event that kicks off Mothman Watchman every 10 minutes.
+      ScheduleExpression: cron(*/10 * * * *)
+      State: ENABLED
+      Targets:
+        - Id: MothmanScheduler
+          Arn: !GetAtt WatchmenMothmanLambda.Arn
   RorschachScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -359,6 +397,13 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt MolochScheduledEvent.Arn
+  InvokeMothmanLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenMothmanLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt MothmanScheduledEvent.Arn
   InvokeRorschachLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
