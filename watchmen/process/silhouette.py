@@ -129,7 +129,7 @@ class Silhouette(Watchman):
                 'log_details': EXCEPTION_MESSAGE.format(filename, tb),
             },
             False: {
-                'details': 'ERROR: {}{}'.format(filename, FAILURE_MESSAGE),
+                'details': 'ERROR: {}\n{}'.format(filename, FAILURE_MESSAGE),
                 'log_details': 'File: {}{}'.format(filename, FAILURE_MESSAGE),
             },
             True: {
