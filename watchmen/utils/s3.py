@@ -140,6 +140,16 @@ def check_size(key, bucket=BUCKET_DEFAULT):
     return False
 
 
+def check_unequal_files(first_file, second_file):
+    """
+    Checks if S3 file objects returned from get_key are unequal sizes in bytes.
+    :param first_file: First S3 file object.
+    :param second_file: Second S3 file object.
+    :return: Boolean, True if files are different sizes, False if files are the same size.
+    """
+    return first_file.size != second_file.size
+
+
 def clean_json(contents):
     """
     Clean out trailing commas in JSON string contents

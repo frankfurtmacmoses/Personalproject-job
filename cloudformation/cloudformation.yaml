@@ -152,7 +152,7 @@ Resources:
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
         S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-      Description: Monitors the Malspam MTA EC2 instance.
+      Description: Monitors files uploaded to the ForeverMail S3 folder.
       Environment:
         Variables:
           ENVIRONMENT: !Ref Env

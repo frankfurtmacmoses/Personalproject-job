@@ -18,7 +18,7 @@ class TestSilhouette(unittest.TestCase):
             None: 'Silhouette for lookalike feeds failed '
                   'on \n\t"analytics/lookalike/prod/results/2018/12/16/status.json" \ndue to '
                   'the Exception:\n\n{}\n\nPlease check the logs!',
-            False: 'ERROR: analytics/lookalike/prod/results/2018/12/16/status.json'
+            False: 'ERROR: analytics/lookalike/prod/results/2018/12/16/status.json\n'
                    'Lookalike feed never added files from 2 days ago! '
                    'The feed may be down or simply did not complete!',
             True: 'Lookalike feed is up and running!',
@@ -26,9 +26,8 @@ class TestSilhouette(unittest.TestCase):
         self.example_success_json = {"STATE": "COMPLETED"}
         self.example_failed_json = {"STATE": "UNCOMPLETED"}
         self.example_result_dict = {
-            "details": "ERROR: "
-                       "analytics/lookalike/prod/results/2018/12/16/status.jsonLookalike "
-                       "feed never added files from 2 days ago! The feed may be down or "
+            "details": "ERROR: analytics/lookalike/prod/results/2018/12/16/status.json\n"
+                       "Lookalike feed never added files from 2 days ago! The feed may be down or "
                        "simply did not complete!",
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",

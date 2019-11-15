@@ -11,6 +11,10 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
   },
+  "ForeverMail": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-malspam-prod"
+  },
   "Georgia Tech S3": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"

@@ -49,6 +49,10 @@ moloch:
   hostname_path: NewlyObservedHostname
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
+mothman:
+  bucket_name: cyber-intel
+  path_prefix: malspam/forevermail
+
 rorschach:
   bucket_name: bitaa
   path_prefix: parquet/com.farsightsecurity.300021
