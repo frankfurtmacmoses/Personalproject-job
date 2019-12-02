@@ -50,5 +50,13 @@
   "Slowdrip Metrics":{
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "VirusTotal Email":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "VirusTotal Pager":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   }
 }

@@ -6,8 +6,21 @@ the subject of emails.
 @email: garciam@infoblox.com
 """
 
+COMEDIAN = {
+    "exception_details": "There was an exception retrieving the quota information from the VirusTotal API.\n\nTraceback"
+                         " of exception:\n{}",
+    "exception_short_message": "EXCEPTION: Unable to check VirusTotal quotas, please check logs!",
+    "exception_subject": "EXCEPTION: Unable to Check VirusTotal Quotas!",
+    "failure_short_message": "FAILURE: A quota was exceeded, please check the logs for more information!",
+    "failure_subject": "FAILURE: VirusTotal Quota Exceeded!",
+    "quota_exceeded": "Quota \"{}\" exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
+    "quota_exception_details": "An expected quota was missing from the VirusTotal API response.\n\n{}",
+    "success_details": "All VirusTotal quota checks ran successfully and were within the current threshold.",
+    "success_short_message": "SUCCESS: All VirusTotal quota checks were within the threshold for today!",
+    "success_subject": "SUCCESS: All VirusTotal Quotas Within Threshold!",
+}
+
 MOTHMAN = {
-    "exception": "S3 file checks were unsuccessful due to an exception! Please check the logs for more information.",
     "exception_details": "There was an exception while trying to check the ForeverMail S3 files.\n\nTraceback of "
                          "exception:\n{}",
     "exception_subject": "EXCEPTION: Unable to check ForeverMail S3 files!",

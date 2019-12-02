@@ -46,6 +46,7 @@ Refactored on 2019-11-07:
 }
 """
 from watchmen.common.result_svc import ResultSvc
+from watchmen.process.comedian import Comedian
 from watchmen.process.jupiter import Jupiter
 from watchmen.process.manhattan import Manhattan
 from watchmen.process.metropolis import Metropolis
@@ -54,6 +55,18 @@ from watchmen.process.mothman import Mothman
 from watchmen.process.rorschach import Rorschach
 from watchmen.process.silhouette import Silhouette
 from watchmen.process.spectre import Spectre
+
+
+def start_comedian_watcher(event, context):
+    """
+    Start the Comedian watcher for the VirusTotal quota.
+    :return: The context that the code is being run in.
+    """
+    comedian = Comedian(event, context)
+    results = comedian.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_jupiter_watcher(event, context):

@@ -50,5 +50,13 @@
   "Slowdrip Metrics":{
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Slowdrip_Metrics"
+  },
+  "VirusTotal Email":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Email"
+  },
+  "VirusTotal Pager":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Pager"
   }
 }
