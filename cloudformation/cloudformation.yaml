@@ -23,6 +23,8 @@ Parameters:
   BuildsPrefix:
     Description: The S3 prefix that contains the Watchmen builds.
     Type: String
+Conditions:
+  IsProd: !Equals [ !Ref Env, prod ]
 Resources:
   WatchmenComedianLambda:
     Type: 'AWS::Lambda::Function'
@@ -297,7 +299,8 @@ Resources:
     Properties:
       Description: A daily event that kicks off Comedian Watchman.
       ScheduleExpression: cron(0 15 * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: ComedianScheduler
           Arn: !GetAtt WatchmenComedianLambda.Arn
@@ -306,7 +309,8 @@ Resources:
     Properties:
       Description: A hourly event that kicks off the Jupiter Watchman
       ScheduleExpression: cron(0 * * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: JupiterScheduler
           Arn: !GetAtt WatchmenJupiterLambda.Arn
@@ -316,7 +320,8 @@ Resources:
     Properties:
       Description: A daily event that kicks off daily Manhattan Watchman
       ScheduleExpression: cron(0 15 * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: ManhattanDailyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
@@ -326,7 +331,8 @@ Resources:
     Properties:
       Description: A hourly event that kicks off hourly Manhattan Watchman
       ScheduleExpression: cron(0 * * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: ManhattanHourlyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
@@ -336,7 +342,8 @@ Resources:
     Properties:
       Description: A weekly event that kicks off weekly Manhattan Watchman
       ScheduleExpression: cron(0 15 ? * FRI *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: ManhattanWeeklyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
@@ -346,7 +353,8 @@ Resources:
     Properties:
       Description: A daily event that kicks off Metropolis Watchman
       ScheduleExpression: cron(0 14 * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: MetropolisScheduler
           Arn: !GetAtt WatchmenMetropolisLambda.Arn
@@ -356,7 +364,8 @@ Resources:
     Properties:
       Description: A hourly event that kicks off Moloch Watchman.
       ScheduleExpression: cron(59 * * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: MolochScheduler
           Arn: !GetAtt WatchmenMolochLambda.Arn
@@ -365,7 +374,8 @@ Resources:
     Properties:
       Description: An event that kicks off Mothman Watchman every 10 minutes.
       ScheduleExpression: cron(0/10 * * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: MothmanScheduler
           Arn: !GetAtt WatchmenMothmanLambda.Arn
@@ -374,7 +384,8 @@ Resources:
     Properties:
       Description: A hourly event that kicks off Rorschach Watchman
       ScheduleExpression: cron(0 * * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: RorschachScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
@@ -383,7 +394,8 @@ Resources:
     Properties:
       Description: A daily event that kicks off Silhouette Watchman.
       ScheduleExpression: cron(0 15 * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: SilhouetteScheduler
           Arn: !GetAtt WatchmenSilhouetteLambda.Arn
@@ -392,7 +404,8 @@ Resources:
     Properties:
       Description: A daily event that kicks off Spectre Watchman
       ScheduleExpression: cron(0 16 * * ? *)
-      State: ENABLED
+      State:
+        - !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: SpectreScheduler
           Arn: !GetAtt WatchmenSpectreLambda.Arn
