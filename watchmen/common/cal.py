@@ -18,6 +18,7 @@ WORK_HOUR_TYPE_ERROR = "Work hour must be type int!"
 
 HOLIDAY_GOOD_FRIDAY = get_boolean('holiday.good_friday')
 HOLIDAY_BEFORE_XMAS_EVE = get_boolean('holiday.day_before_xmas_eve')
+HOLIDAY_THURSDAY_BEFORE_INDEPENDENCE_DAY = get_boolean('holiday.thursday_before_independence_day')
 
 DOW = [
     "Monday",
@@ -138,6 +139,16 @@ class InfobloxCalendar(object):
                 self.add_holiday(year, 12, day_num, "Holiday Slowdown")
                 day_num += 1
 
+    def _add_holiday_thursday_before_independence_day(self):
+        """
+        Add the Thursday before Independence day to the holiday list. This holiday only occurs when Independence day
+        falls on a Saturday.
+        """
+        for key, value in dict(self.holiday_list).items():
+            if value == "Independence Day":
+                thursday = key - timedelta(days=2)
+                self.add_holiday(thursday.year, thursday.month, thursday.day, "Thursday Before Independence Day")
+
     def _add_holiday_xmas_eve(self):
         """
         Add Christmas Eve to holiday list
@@ -169,7 +180,7 @@ class InfobloxCalendar(object):
         @param year_range: years to add/remove holidays
         @note Some years, Good Friday is not an Infoblox holiday
         """
-        not_holidays = ["Martin Luther King, Jr. Day", "Veterans Day"]
+        not_holidays = ["Martin Luther King, Jr. Day", "Veterans Day", "Columbus Day"]
 
         # remove holidays that are still work days
         self.remove_holiday(names=not_holidays)
@@ -177,6 +188,8 @@ class InfobloxCalendar(object):
         # add infoblox specific holidays
         if HOLIDAY_GOOD_FRIDAY:
             self._add_holiday_good_friday()
+        if HOLIDAY_THURSDAY_BEFORE_INDEPENDENCE_DAY:
+            self._add_holiday_thursday_before_independence_day()
         self._add_holiday_after_thanksgiving()
         self._add_holiday_slowdown()
         self._add_holiday_xmas_eve()
