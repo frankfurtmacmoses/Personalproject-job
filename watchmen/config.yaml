@@ -24,7 +24,7 @@ ecs:
 
 holiday:
   good_friday: false
-  day_b4_xmas_eve: true
+  day_before_xmas_eve: true
 
 jupiter:
   bucket: cyber-intel-test
