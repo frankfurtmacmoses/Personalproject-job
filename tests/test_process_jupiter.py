@@ -126,7 +126,7 @@ class TestJupiter(unittest.TestCase):
         self.example_passed_endpoints = [
             {"name": "good endpoint", "path": "good/path"}
         ]
-        self.example_prefix = "watchmen/jupiter/{}/{}".format("2019",
+        self.example_prefix = "watchmen/jupiter/{}/{}".format(datetime.now().year,
                                                               self.check_time_utc.strftime(self.example_date_format))
         self.example_results_mix = {
             'failure': [{
