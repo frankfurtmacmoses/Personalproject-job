@@ -17,7 +17,8 @@ REMOVE_HOLIDAY_ERROR = "Holiday cannot be removed!"
 WORK_HOUR_TYPE_ERROR = "Work hour must be type int!"
 
 HOLIDAY_GOOD_FRIDAY = get_boolean('holiday.good_friday')
-HOLIDAY_DAY_B4_XMAS_EVE = get_boolean('holiday.day_b4_xmas_eve')
+HOLIDAY_BEFORE_XMAS_EVE = get_boolean('holiday.day_before_xmas_eve')
+HOLIDAY_THURSDAY_BEFORE_INDEPENDENCE_DAY = get_boolean('holiday.thursday_before_independence_day')
 
 DOW = [
     "Monday",
@@ -95,17 +96,17 @@ class InfobloxCalendar(object):
             message = "{}\nTrying to add holiday: Year-{} Month-{} Day-{}".format(ADD_HOLIDAY_ERROR, year, month, day)
             LOGGER.error(message)
 
-    def _add_holiday_xmas_eve(self):
+    def _add_holiday_after_thanksgiving(self):
         """
-        Add Christmas Eve to holiday list
+        Add the day after Thanksgiving to the holiday list
         """
         for key, value in dict(self.holiday_list).items():
-            if value == "Christmas Day":
-                eve = key - timedelta(days=1)
-                self.add_holiday(eve.year, eve.month, eve.day, "Christmas Eve")
-                return eve
+            if value == "Thanksgiving":
+                next_day = key + timedelta(days=1)
+                self.add_holiday(next_day.year, next_day.month, next_day.day, "Day After Thanksgiving (Black Friday)")
+                return next_day
 
-    def _add_holiday_day_b4_xmas_eve(self):
+    def _add_holiday_before_xmas_eve(self):
         """
         Add the Day before Christmas Eve to the holiday list
         """
@@ -117,16 +118,6 @@ class InfobloxCalendar(object):
                     day_before = key - timedelta(days=1)
                 self.add_holiday(day_before.year, day_before.month, day_before.day, "Day Before Christmas Eve")
                 return day_before
-
-    def _add_holiday_day_after_thanksgiving(self):
-        """
-        Add the day after Thanksgiving to the holiday list
-        """
-        for key, value in dict(self.holiday_list).items():
-            if value == "Thanksgiving":
-                next_day = key + timedelta(days=1)
-                self.add_holiday(next_day.year, next_day.month, next_day.day, "Day After Thanksgiving (Black Friday)")
-                return next_day
 
     def _add_holiday_good_friday(self):
         """
@@ -147,6 +138,26 @@ class InfobloxCalendar(object):
             while day_num <= 31:
                 self.add_holiday(year, 12, day_num, "Holiday Slowdown")
                 day_num += 1
+
+    def _add_holiday_thursday_before_independence_day(self):
+        """
+        Add the Thursday before Independence day to the holiday list. This holiday only occurs when Independence day
+        falls on a Saturday.
+        """
+        for key, value in dict(self.holiday_list).items():
+            if value == "Independence Day":
+                thursday = key - timedelta(days=2)
+                self.add_holiday(thursday.year, thursday.month, thursday.day, "Thursday Before Independence Day")
+
+    def _add_holiday_xmas_eve(self):
+        """
+        Add Christmas Eve to holiday list
+        """
+        for key, value in dict(self.holiday_list).items():
+            if value == "Christmas Day":
+                eve = key - timedelta(days=1)
+                self.add_holiday(eve.year, eve.month, eve.day, "Christmas Eve")
+                return eve
 
     @staticmethod
     def _find_weekday(date_to_check):
@@ -169,7 +180,7 @@ class InfobloxCalendar(object):
         @param year_range: years to add/remove holidays
         @note Some years, Good Friday is not an Infoblox holiday
         """
-        not_holidays = ["Martin Luther King, Jr. Day", "Veterans Day"]
+        not_holidays = ["Martin Luther King, Jr. Day", "Veterans Day", "Columbus Day"]
 
         # remove holidays that are still work days
         self.remove_holiday(names=not_holidays)
@@ -177,11 +188,13 @@ class InfobloxCalendar(object):
         # add infoblox specific holidays
         if HOLIDAY_GOOD_FRIDAY:
             self._add_holiday_good_friday()
-        self._add_holiday_day_after_thanksgiving()
+        if HOLIDAY_THURSDAY_BEFORE_INDEPENDENCE_DAY:
+            self._add_holiday_thursday_before_independence_day()
+        self._add_holiday_after_thanksgiving()
         self._add_holiday_slowdown()
         self._add_holiday_xmas_eve()
-        if HOLIDAY_DAY_B4_XMAS_EVE:
-            self._add_holiday_day_b4_xmas_eve()
+        if HOLIDAY_BEFORE_XMAS_EVE:
+            self._add_holiday_before_xmas_eve()
 
     def _get_month(self, date_to_check):
         """
