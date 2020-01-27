@@ -8,17 +8,7 @@ from watchmen import const
 from watchmen.process.endpoints import DATA as LOCAL_ENDPOINTS
 from watchmen.process.jupiter import Jupiter
 from watchmen.process.jupiter import \
-    BAD_ENDPOINTS_MESSAGE, \
-    CHECK_LOGS, \
-    ERROR_JUPITER, \
-    ERROR_SUBJECT, \
-    FAILURE_SUBJECT, \
-    NO_RESULTS, \
-    NOT_ENOUGH_EPS, \
-    NOT_ENOUGH_EPS_MESSAGE, \
-    RESULTS_DNE, \
-    SUCCESS_MESSAGE, \
-    SUCCESS_SUBJECT, \
+    MESSAGES, \
     TARGET
 
 
@@ -27,18 +17,18 @@ class TestJupiter(unittest.TestCase):
     def setUp(self):
         self.check_time_utc = datetime.utcnow()
         self.example_bad_endpoints_result = {
-            "details": NOT_ENOUGH_EPS_MESSAGE,
+            "details": MESSAGES.get("not_enough_eps_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": BAD_ENDPOINTS_MESSAGE + const.LINE_SEPARATOR,
+            "message": MESSAGES.get("bad_endpoints_message") + const.LINE_SEPARATOR,
             "result_id": 0,
             "snapshot": {},
             "source": "Jupiter",
             "state": "EXCEPTION",
-            "subject": NOT_ENOUGH_EPS,
+            "subject": MESSAGES.get("not_enough_eps"),
             "success": False,
             "target": TARGET,
         }
@@ -69,18 +59,18 @@ class TestJupiter(unittest.TestCase):
         ]
         self.example_exception_message = "An exception occurred."
         self.example_exception_result = {
-            "details": NOT_ENOUGH_EPS_MESSAGE,
+            "details": MESSAGES.get("not_enough_eps_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": NOT_ENOUGH_EPS_MESSAGE,
+            "message": MESSAGES.get("not_enough_eps_message"),
             "result_id": 0,
             "snapshot": {},
             "source": "Jupiter",
             "state": "EXCEPTION",
-            "subject": NOT_ENOUGH_EPS,
+            "subject": MESSAGES.get("not_enough_eps"),
             "success": False,
             "target": TARGET,
         }
@@ -99,12 +89,12 @@ class TestJupiter(unittest.TestCase):
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": SUCCESS_MESSAGE,
+            "message": MESSAGES.get("success_message"),
             "result_id": 0,
             "snapshot": {},
             "source": "Jupiter",
             "state": "FAILURE",
-            "subject": FAILURE_SUBJECT,
+            "subject": MESSAGES.get("failure_subject"),
             "success": False,
             "target": TARGET,
         }
@@ -139,7 +129,7 @@ class TestJupiter(unittest.TestCase):
             "success": True,
             "disable_notifier": True,
             "state": "SUCCESS",
-            "subject": SUCCESS_SUBJECT,
+            "subject": MESSAGES.get("success_subject"),
         }
         self.example_results_passed = {
             'failure': [{
@@ -150,18 +140,18 @@ class TestJupiter(unittest.TestCase):
             }]}
         self.example_status = "Everything has been checked!"
         self.example_success_result = {
-            "details": SUCCESS_MESSAGE,
+            "details": MESSAGES.get("success_message"),
             "disable_notifier": True,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": SUCCESS_MESSAGE,
+            "message": MESSAGES.get("success_message"),
             "result_id": 0,
             "snapshot": {},
             "source": "Jupiter",
             "state": "SUCCESS",
-            "subject": SUCCESS_SUBJECT,
+            "subject": MESSAGES.get("success_subject"),
             "success": True,
             "target": TARGET,
         }
@@ -390,7 +380,7 @@ class TestJupiter(unittest.TestCase):
             {"endpoints": self.example_invalid_paths, "expected": self.example_bad_endpoints_result,
              "check_result": None, "details": ""},
             {"endpoints": self.example_valid_paths, "expected": self.example_success_result,
-             "check_result": True, "details": SUCCESS_MESSAGE},
+             "check_result": True, "details": MESSAGES.get("success_message")},
             {"endpoints": self.example_valid_paths, "expected": self.example_failure_result,
              "check_result": False, "details": self.example_failure_message}
         ]
@@ -421,10 +411,10 @@ class TestJupiter(unittest.TestCase):
                 item.get('name'), item.get('path'), item.get('_err')
             )
             failed_message.append(msg)
-        failed_message = '{}\n\n\n{}'.format('\n\n'.join(failed_message), CHECK_LOGS)
+        failed_message = '{}\n\n\n{}'.format('\n\n'.join(failed_message), MESSAGES.get("check_logs"))
 
         first_failure = 's' if len(failures) > 1 else ' - {}'.format(failures[0].get('name'))
-        failed_subject = '{}{}'.format(ERROR_SUBJECT, first_failure)
+        failed_subject = '{}{}'.format(MESSAGES.get("error_subject"), first_failure)
 
         #  Empty results setup
         empty_message = 'Empty result:\n{}\n{}\nEndpoints:\n{}\n{}\n{}'.format(
@@ -434,11 +424,11 @@ class TestJupiter(unittest.TestCase):
             const.MESSAGE_SEPARATOR,
             json.dumps(self.example_validated, indent=2)
         )
-        empty_message = "{}\n\n\n{}".format(empty_message, NO_RESULTS)
+        empty_message = "{}\n\n\n{}".format(empty_message, MESSAGES.get("no_results"))
 
         test_results = [{
             "results": self.example_no_failures, "last_failed": False, "expected": {
-                "message": SUCCESS_MESSAGE, "subject": SUCCESS_SUBJECT, "success": True,
+                "message": MESSAGES.get("success_message"), "subject": MESSAGES.get("success_subject"), "success": True,
             }
         }, {
             "results": self.example_failed, "last_failed": True, "expected": {
@@ -446,7 +436,8 @@ class TestJupiter(unittest.TestCase):
             }
         }, {
             "results": self.example_empty, "last_failed": False, "expected": {
-                 "last_failed": False, "message": empty_message, "subject": ERROR_JUPITER, "success": False,
+                 "last_failed": False, "message": empty_message, "subject": MESSAGES.get("error_jupiter"),
+                 "success": False,
             }
         }]
 
@@ -460,7 +451,8 @@ class TestJupiter(unittest.TestCase):
         # Results DNE
         results = None
         expected = {
-            "last_failed": True, "message": RESULTS_DNE, "subject": ERROR_JUPITER, "success": False,
+            "last_failed": True, "message": MESSAGES.get("results_dne"), "subject": MESSAGES.get("error_jupiter"),
+            "success": False,
             }
         mock_fail.return_value = True
         returned = jupiter_obj.summarize(results, None, None)
