@@ -30,7 +30,6 @@ from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import copy_contents_to_bucket
 from watchmen.utils.s3 import get_content
-from watchmen.utils.s3 import mv_key
 
 CHECK_TIME_UTC = datetime.utcnow()
 DATETIME_FORMAT = '%Y%m%d_%H%M%S'
@@ -43,7 +42,6 @@ WORKDAY_NOTIFICATION_TIMES = [8, 12, 16]
 # S3
 S3_BUCKET = settings('jupiter.bucket')
 S3_PREFIX_JUPITER = settings('jupiter.s3_prefix')
-S3_PREFIX_STATE = '{}/LATEST'.format(S3_PREFIX_JUPITER)
 
 
 class Jupiter(Watchman):
@@ -71,10 +69,9 @@ class Jupiter(Watchman):
 
         checker = ServiceChecker(endpoints_with_path)
         checker_results = checker.start()
-        prefix = self.log_result(checker_results)
+        self.log_result(checker_results)
         validated_paths = checker.get_validated_paths()
         summarized_result = self.summarize(checker_results, endpoints, validated_paths)
-        self.log_state(summarized_result, prefix)
 
         date_check_result, details = self._check_skip_notification_(summarized_result)
         parameters = self._get_result_parameters(date_check_result)
@@ -296,25 +293,6 @@ class Jupiter(Watchman):
         except Exception as ex:
             self.logger.error(ex)
         return prefix_result
-
-    def log_state(self, summarized_result, prefix):
-        """
-        Logs whether the current state of Jupiter contains failed endpoints or all are successes.
-        If there are failures, they will be written to the LATEST file on s3.
-        An empty LATEST file indicates that there are no failures.
-        Each time this method is run, it will overwrite the contents of LATEST.
-        @param summarized_result: dictionary containing results of the sanitization of the successful and
-                                  failed endpoints.
-        @param prefix: prefix of the original file
-        """
-        try:
-            success = summarized_result.get('success')
-            content = '' if success else json.dumps(summarized_result, indent=4, sort_keys=True)
-            copy_contents_to_bucket(content, S3_PREFIX_STATE, S3_BUCKET)
-            state = 'SUCCESS' if success else 'FAILURE'
-            mv_key(prefix, '{}_{}.json'.format(prefix, state), bucket=S3_BUCKET)
-        except Exception as ex:
-            self.logger.error(ex)
 
     def summarize(self, results, endpoints, validated_paths):
         """
