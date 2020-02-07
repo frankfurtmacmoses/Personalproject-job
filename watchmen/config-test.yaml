@@ -33,8 +33,6 @@ jupiter:
   endpoints: endpoints.json
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
   s3_prefix: watchmen/jupiter
-  hr_start_pdt: 6
-  hr_end_pdt: 18
 
 logging:
   level: 10

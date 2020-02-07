@@ -10,7 +10,7 @@ If an endpoint is not working correctly or key check fails its conditions, an SN
 @author: Kayla Ramos
 @email: kramos@infoblox.com
 
-Refactored on October 30, 2019
+Refactored on February 03, 2020
 @author Michael Garcia
 @email garciam@infoblox.com
 """
@@ -19,6 +19,7 @@ import pytz
 
 from datetime import datetime
 from watchmen import const
+from watchmen import messages
 from watchmen.common.cal import InfobloxCalendar
 from watchmen.common.result import Result
 from watchmen.common.svc_checker import ServiceChecker
@@ -29,37 +30,18 @@ from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import copy_contents_to_bucket
 from watchmen.utils.s3 import get_content
-from watchmen.utils.s3 import mv_key
 
 CHECK_TIME_UTC = datetime.utcnow()
-CHECK_TIME_PDT = pytz.utc.localize(CHECK_TIME_UTC).astimezone(pytz.timezone('US/Pacific'))
 DATETIME_FORMAT = '%Y%m%d_%H%M%S'
+HOLIDAY_NOTIFICATION_TIMES = [8, 16]
+MESSAGES = messages.JUPITER
 SNS_TOPIC_ARN = settings("jupiter.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 TARGET = "Cyber-Intel Endpoints"
+WORKDAY_NOTIFICATION_TIMES = [8, 12, 16]
 
 # S3
 S3_BUCKET = settings('jupiter.bucket')
-S3_FAIL_LOAD_MESSAGE = "Cannot load endpoints from the following S3 resource:\n\tBucket: {}\n\tKey: {} \n\n" \
-                       "Local endpoints being monitored: \n{} \nException that caused failure: {}"
-S3_FAIL_LOAD_SUBJECT = "Jupiter endpoints - S3 load error"
 S3_PREFIX_JUPITER = settings('jupiter.s3_prefix')
-S3_PREFIX_STATE = '{}/LATEST'.format(S3_PREFIX_JUPITER)
-
-# Messages
-BAD_ENDPOINTS_MESSAGE = "There are endpoints with no path variable, please check the endpoints files locally and in S3!"
-CHECK_LOGS = "Please check logs for more details!"
-ERROR_JUPITER = "Jupiter: Failure in runtime"
-ERROR_SUBJECT = "Jupiter: Failure in checking endpoint"
-FAILURE_SUBJECT = "Jupiter: Cyber Intel endpoints monitor detected a failure!"
-NO_RESULTS = "There are no results! Endpoint file might be empty or Service Checker may not be working correctly. " \
-             "Please check logs and endpoint file to help identify the issue."
-NOT_ENOUGH_EPS = "Jupiter: Too Few Endpoints"
-NOT_ENOUGH_EPS_MESSAGE = "There are no valid endpoints to check or something is wrong with endpoint file."
-RESULTS_DNE = "Results do not exist! There is nothing to check. Service Checker may not be working correctly. " \
-              "Please check logs and endpoint file to help identify the issue."
-SKIP_MESSAGE_FORMAT = "Notification is skipped at {}"
-SUCCESS_MESSAGE = "All endpoints are healthy!"
-SUCCESS_SUBJECT = "Jupiter: Cyber Intel endpoints are working properly!"
 
 
 class Jupiter(Watchman):
@@ -87,17 +69,16 @@ class Jupiter(Watchman):
 
         checker = ServiceChecker(endpoints_with_path)
         checker_results = checker.start()
-        prefix = self.log_result(checker_results)
+        self.log_result(checker_results)
         validated_paths = checker.get_validated_paths()
         summarized_result = self.summarize(checker_results, endpoints, validated_paths)
-        self.log_state(summarized_result, prefix)
 
         date_check_result, details = self._check_skip_notification_(summarized_result)
         parameters = self._get_result_parameters(date_check_result)
 
         # The result_message is empty if the load_endpoints and check_endpoints_path were both successful.
         if not self.result_message:
-            self.result_message = SUCCESS_MESSAGE
+            self.result_message = MESSAGES.get("success_message")
 
         result = Result(
             success=parameters.get("success"),
@@ -142,24 +123,14 @@ class Jupiter(Watchman):
                 messages.append(msg)
                 self.logger.error('Notify failure:\n%s', msg)
             alarm_message = '\n'.join(messages)
-            self._append_to_message(BAD_ENDPOINTS_MESSAGE)
-            raise_alarm(SNS_TOPIC_ARN, subject=ERROR_SUBJECT, msg=alarm_message)
+            self._append_to_message(MESSAGES.get("bad_endpoints_message"))
+            raise_alarm(SNS_TOPIC_ARN, subject=MESSAGES.get("error_subject"), msg=alarm_message)
 
         if not validated:
-            self.logger.warning(NOT_ENOUGH_EPS_MESSAGE)
+            self.logger.warning(MESSAGES.get("not_enough_eps_message"))
             return None
 
         return validated
-
-    def _check_failure(self):
-        """
-        Use key, e.g. bucket/prefix/LATEST to check if the current check failed.
-        LATEST key contains result (non-empty) if current result has failure; empty indicates success.
-
-        @return: True if current check failed; otherwise, False.
-        """
-        data = get_content(S3_PREFIX_STATE, bucket=S3_BUCKET)
-        return data != '' and data is not None
 
     def _check_notification_time(self):
         """
@@ -170,18 +141,19 @@ class Jupiter(Watchman):
         now = self._get_time_pdt()
         hour = now.hour
         year = now.year
-        notification_time = False
         # Create a calendar for last year, current year, and next year
         cal = InfobloxCalendar(year - 1, year + 1)
 
         if not cal.is_workday():
-            notification_time = hour != 0 and hour % 8 == 0
-        elif cal.is_workhour(hour):
-            notification_time = hour % 4 == 0
+            # Holidays or weekends: Send notifications at 8am or 4pm PST.
+            is_notification_time = hour in HOLIDAY_NOTIFICATION_TIMES
+        else:
+            # Workdays: Send notifications at 8am, 12pm, or 4pm PST.
+            is_notification_time = hour in WORKDAY_NOTIFICATION_TIMES
 
-        self.logger.debug("The current hour is %s and notification_time = %s", hour, notification_time)
+        self.logger.debug("The current PST hour is %s and notification_time = %s", hour, is_notification_time)
 
-        return notification_time
+        return is_notification_time
 
     def _check_skip_notification_(self, summarized_result):
         """
@@ -201,14 +173,17 @@ class Jupiter(Watchman):
             return True, details
 
         enable_calendar = get_boolean('jupiter.enable_calendar')
-        failed = summarized_result.get('last_failed')
-        notification_time = self._check_notification_time()
-        # Skip if last check in state file is a failure and it is not time to send a notification
-        is_skipping = enable_calendar and failed and not notification_time
-        if is_skipping:
-            return True, SKIP_MESSAGE_FORMAT.format(CHECK_TIME_UTC)
 
-        return False, details
+        # If the calendar is disabled, always send a notification for failures.
+        if not enable_calendar:
+            return False, details
+
+        is_notification_time = self._check_notification_time()
+
+        if is_notification_time:
+            return False, details
+        else:
+            return True, MESSAGES.get("skip_message_format").format(CHECK_TIME_UTC)
 
     def _create_invalid_endpoints_result(self):
         """
@@ -219,10 +194,10 @@ class Jupiter(Watchman):
         parameters = self._get_result_parameters(None)
         message = self.result_message
         if not message:
-            message = NOT_ENOUGH_EPS_MESSAGE
+            message = MESSAGES.get("not_enough_eps_message")
 
         result = Result(
-            details=NOT_ENOUGH_EPS_MESSAGE,
+            details=MESSAGES.get("not_enough_eps_message"),
             disable_notifier=parameters.get("disable_notifier"),
             message=message,
             snapshot={},
@@ -232,7 +207,8 @@ class Jupiter(Watchman):
             success=parameters.get("success"),
             target=TARGET,
         )
-        raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=NOT_ENOUGH_EPS_MESSAGE, subject=parameters.get('subject'))
+        raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=MESSAGES.get("not_enough_eps_message"),
+                    subject=parameters.get('subject'))
         return result
 
     def _get_result_parameters(self, endpoint_check):
@@ -246,19 +222,19 @@ class Jupiter(Watchman):
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
-                "subject": FAILURE_SUBJECT,
+                "subject": MESSAGES.get("failure_subject"),
             },
             None: {
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
-                "subject": NOT_ENOUGH_EPS,
+                "subject": MESSAGES.get("not_enough_eps"),
             },
             True: {
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
-                "subject": SUCCESS_SUBJECT,
+                "subject": MESSAGES.get("success_subject"),
             },
         }
 
@@ -294,10 +270,10 @@ class Jupiter(Watchman):
                 formatted_data += "\tName: " + endpoint.get('name') + "\n"
                 formatted_data += "\tPath: " + endpoint.get('path') + "\n\n"
 
-            message = S3_FAIL_LOAD_MESSAGE.format(bucket, data_file, formatted_data, ex)
+            message = MESSAGES.get("s3_fail_load_message").format(bucket, data_file, formatted_data, ex)
             self._append_to_message(message)
             self.logger.warning(message)
-            raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=S3_FAIL_LOAD_SUBJECT, msg=message)
+            raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=MESSAGES.get("s3_fail_load_subject"), msg=message)
 
         endpoints = ENDPOINTS_DATA
         return endpoints
@@ -318,25 +294,6 @@ class Jupiter(Watchman):
             self.logger.error(ex)
         return prefix_result
 
-    def log_state(self, summarized_result, prefix):
-        """
-        Logs whether the current state of Jupiter contains failed endpoints or all are successes.
-        If there are failures, they will be written to the LATEST file on s3.
-        An empty LATEST file indicates that there are no failures.
-        Each time this method is run, it will overwrite the contents of LATEST.
-        @param summarized_result: dictionary containing results of the sanitization of the successful and
-                                  failed endpoints.
-        @param prefix: prefix of the original file
-        """
-        try:
-            success = summarized_result.get('success')
-            content = '' if success else json.dumps(summarized_result, indent=4, sort_keys=True)
-            copy_contents_to_bucket(content, S3_PREFIX_STATE, S3_BUCKET)
-            state = 'SUCCESS' if success else 'FAILURE'
-            mv_key(prefix, '{}_{}.json'.format(prefix, state), bucket=S3_BUCKET)
-        except Exception as ex:
-            self.logger.error(ex)
-
     def summarize(self, results, endpoints, validated_paths):
         """
         Creates a dictionary based on endpoints results.
@@ -346,14 +303,11 @@ class Jupiter(Watchman):
         @param validated_paths: validated endpoints
         @return: the notification message
         """
-        is_failure = self._check_failure()
-
         if not results or not isinstance(results, dict):
-            message = RESULTS_DNE
+            message = MESSAGES.get("results_dne")
             return {
-                "last_failed": is_failure,
                 "message": message,
-                "subject": ERROR_JUPITER,
+                "subject": MESSAGES.get("error_jupiter"),
                 "success": False,
             }
 
@@ -370,11 +324,10 @@ class Jupiter(Watchman):
                 json.dumps(validated_paths, indent=2)
             )
             self.logger.error(message)
-            message = "{}\n\n\n{}".format(message, NO_RESULTS)
+            message = "{}\n\n\n{}".format(message, MESSAGES.get("no_results"))
             return {
-                "last_failed": is_failure,
                 "message": message,
-                "subject": ERROR_JUPITER,
+                "subject": MESSAGES.get("error_jupiter"),
                 "success": False,
             }
 
@@ -387,12 +340,11 @@ class Jupiter(Watchman):
                 )
                 messages.append(msg)
                 self.logger.error('Notify failure:\n%s', msg)
-            message = '{}\n\n\n{}'.format('\n\n'.join(messages), CHECK_LOGS)
+            message = '{}\n\n\n{}'.format('\n\n'.join(messages), MESSAGES.get("check_logs"))
 
             first_failure = 's' if len(failure) > 1 else ' - {}'.format(failure[0].get('name'))
-            subject = '{}{}'.format(ERROR_SUBJECT, first_failure)
+            subject = '{}{}'.format(MESSAGES.get("error_subject"), first_failure)
             return {
-                "last_failed": is_failure,
                 "message": message,
                 "subject": subject,
                 "success": False,
@@ -400,8 +352,8 @@ class Jupiter(Watchman):
 
         # All Successes
         return {
-            "message": SUCCESS_MESSAGE,
-            "subject": SUCCESS_SUBJECT,
+            "message": MESSAGES.get("success_message"),
+            "subject": MESSAGES.get("success_subject"),
             "success": True,
         }
 

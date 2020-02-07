@@ -20,6 +20,27 @@ COMEDIAN = {
     "success_subject": "SUCCESS: All VirusTotal Quotas Within Threshold!",
 }
 
+JUPITER = {
+    "bad_endpoints_message": "There are endpoints with no path variable, please check the endpoints files locally and "
+                             "in S3!",
+    "check_logs": "Please check logs for more details!",
+    "error_jupiter": "Jupiter: No Results Found",
+    "error_subject": "Jupiter: Failure in checking endpoint",
+    "failure_subject": "Jupiter: Cyber Intel endpoints monitor detected a failure!",
+    "no_results": "There are no results! Endpoint file might be empty or Service Checker may not be working correctly."
+                  " Please check logs and endpoint file to help identify the issue.",
+    "not_enough_eps": "Jupiter: Too Few Endpoints",
+    "not_enough_eps_message": "There are no valid endpoints to check or something is wrong with endpoint file.",
+    "results_dne": "Results do not exist! There is nothing to check. Service Checker may not be working correctly. "
+                  "Please check logs and endpoint file to help identify the issue.",
+    "skip_message_format": "Notification is skipped at {}",
+    "success_message": "All endpoints are healthy!",
+    "success_subject": "Jupiter: Cyber Intel endpoints are working properly!",
+    "s3_fail_load_message": "Cannot load endpoints from the following S3 resource:\n\tBucket: {}\n\tKey: {} \n\n"
+                            "Local endpoints being monitored: \n{} \nException that caused failure: {}",
+    "s3_fail_load_subject": "Jupiter endpoints - S3 load error"
+}
+
 MOTHMAN = {
     "exception_details": "There was an exception while trying to check the ForeverMail S3 files.\n\nTraceback of "
                          "exception:\n{}",
