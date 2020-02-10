@@ -32,12 +32,6 @@ class TestJupiter(unittest.TestCase):
             "success": False,
             "target": TARGET,
         }
-        self.example_bad_list = [
-            {"name": "NoPath"},
-            {}
-        ]
-        self.example_bad_messages = "There is not a path to check for: HaveName\n" \
-                                    "There is not a path to check for: There is not a name available"
         self.example_data = """[{
                                     "name": "happy data from s3",
                                     "path": "success",
@@ -98,24 +92,17 @@ class TestJupiter(unittest.TestCase):
             "success": False,
             "target": TARGET,
         }
-        self.example_few_validated = []
         self.example_holiday_bad_time = datetime(year=2018, month=12, day=25, hour=9, tzinfo=pytz.utc)
         self.example_holiday_good_time = datetime(year=2018, month=12, day=25, hour=8, tzinfo=pytz.utc)
         self.example_holiday_midnight_time = datetime(year=2018, month=12, day=25, hour=0, tzinfo=pytz.utc)
         self.example_invalid_paths = [
             {"key": "that fails"}
         ]
-        self.example_local_endpoints = [
-            {"name": "local", "path": "s3/failed"}
-        ]
         self.example_no_failures = {
             "failure": [],
             "success": [
                 {"name": "succeeded"}
             ]}
-        self.example_passed_endpoints = [
-            {"name": "good endpoint", "path": "good/path"}
-        ]
         self.example_prefix = "watchmen/jupiter/{}/{}".format(datetime.now().year,
                                                               self.check_time_utc.strftime(self.example_date_format))
         self.example_results_mix = {
@@ -131,14 +118,6 @@ class TestJupiter(unittest.TestCase):
             "state": "SUCCESS",
             "subject": MESSAGES.get("success_subject"),
         }
-        self.example_results_passed = {
-            'failure': [{
-                'name': 'failed'
-            }],
-            'success': [{
-                'name': 'passed'
-            }]}
-        self.example_status = "Everything has been checked!"
         self.example_success_result = {
             "details": MESSAGES.get("success_message"),
             "disable_notifier": True,
@@ -155,12 +134,6 @@ class TestJupiter(unittest.TestCase):
             "success": True,
             "target": TARGET,
         }
-        self.example_summarized_results = {
-            "message": "This is your in-depth result",
-            "subject": "Good subject line",
-            "success": False,
-        }
-        self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
         self.example_valid_paths = [{
             "name": "I will work",
             "path": "here/is/path"
@@ -169,14 +142,6 @@ class TestJupiter(unittest.TestCase):
             "name": "endpoint",
             "path": "example"
         }]
-        self.example_validated_list = [
-            {"name": "HaveName", "path": "have/path"},
-            {"path": "pathWith/NoName"}
-        ]
-        self.example_variety_endpoints = [
-            {"name": "endpoint", "path": "cool/path"},
-            {"key": "bad endpoint"}
-        ]
         self.example_workday_bad_time = datetime(year=2019, month=10, day=28, hour=15, tzinfo=pytz.utc)
         self.example_workday_good_time = datetime(year=2019, month=10, day=28, hour=12, tzinfo=pytz.utc)
         self.example_weekend_bad_time = datetime(year=2019, month=10, day=27, hour=15, tzinfo=pytz.utc)
@@ -214,51 +179,84 @@ class TestJupiter(unittest.TestCase):
             returned = jupiter_obj._check_notification_time()
             self.assertEqual(expected, returned)
 
-    @patch('watchmen.process.jupiter.get_boolean')
     @patch('watchmen.process.jupiter.raise_alarm')
     @patch('watchmen.process.jupiter.Jupiter._check_notification_time')
     @patch('watchmen.process.jupiter.datetime')
-    def test_check_skip_notification(self, mock_datetime, mock_time, mock_alarm, mock_boolean):
+    def test_check_skip_notification(self, mock_datetime, mock_time, mock_alarm):
         jupiter_obj = Jupiter(event=None, context=None)
+
         success = {
+            "failed_nocal_endpoints_msg": "",
+            "failed_endpoints_not_using_cal": False,
+            "failed_endpoints_using_cal": False,
             "message": "Everything passed",
             "subject": "Happy subject line",
             "success": True,
         }
 
         failure = {
+            "failed_nocal_endpoints_msg": "Message displayed when it is not notification time but there were failed "
+                                          "endpoints that do not use the calendar.",
+            "failed_endpoints_not_using_cal": True,
+            "failed_endpoints_using_cal": False,
             "message": "Contains Failures",
             "subject": "Sad subject line",
             "success": False,
         }
 
-        skip_tests = [{
-            "use_cal": False, "notification_time": False,
+        failure_based_on_notification_time = {
+            "failed_nocal_endpoints_msg": "Message displayed when it is not notification time but there were failed "
+                                          "endpoints that do not use the calendar.",
+            "failed_endpoints_not_using_cal": True,
+            "failed_endpoints_using_cal": True,
+            "message": "Contains Failures",
+            "subject": "Sad subject line",
+            "success": False,
+        }
+
+        failure_skipped = {
+            "failed_nocal_endpoints_msg": "Message displayed when it is not notification time but there were failed "
+                                          "endpoints that do not use the calendar.",
+            "failed_endpoints_not_using_cal": False,
+            "failed_endpoints_using_cal": True,
+            "message": "Contains Failures",
+            "subject": "Sad subject line",
+            "success": False,
+        }
+
+        # Cases when the alarm is triggered:
+        # - When there are any failed endpoints that do not use the calendar.
+        # - When it is notification time and there are any failed endpoints.
+        # - When it is not notification time and there are failed endpoints that do not use the calendar.
+        failed_endpoints_tests = [{
+            "notification_time": False, "summarized_result": failure,
             "expected": failure.get('message'),
         }, {
-            "use_cal": True, "notification_time": True,
-            "expected": failure.get('message'),
+            "notification_time": True, "summarized_result": failure_based_on_notification_time,
+            "expected": failure_based_on_notification_time.get('message'),
+        }, {
+            "notification_time": False, "summarized_result": failure_based_on_notification_time,
+            "expected": failure_based_on_notification_time.get('failed_nocal_endpoints_msg'),
         }]
 
-        # Success is true
+        # Success is true:
         expected = True, success.get('message')
         returned = jupiter_obj._check_skip_notification_(success)
         self.assertEqual(expected, returned)
 
-        # Cases where alarm is triggered
-        for test in skip_tests:
-            mock_boolean.return_value = test.get("use_cal")
+        # Testing all scenarios for failed endpoints:
+        for test in failed_endpoints_tests:
             mock_time.return_value = test.get("notification_time")
             expected = False, test.get("expected")
-            returned = jupiter_obj._check_skip_notification_(failure)
+            returned = jupiter_obj._check_skip_notification_(test.get("summarized_result"))
             self.assertEqual(expected, returned)
 
-        # Notifications should be skipped on a failure when the calendar is enabled and it is not notification time.
-        mock_boolean.return_value = True
+        # Notifications should be skipped when there are only failed endpoints that use the calendar and it is not
+        # notification time.
         mock_time.return_value = False
-        mock_datetime.now.return_value = self.example_today
-        skip_boolean, skip_message = jupiter_obj._check_skip_notification_(self.example_summarized_results)
-        # Cannot mock datetime and return result contains exact time to the second
+        skip_boolean, skip_message = jupiter_obj._check_skip_notification_(failure_skipped)
+        # Cannot mock datetime and return result contains exact time to the second, so just assert that the correct
+        # message was returned.
         self.assertIn("Notification is skipped at", skip_message)
 
     @patch('watchmen.process.jupiter.raise_alarm')
@@ -381,16 +379,21 @@ class TestJupiter(unittest.TestCase):
 
         test_results = [{
             "results": self.example_no_failures, "expected": {
-                "message": MESSAGES.get("success_message"), "subject": MESSAGES.get("success_subject"), "success": True,
+                "failed_nocal_endpoints_msg": "", "failed_endpoints_not_using_cal": False,
+                "failed_endpoints_using_cal": False, "message": MESSAGES.get("success_message"),
+                "subject": MESSAGES.get("success_subject"), "success": True,
             }
         }, {
             "results": self.example_failed, "expected": {
-                "message": failed_message, "subject": failed_subject, "success": False,
+                "failed_nocal_endpoints_msg": failed_message, "failed_endpoints_not_using_cal": True,
+                "failed_endpoints_using_cal": False, "message": failed_message, "subject": failed_subject,
+                "success": False
             }
         }, {
             "results": self.example_empty, "expected": {
-                 "message": empty_message, "subject": MESSAGES.get("error_jupiter"),
-                 "success": False,
+                "failed_nocal_endpoints_msg": "", "failed_endpoints_not_using_cal": False,
+                "failed_endpoints_using_cal": False, "message": empty_message, "subject": MESSAGES.get("error_jupiter"),
+                "success": False,
             }
         }]
 
@@ -403,8 +406,9 @@ class TestJupiter(unittest.TestCase):
         # Results DNE
         results = None
         expected = {
-            "message": MESSAGES.get("results_dne"), "subject": MESSAGES.get("error_jupiter"),
-            "success": False,
+            "message": MESSAGES.get("results_dne"), "subject": MESSAGES.get("error_jupiter"), "success": False,
+            "failed_nocal_endpoints_msg": "", "failed_endpoints_not_using_cal": False,
+            "failed_endpoints_using_cal": False
             }
         returned = jupiter_obj.summarize(results, None, None)
         self.assertEqual(expected, returned)
