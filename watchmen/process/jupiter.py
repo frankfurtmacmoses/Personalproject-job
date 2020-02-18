@@ -56,8 +56,6 @@ class Jupiter(Watchman):
         Monitors Cyber-Intel endpoints.
         :return: Result object list (with one Result) with information on the health of Cyber-Intel endpoints.
         """
-        # This method is only used when updating the endpoints on S3.
-        # _update_endpoints()
         endpoints = self.load_endpoints()
         endpoints_with_path = self.check_endpoints_path(endpoints)
 
@@ -404,13 +402,3 @@ class Jupiter(Watchman):
             "subject": MESSAGES.get("success_subject"),
             "success": True
         }
-
-    def _update_endpoints(self):
-        """
-        This methods will update the the endpoints.json file on S3 to match watchmen/process/endpoints.json
-        This is a private method that is only used locally and should be uncommented in the monitor() when intending
-        to update endpoints.
-        """
-        content = json.dumps(ENDPOINTS_DATA, indent=4, sort_keys=True)
-        key = '{}/endpoints.json'.format(S3_PREFIX_JUPITER)
-        copy_contents_to_bucket(content, key, S3_BUCKET)
