@@ -66,13 +66,15 @@ class ServiceCheckerTester(unittest.TestCase):
     @patch('watchmen.common.svc_checker.get_api_data')
     def test_start(self, mock_get_api_data):
         _res_test = [{
-          "name": "endpoint 0-no-response",
-          "path": "https://abc/v0/",
+            "calendar": "disabled",
+            "name": "endpoint 0-no-response",
+            "path": "https://abc/v0/",
         }]
         _res_data = {
           "failure": [
             {
               "_err": "no response data from URL: https://abc/v0",
+              "calendar": "disabled",
               "name": "endpoint 0-no-response",
               "path": "https://abc/v0"
             }
@@ -80,43 +82,51 @@ class ServiceCheckerTester(unittest.TestCase):
           "success": []
         }
         _top_test = [{
+          "calendar": "disabled",
           "name": "endpoint 0-html",
           "desc": "app endpoint v0.",
           "path": "https://abc/v0/",
           "regx": "KIDDING ME",
           "format": "html",
         }, {
+          "calendar": "disabled",
           "name": "endpoint 1-check-keys",
           "desc": "application foobar v1.",
           "path": "http://foobar/v1",
           "keys": "do_not_exist",
         }, {
+          "calendar": "disabled",
           "name": "endpoint 2-html",
           "desc": "app endpoint v2.",
           "path": "https://xyz/v2/",
           "regx": "<version>",
           "format": "html",
         }, {
+          "calendar": "disabled",
           "name": "endpoint 3-bad-url",
           "desc": "bad application foobar v3.",
           "path": "bad/foobar/v3",
         }]
         _top_data = {
           "failure": [{
+            "calendar": "disabled",
             "_err": "cannot find `KIDDING ME` in response data from: https://abc/v0",
             "name": "endpoint 0-html",
             "path": "https://abc/v0"
           }, {
+            "calendar": "disabled",
             "_err": "missing value by key `do_not_exist` in response data from: http://foobar/v1",
             "name": "endpoint 1-check-keys",
             "path": "http://foobar/v1"
           }, {
-            "_err": "invalid endpoint URL: bad/foobar/v3",
             "base": "",
+            "calendar": "disabled",
+            "_err": "invalid endpoint URL: bad/foobar/v3",
             "name": "endpoint 3-bad-url",
             "path": "bad/foobar/v3"
           }],
           "success": [{
+            "calendar": "disabled",
             "name": "endpoint 2-html",
             "path": "https://xyz/v2"
           }]

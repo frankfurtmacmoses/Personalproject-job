@@ -2,50 +2,62 @@
   "failure": [],
   "success": [
     {
+      "calendar": "disabled",
       "name": "endpoint 0",
       "path": "https://abc/v0"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 1",
       "path": "http://foobar/v1"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 1-0",
       "path": "http://foobar/v1/api/v1.0"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2",
       "path": "https://test/v2"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2-0",
       "path": "https://test/v2/next/v2.0"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2-1",
       "path": "https://test/v2/next/v2.1"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2.1.0",
       "path": "https://test/v2/next/v2.1/apidoc/v2.1.1"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2.1.1",
       "path": "https://test/v2/next/v2.1/nested/v2.1.1"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2.1.2",
       "path": "https://test/v2/next/v2.1/nested/v2.1.2"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2.1.2.x",
       "path": "https://test/v2/next/v2.1/nested/v2.1.2/deeper/v2.1.x"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 2.1.3",
       "path": "https://test/v2/next/v2.1/nested/v2.1.3"
     },
     {
+      "calendar": "disabled",
       "name": "endpoint 3",
       "path": "https://xyz/v3"
     }
