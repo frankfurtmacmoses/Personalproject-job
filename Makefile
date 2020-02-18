@@ -29,7 +29,12 @@ DOCKER_PATH := $(shell which docker)
 BUILD_ENV ?= test
 COVERAGE_DIR := htmlcov
 COVERAGE_REPORT := $(COVERAGE_DIR)/index.html
-
+ENDPOINTS_JSON := endpoints.json
+JUPITER := jupiter
+PROCESS := process
+PROJECT := watchmen
+S3_PROD_BUCKET := cyber-intel
+S3_TEST_BUCKET := cyber-intel-test
 SYSTOOLS := find rm python tee xargs zip
 
 USE_PYTHON3 := true
@@ -378,3 +383,13 @@ deploy-prod: clean
 	BUILD_ENV=prod BUCKET=cyber-intel $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
+
+deploy-endpoints-test:
+	@echo "--- Deploying endpoints.json to test S3 folder..."
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(ENDPOINTS_JSON) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
+	@echo "--- Done."
+
+deploy-endpoints-prod:
+	@echo "--- Deploying endpoints.json to prod S3 folder..."
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(ENDPOINTS_JSON) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
+	@echo "--- Done."
