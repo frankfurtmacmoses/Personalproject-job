@@ -202,9 +202,10 @@ class ServiceChecker(object):
         Check if a service endpoint is up and live.
         """
         _base = str(parent_path).strip('/')
-        _path = endpoint.get('path', '').strip('/')
+        _calendar = endpoint.get('calendar', 'disabled')
         _desc = endpoint.get('desc', '__unknown_service__')
         _name = endpoint.get('name', '__unnamed__')
+        _path = endpoint.get('path', '').strip('/')
 
         log_prefix = '{}- [{}]'.format('-' * self._run_level, self._run_level)
         log = 'validating endpoint URL: {} - {}'.format(_name, _desc)
@@ -216,8 +217,9 @@ class ServiceChecker(object):
         _endp = _path if _chk1 else _url2
 
         _data = {
+            "calendar": _calendar,
             "name": _name,
-            "path": _path,
+            "path": _path
         }
         if not _chk1 and not _chk2:
             _data.update({"base": _base})
@@ -277,8 +279,9 @@ class ServiceChecker(object):
         Make a copy of the endpoint without some keys.
         """
         data = {
+            "calendar": endpoint.get('calendar'),
             "name": endpoint.get('name'),
-            "path": endpoint.get('path'),
+            "path": endpoint.get('path')
         }
         if err:
             data['_err'] = err

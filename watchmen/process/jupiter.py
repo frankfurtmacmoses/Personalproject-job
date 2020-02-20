@@ -10,7 +10,7 @@ If an endpoint is not working correctly or key check fails its conditions, an SN
 @author: Kayla Ramos
 @email: kramos@infoblox.com
 
-Refactored on February 03, 2020
+Refactored on February 18, 2020
 @author Michael Garcia
 @email garciam@infoblox.com
 """
@@ -24,7 +24,6 @@ from watchmen.common.cal import InfobloxCalendar
 from watchmen.common.result import Result
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.common.watchman import Watchman
-from watchmen.config import get_boolean
 from watchmen.config import settings
 from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
@@ -57,8 +56,6 @@ class Jupiter(Watchman):
         Monitors Cyber-Intel endpoints.
         :return: Result object list (with one Result) with information on the health of Cyber-Intel endpoints.
         """
-        # This method is only used when updating the endpoints on S3.
-        # _update_endpoints()
         endpoints = self.load_endpoints()
         endpoints_with_path = self.check_endpoints_path(endpoints)
 
@@ -158,32 +155,47 @@ class Jupiter(Watchman):
     def _check_skip_notification_(self, summarized_result):
         """
         Check if the SNS notification can be sent.
-        If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
-        If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
-        Otherwise, all notifications will be skipped.
+        If there are failed endpoints that do not use the calendar or an error occurred while trying to test endpoints,
+        then a notification will always be sent.
+        If there are failed endpoints that do use the calendar, then a notification for those endpoints will only be
+        sent based on the following time configurations:
+            - If the day is a holiday and the hour is 8am or 4pm, a notification will be sent.
+            - If the day is a work day and the hour is 8am, 12pm, or 4pm, a notification will be sent.
+        Notifications are skipped if there are no failed endpoints or if there are only failed endpoints that use the
+        calendar and it is not time to send a notification.
+
         @param summarized_result: dictionary containing notification information
         @return: <bool>, <str>
         <bool>: True if the notification is skipped, false if not.
         <str>: The details for the result object.
         """
-        details = summarized_result.get('message')
+        failed_endpoints_not_using_cal = summarized_result.get("failed_endpoints_not_using_cal")
+        failed_endpoints_using_cal = summarized_result.get("failed_endpoints_using_cal")
+        failed_nocal_endpoints_msg = summarized_result.get("failed_nocal_endpoints_msg")
+        message = summarized_result.get('message')
         success = summarized_result.get('success')
 
         if success:
-            return True, details
+            return True, message
 
-        enable_calendar = get_boolean('jupiter.enable_calendar')
-
-        # If the calendar is disabled, always send a notification for failures.
-        if not enable_calendar:
-            return False, details
+        # If there are only failed endpoints that do not use the calendar, a notification is always sent.
+        if not failed_endpoints_using_cal:
+            return False, message
 
         is_notification_time = self._check_notification_time()
 
+        # If it is notification time, send the notification containing all failed endpoints.
         if is_notification_time:
-            return False, details
-        else:
-            return True, MESSAGES.get("skip_message_format").format(CHECK_TIME_UTC)
+            return False, message
+
+        # If it is NOT notification time, a notification containing information about the failed endpoints that do NOT
+        # use the calendar will be sent.
+        if not is_notification_time and failed_endpoints_not_using_cal:
+            return False, failed_nocal_endpoints_msg
+
+        # If there are only failed endpoints that use the calendar and it is not notification time, a notification
+        # is NOT sent.
+        return True, MESSAGES.get("skip_message_format").format(CHECK_TIME_UTC)
 
     def _create_invalid_endpoints_result(self):
         """
@@ -298,6 +310,15 @@ class Jupiter(Watchman):
         """
         Creates a dictionary based on endpoints results.
         This dictionary will be given to monitor to create alarm messages and logs.
+
+        Variables included in dictionary:
+            failed_endpoints_not_using_cal: Boolean indicating if there were failed endpoints that do NOT use the cal.
+            failed_endpoints_using_cal: Boolean indicating if there were failed endpoints that DO use the calendar.
+            failed_nocal_endpoints_msg: Message (String) for failed endpoints that do not use the calendar.
+            message: Message (String) describing the result of checking all endpoints.
+            subject: Subject of the SNS notification (String),
+            success: Boolean, true if all endpoints are working, false if any endpoints failed or an error occurred.
+
         @param results: dict to be checked for failed endpoints
         @param endpoints: loaded endpoints data
         @param validated_paths: validated endpoints
@@ -306,9 +327,12 @@ class Jupiter(Watchman):
         if not results or not isinstance(results, dict):
             message = MESSAGES.get("results_dne")
             return {
+                "failed_endpoints_not_using_cal": False,
+                "failed_endpoints_using_cal": False,
+                "failed_nocal_endpoints_msg": "",
                 "message": message,
                 "subject": MESSAGES.get("error_jupiter"),
-                "success": False,
+                "success": False
             }
 
         failure = results.get('failure', [])
@@ -326,43 +350,55 @@ class Jupiter(Watchman):
             self.logger.error(message)
             message = "{}\n\n\n{}".format(message, MESSAGES.get("no_results"))
             return {
+                "failed_endpoints_not_using_cal": False,
+                "failed_endpoints_using_cal": False,
+                "failed_nocal_endpoints_msg": "",
                 "message": message,
                 "subject": MESSAGES.get("error_jupiter"),
-                "success": False,
+                "success": False
             }
 
         # Checking failure list and announcing errors
         if failure and isinstance(failure, list):
+            failed_endpoints_not_using_cal = False
+            failed_endpoints_using_cal = False
+            failed_nocal_endpoints_msgs = []
             messages = []
+
             for item in failure:
                 msg = '\tname: {}\n\tpath: {}\n\terror: {}'.format(
                     item.get('name'), item.get('path'), item.get('_err')
                 )
                 messages.append(msg)
+                if item.get("calendar") == "enabled":
+                    failed_endpoints_using_cal = True
+                else:
+                    failed_endpoints_not_using_cal = True
+                    failed_nocal_endpoints_msgs.append(msg)
+
                 self.logger.error('Notify failure:\n%s', msg)
+
             message = '{}\n\n\n{}'.format('\n\n'.join(messages), MESSAGES.get("check_logs"))
+            failed_nocal_endpoints_msg = '{}\n\n\n{}'.format('\n\n'.join(failed_nocal_endpoints_msgs),
+                                                             MESSAGES.get("check_logs"))
 
             first_failure = 's' if len(failure) > 1 else ' - {}'.format(failure[0].get('name'))
             subject = '{}{}'.format(MESSAGES.get("error_subject"), first_failure)
             return {
+                "failed_endpoints_not_using_cal": failed_endpoints_not_using_cal,
+                "failed_endpoints_using_cal": failed_endpoints_using_cal,
+                "failed_nocal_endpoints_msg": failed_nocal_endpoints_msg,
                 "message": message,
                 "subject": subject,
-                "success": False,
+                "success": False
             }
 
         # All Successes
         return {
+            "failed_endpoints_not_using_cal": False,
+            "failed_endpoints_using_cal": False,
+            "failed_nocal_endpoints_msg": "",
             "message": MESSAGES.get("success_message"),
             "subject": MESSAGES.get("success_subject"),
-            "success": True,
+            "success": True
         }
-
-    def _update_endpoints(self):
-        """
-        This methods will update the the endpoints.json file on S3 to match watchmen/process/endpoints.json
-        This is a private method that is only used locally and should be uncommented in the monitor() when intending
-        to update endpoints.
-        """
-        content = json.dumps(ENDPOINTS_DATA, indent=4, sort_keys=True)
-        key = '{}/endpoints.json'.format(S3_PREFIX_JUPITER)
-        copy_contents_to_bucket(content, key, S3_BUCKET)

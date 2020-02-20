@@ -28,8 +28,7 @@ holiday:
   thursday_before_independence_day: true
 
 jupiter:
-  bucket: cyber-intel-test
-  enable_calendar: true
+  bucket: cyber-intel
   endpoints: endpoints.json
   sns_topic: arn:aws:sns:us-east-1:405093580753:Sockeye
   s3_prefix: watchmen/jupiter
