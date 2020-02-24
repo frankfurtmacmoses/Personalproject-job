@@ -44,6 +44,10 @@ JUPITER = {
 MANHATTAN = {
     "check_email_message": "Please check the email for more details!",
     "exception_details_start": "Manhattan failed due to the following: ",
+    "exception_invalid_event_message": "An invalid event was passed from the CloudWatch event, please check the "
+                                       "CloudFormation file and CloudWatch events to ensure that the correct parameters"
+                                       " are being sent. Metrics can not be checked with an invalid event parameter.",
+    "exception_invalid_event_subject": "Manhattan Exception: Invalid CloudWatch Event!",
     "exception_message": "EXCEPTION occurred while checking feeds! Please check the email for more details!",
     "failure_abnormal_message": "One or more feeds are submitting abnormal amounts of domains:",
     "failure_down_message": "One or more feeds are down:",
