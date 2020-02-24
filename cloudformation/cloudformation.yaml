@@ -309,7 +309,7 @@ Resources:
       Targets:
         - Id: JupiterScheduler
           Arn: !GetAtt WatchmenJupiterLambda.Arn
-          Input: '{"type": "Hourly"}'
+          Input: '{"Type": "Hourly"}'
   ManhattanDailyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -319,7 +319,7 @@ Resources:
       Targets:
         - Id: ManhattanDailyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
-          Input: '{"type": "Daily"}'
+          Input: '{"Type": "Daily"}'
   ManhattanHourlyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -329,7 +329,7 @@ Resources:
       Targets:
         - Id: ManhattanHourlyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
-          Input: '{"type": "Hourly"}'
+          Input: '{"Type": "Hourly"}'
   ManhattanWeeklyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -339,7 +339,7 @@ Resources:
       Targets:
         - Id: ManhattanWeeklyScheduler
           Arn: !GetAtt WatchmenManhattanLambda.Arn
-          Input: '{"type": "Weekly"}'
+          Input: '{"Type": "Weekly"}'
   MetropolisScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -349,7 +349,7 @@ Resources:
       Targets:
         - Id: MetropolisScheduler
           Arn: !GetAtt WatchmenMetropolisLambda.Arn
-          Input: '{"type": "Daily"}'
+          Input: '{"Type": "Daily"}'
   MolochScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
