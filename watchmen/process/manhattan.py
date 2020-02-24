@@ -29,6 +29,8 @@ HOURLY = "Hourly"
 DAILY = "Daily"
 WEEKLY = "Weekly"
 
+ALL_EVENT_TYPES = [HOURLY, DAILY, WEEKLY]
+
 # Messages
 MESSAGES = messages.MANHATTAN
 
@@ -67,6 +69,8 @@ class Manhattan(Watchman):
         Monitors the Reaper feeds hourly, daily, or weekly.
         @return: <Result> List of Result objects
         """
+        if self._check_invalid_event():
+            return self._create_invalid_event_results()
         stuck_tasks, find_st_tb = self._find_stuck_tasks()
         bad_feeds, find_bf_tb = self._find_bad_feeds()
         snapshot = self._create_snapshot(stuck_tasks, bad_feeds)
@@ -80,6 +84,55 @@ class Manhattan(Watchman):
         for task in task_list:
             message += "\n\t- {}".format(task)
         return message
+
+    def _check_invalid_event(self):
+        """
+        Method to check that the event passed in from the Lambda has the correct parameters. If there is no "Type"
+        parameter passed in, or the "Type" does not equal any of the expected values ("Hourly", "Daily", or "Weekly"),
+        then the event parameter is invalid.
+        :return: True if the event parameter passed from the Lambda is invalid, false if the event parameter is valid.
+        """
+        if not self.event or self.event not in ALL_EVENT_TYPES:
+            self.logger.info(MESSAGES.get("failed_event_check").format(self.event))
+            return True
+
+        self.logger.info(MESSAGES.get("success_event_check"))
+        return False
+
+    def _create_invalid_event_results(self):
+        """
+        Method to create the results for the scenario when the Lambda sends in invalid event parameters.
+        :return: Two result objects, one for the pager SNS topic and one for the email SNS topic.
+        """
+        exception_results = []
+
+        exception_results.append(Result(
+            disable_notifier=False,
+            state=Watchman.STATE.get("exception"),
+            success=False,
+            subject=MESSAGES.get("exception_invalid_event_subject"),
+            source=self.source,
+            target=TARGET,
+            details=MESSAGES.get("exception_invalid_event_message"),
+            snapshot={},
+            message=MESSAGES.get("exception_message"),
+        ))
+
+        # result for Pager Duty SNS
+        exception_results.append(Result(
+            disable_notifier=False,
+            state=Watchman.STATE.get("exception"),
+            success=False,
+            subject=MESSAGES.get("exception_invalid_event_subject"),
+            source=self.source,
+            target=PAGER_TARGET,
+            # Pager Duty requires a short message
+            details=MESSAGES.get("exception_message"),
+            snapshot={},
+            message=MESSAGES.get("exception_message"),
+        ))
+
+        return exception_results
 
     def _create_results(self, summary, snapshot):
         """

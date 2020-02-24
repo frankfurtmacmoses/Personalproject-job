@@ -49,6 +49,7 @@ MANHATTAN = {
                                        " are being sent. Metrics can not be checked with an invalid event parameter.",
     "exception_invalid_event_subject": "Manhattan Exception: Invalid CloudWatch Event!",
     "exception_message": "EXCEPTION occurred while checking feeds! Please check the email for more details!",
+    "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
     "failure_abnormal_message": "One or more feeds are submitting abnormal amounts of domains:",
     "failure_down_message": "One or more feeds are down:",
     "failure_subject": "Manhattan Feeds Failure",
@@ -58,6 +59,7 @@ MANHATTAN = {
     "subject_exception_message": "Manhattan watchmen failed due to an exception!",
     "success_message": "SUCCESS: Feeds are up and running normally!",
     "success_subject": "{} feeds monitored by Manhattan are up and running!",
+    "success_event_check": "The event parameter passed from Lambda is valid."
 }
 
 MOTHMAN = {
