@@ -17,6 +17,7 @@ import traceback
 
 # Watchmen imports
 from watchmen import const
+from watchmen import messages
 from watchmen.common.result import Result
 from watchmen.common.watchman import Watchman
 from watchmen.config import settings
@@ -29,18 +30,7 @@ DAILY = "Daily"
 WEEKLY = "Weekly"
 
 # Messages
-CHECK_EMAIL_MESSAGE = "Please check the email for more details!"
-EXCEPTION_MESSAGE = "EXCEPTION occurred while checking feeds! Please check the email for more details!"
-EXCEPTION_DETAILS_START = "Manhattan failed due to the following: "
-FAILURE_ABNORMAL_MESSAGE = "One or more feeds are submitting abnormal amounts of domains:"
-FAILURE_DOWN_MESSAGE = "One or more feeds are down:"
-FAILURE_SUBJECT = "Manhattan Feeds Failure"
-NO_METRICS_MESSAGE = 'One or more feeds do not have metrics:{}'
-STUCK_TASKS_MESSAGE = 'One or more feeds have been running longer than a day:{}\n\n' \
-                      'These feeds must be manually stopped within AWS console here: \n{}'
-SUBJECT_EXCEPTION_MESSAGE = "Manhattan watchmen failed due to an exception!"
-SUCCESS_MESSAGE = "SUCCESS: Feeds are up and running normally!"
-SUCCESS_SUBJECT = "{} feeds monitored by Manhattan are up and running!"
+MESSAGES = messages.MANHATTAN
 
 # DynamoDB and Files
 CLUSTER_NAME = settings('ecs.feeds.cluster', 'cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8')
@@ -184,10 +174,10 @@ class Manhattan(Watchman):
         # return exception set if tb
         if tb:
             return {
-                "subject": SUBJECT_EXCEPTION_MESSAGE,
+                "subject": MESSAGES.get("subject_exception_message"),
                 "details": tb,
                 "success": None,
-                "message": EXCEPTION_MESSAGE,
+                "message": MESSAGES.get("exception_message"),
             }
 
         down = bad_feeds[0]
@@ -200,20 +190,20 @@ class Manhattan(Watchman):
         all_no = self._build_bad_tasks_message(no_metrics)
 
         # If success, return success information
-        subject_line = SUCCESS_SUBJECT.format(event)
+        subject_line = MESSAGES.get("success_subject").format(event)
         details_body = ""
         success = True
-        message = SUCCESS_MESSAGE
+        message = MESSAGES.get("success_message")
 
         # Check for stuck tasks
         if stuck_tasks:
             subject_line = "{} {}{}".format(
                 event,
-                FAILURE_SUBJECT,
+                MESSAGES.get("failure_subject"),
                 " | Stuck Tasks"
             )
             details_body = "{}\n\n{}\n\n".format(
-                STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL),
+                MESSAGES.get("stuck_tasks_message").format(all_stuck, FEED_URL),
                 const.LINE_SEPARATOR
             )
             message = "FAILURE: Stuck Tasks" + const.LINE_SEPARATOR
@@ -224,12 +214,12 @@ class Manhattan(Watchman):
             if success:
                 subject_line = "{} {}".format(
                     event,
-                    FAILURE_SUBJECT,
+                    MESSAGES.get("failure_subject"),
                 )
                 message = "FAILURE: "
             subject_line += ' | Down'
             details_body += '{}{}\n\n{}\n\n'.format(
-                FAILURE_DOWN_MESSAGE,
+                MESSAGES.get("failure_down_message"),
                 all_down,
                 const.LINE_SEPARATOR
             )
@@ -241,12 +231,12 @@ class Manhattan(Watchman):
             if success:
                 subject_line = "{} {}".format(
                     event,
-                    FAILURE_SUBJECT,
+                    MESSAGES.get("failure_subject"),
                 )
                 message = "FAILURE: "
             subject_line += " | Out of Range"
             details_body += '{}{}\n\n{}\n\n'.format(
-                FAILURE_ABNORMAL_MESSAGE,
+                MESSAGES.get("failure_abnormal_message"),
                 all_range,
                 const.LINE_SEPARATOR
             )
@@ -257,17 +247,17 @@ class Manhattan(Watchman):
             if success:
                 subject_line = "{} {}".format(
                     event,
-                    FAILURE_SUBJECT,
+                    MESSAGES.get("failure_subject"),
                 )
                 message = "FAILURE: "
             subject_line += ' | No Metrics'
-            details_body += "{}".format(NO_METRICS_MESSAGE.format(all_no))
+            details_body += "{}".format(MESSAGES.get("no_metrics_message").format(all_no))
             message += "Feeds with no metrics" + const.LINE_SEPARATOR
             success = False
 
         # If check was not a success, need to add extra line to message for Pager Duty
         if not success:
-            message += CHECK_EMAIL_MESSAGE
+            message += MESSAGES.get("check_email_message")
 
         return {
             "subject": subject_line,
@@ -286,7 +276,7 @@ class Manhattan(Watchman):
         """
         result = None
         if find_bf_tb or find_st_tb:
-            result = EXCEPTION_DETAILS_START
+            result = MESSAGES.get("exception_details_start")
         if find_bf_tb:
             result += "\n\n* when finding bad feed: {}".format(find_bf_tb)
         if find_st_tb:

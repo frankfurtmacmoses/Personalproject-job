@@ -41,6 +41,21 @@ JUPITER = {
     "s3_fail_load_subject": "Jupiter endpoints - S3 load error"
 }
 
+MANHATTAN = {
+    "check_email_message": "Please check the email for more details!",
+    "exception_details_start": "Manhattan failed due to the following: ",
+    "exception_message": "EXCEPTION occurred while checking feeds! Please check the email for more details!",
+    "failure_abnormal_message": "One or more feeds are submitting abnormal amounts of domains:",
+    "failure_down_message": "One or more feeds are down:",
+    "failure_subject": "Manhattan Feeds Failure",
+    "no_metrics_message": 'One or more feeds do not have metrics:{}',
+    "stuck_tasks_message": 'One or more feeds have been running longer than a day:{}\n\n'
+                          'These feeds must be manually stopped within AWS console here: \n{}',
+    "subject_exception_message": "Manhattan watchmen failed due to an exception!",
+    "success_message": "SUCCESS: Feeds are up and running normally!",
+    "success_subject": "{} feeds monitored by Manhattan are up and running!",
+}
+
 MOTHMAN = {
     "exception_details": "There was an exception while trying to check the ForeverMail S3 files.\n\nTraceback of "
                          "exception:\n{}",

@@ -6,17 +6,8 @@ from watchmen import const
 from watchmen.process.manhattan import Manhattan
 
 from watchmen.process.manhattan import \
-    CHECK_EMAIL_MESSAGE, \
-    EXCEPTION_MESSAGE, \
-    FAILURE_ABNORMAL_MESSAGE, \
-    FAILURE_DOWN_MESSAGE, \
-    FAILURE_SUBJECT, \
     FEED_URL, \
-    NO_METRICS_MESSAGE, \
-    STUCK_TASKS_MESSAGE, \
-    SUBJECT_EXCEPTION_MESSAGE, \
-    SUCCESS_SUBJECT, \
-    SUCCESS_MESSAGE, \
+    MESSAGES, \
     PAGER_TARGET, \
     TARGET
 
@@ -39,13 +30,13 @@ class TestManhattan(unittest.TestCase):
             "subject": self.example_fail_subject,
             "details": "Message Body: things failed\nthis also failed\nEverything keeps failing!",
             "success": False,
-            "message": FAILURE_DOWN_MESSAGE,
+            "message": MESSAGES.get("failure_down_message"),
         }
         self.example_exception_summary = {
-            "subject": SUBJECT_EXCEPTION_MESSAGE,
+            "subject": MESSAGES.get("subject_exception_message"),
             "details": self.example_tb_msg,
             "success": None,
-            "message": EXCEPTION_MESSAGE,
+            "message": MESSAGES.get("exception_message"),
         }
         self.example_notification = "The job was done"
         self.example_watcher_group = "group"
@@ -66,7 +57,7 @@ class TestManhattan(unittest.TestCase):
                 "dt_updated": "2018-12-18T00:00:00+00:00",
                 "is_ack": False,
                 "is_notified": False,
-                "message": FAILURE_DOWN_MESSAGE,
+                "message": MESSAGES.get("failure_down_message"),
                 "result_id": 0,
                 "snapshot": self.example_snapshot,
                 "source": "Manhattan",
@@ -76,13 +67,13 @@ class TestManhattan(unittest.TestCase):
                 "target": TARGET,
         }
         self.example_pager_result_dict = {
-            "details": FAILURE_DOWN_MESSAGE,
+            "details": MESSAGES.get("failure_down_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": FAILURE_DOWN_MESSAGE,
+            "message": MESSAGES.get("failure_down_message"),
             "result_id": 0,
             "snapshot": self.example_snapshot,
             "source": "Manhattan",
@@ -100,28 +91,28 @@ class TestManhattan(unittest.TestCase):
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": EXCEPTION_MESSAGE,
+            "message": MESSAGES.get("exception_message"),
             "result_id": 0,
             "snapshot": {},
             "source": "Manhattan",
             "state": "EXCEPTION",
-            "subject": SUBJECT_EXCEPTION_MESSAGE,
+            "subject": MESSAGES.get("subject_exception_message"),
             "success": None,
             "target": TARGET,
         }
         self.example_pager_result_dict_ex = {
-            "details": EXCEPTION_MESSAGE,
+            "details": MESSAGES.get("exception_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": EXCEPTION_MESSAGE,
+            "message": MESSAGES.get("exception_message"),
             "result_id": 0,
             "snapshot": {},
             "source": "Manhattan",
             "state": "EXCEPTION",
-            "subject": SUBJECT_EXCEPTION_MESSAGE,
+            "subject": MESSAGES.get("subject_exception_message"),
             "success": None,
             "target": PAGER_TARGET,
         }
@@ -134,7 +125,7 @@ class TestManhattan(unittest.TestCase):
             "dt_updated": "2018-12-18T00:00:00+00:00",
             "is_ack": False,
             "is_notified": False,
-            "message": EXCEPTION_MESSAGE,
+            "message": MESSAGES.get("exception_message"),
             "result_id": 0,
             "snapshot": {},
             "source": "Manhattan",
@@ -282,20 +273,20 @@ class TestManhattan(unittest.TestCase):
             all_no = manhattan_obj._build_bad_tasks_message(no_metrics)
 
             # If success, return success information
-            subject_line = SUCCESS_SUBJECT.format(event)
+            subject_line = MESSAGES.get("success_subject").format(event)
             details_body = ""
             success = True
-            message = SUCCESS_MESSAGE
+            message = MESSAGES.get("success_message")
 
             # Check for stuck tasks
             if stuck_tasks:
                 subject_line = "{} {}{}".format(
                     event,
-                    FAILURE_SUBJECT,
+                    MESSAGES.get("failure_subject"),
                     " | Stuck Tasks"
                 )
                 details_body = "{}\n\n{}\n\n".format(
-                    STUCK_TASKS_MESSAGE.format(all_stuck, FEED_URL),
+                    MESSAGES.get("stuck_tasks_message").format(all_stuck, FEED_URL),
                     const.LINE_SEPARATOR
                 )
                 message = "FAILURE: Stuck Tasks ---- "
@@ -306,12 +297,12 @@ class TestManhattan(unittest.TestCase):
                 if success:
                     subject_line = "{} {}".format(
                         event,
-                        FAILURE_SUBJECT,
+                        MESSAGES.get("failure_subject"),
                     )
                     message = "FAILURE: "
                 subject_line += ' | Down'
                 details_body += '{}{}\n\n{}\n\n'.format(
-                    FAILURE_DOWN_MESSAGE,
+                    MESSAGES.get("failure_down_message"),
                     all_down,
                     const.LINE_SEPARATOR
                 )
@@ -323,12 +314,12 @@ class TestManhattan(unittest.TestCase):
                 if success:
                     subject_line = "{} {}".format(
                         event,
-                        FAILURE_SUBJECT,
+                        MESSAGES.get("failure_subject"),
                     )
                     message = "FAILURE: "
                 subject_line += " | Out of Range"
                 details_body += '{}{}\n\n{}\n\n'.format(
-                    FAILURE_ABNORMAL_MESSAGE,
+                    MESSAGES.get("failure_abnormal_message"),
                     all_range,
                     const.LINE_SEPARATOR
                 )
@@ -339,17 +330,17 @@ class TestManhattan(unittest.TestCase):
                 if success:
                     subject_line = "{} {}".format(
                         event,
-                        FAILURE_SUBJECT,
+                        MESSAGES.get("failure_subject"),
                     )
                     message = "FAILURE: "
                 subject_line += ' | No Metrics'
-                details_body += "{}".format(NO_METRICS_MESSAGE.format(all_no))
+                details_body += "{}".format(MESSAGES.get("no_metrics_message").format(all_no))
                 message += "Feeds with no metrics ---- "
                 success = False
 
             # If check was not a success, need to add extra line to message for Pager Duty
             if not success:
-                message += CHECK_EMAIL_MESSAGE
+                message += MESSAGES.get("check_email_message")
 
             expected = {
                 "subject": subject_line,
