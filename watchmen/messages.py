@@ -41,6 +41,27 @@ JUPITER = {
     "s3_fail_load_subject": "Jupiter endpoints - S3 load error"
 }
 
+MANHATTAN = {
+    "check_email_message": "Please check the email for more details!",
+    "exception_details_start": "Manhattan failed due to the following: ",
+    "exception_invalid_event_message": "An invalid event was passed from the CloudWatch event, please check the "
+                                       "CloudFormation file and CloudWatch events to ensure that the correct parameters"
+                                       " are being sent. Metrics can not be checked with an invalid event parameter.",
+    "exception_invalid_event_subject": "Manhattan Exception: Invalid CloudWatch Event!",
+    "exception_message": "EXCEPTION occurred while checking feeds! Please check the email for more details!",
+    "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
+    "failure_abnormal_message": "One or more feeds are submitting abnormal amounts of domains:",
+    "failure_down_message": "One or more feeds are down:",
+    "failure_subject": "Manhattan Feeds Failure",
+    "no_metrics_message": 'One or more feeds do not have metrics:{}',
+    "stuck_tasks_message": 'One or more feeds have been running longer than a day:{}\n\n'
+                          'These feeds must be manually stopped within AWS console here: \n{}',
+    "subject_exception_message": "Manhattan watchmen failed due to an exception!",
+    "success_message": "SUCCESS: Feeds are up and running normally!",
+    "success_subject": "{} feeds monitored by Manhattan are up and running!",
+    "success_event_check": "The event parameter passed from Lambda is valid."
+}
+
 MOTHMAN = {
     "exception_details": "There was an exception while trying to check the ForeverMail S3 files.\n\nTraceback of "
                          "exception:\n{}",
