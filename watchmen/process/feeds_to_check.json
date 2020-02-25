@@ -43,7 +43,7 @@
       "max": 2000,
       "needs_metric": false
     }, {
-      "name": "xvault-scraper",
+      "name": "vxvault-scraper",
       "source_name": "VX_Vault",
       "metric_name": "URI",
       "min": 1,
