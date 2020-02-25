@@ -115,7 +115,7 @@
       "needs_metric": true
     }, {
       "name": "tor-exit-node-scraper",
-      "source_name": "torstatus.blutmagie.de",
+      "source_name": "torproject",
       "metric_name": "IPV4_TIDE_SUCCESS",
       "min": 500,
       "max": 1500,
