@@ -25,7 +25,7 @@
       "name": "ecrimex-scraper",
       "source_name": "ecrimeX",
       "metric_name": "URI_TIDE_SUCCESS",
-      "min": 10,
+      "min": 1,
       "max": 2000,
       "needs_metric": true
     }, {
