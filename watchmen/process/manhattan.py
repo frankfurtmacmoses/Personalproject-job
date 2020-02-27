@@ -294,6 +294,7 @@ class Manhattan(Watchman):
                 const.LINE_SEPARATOR
             )
             message += "Out of range feeds" + const.LINE_SEPARATOR
+            success = False
 
         # Check if any feeds have no metrics
         if no_metrics:

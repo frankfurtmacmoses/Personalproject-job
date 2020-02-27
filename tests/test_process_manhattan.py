@@ -324,6 +324,7 @@ class TestManhattan(unittest.TestCase):
                     const.LINE_SEPARATOR
                 )
                 message += "Out of range feeds ---- "
+                success = False
 
             # Check if any feeds have no metrics
             if no_metrics:
