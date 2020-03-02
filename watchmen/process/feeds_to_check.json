@@ -27,7 +27,7 @@
       "metric_name": "URI_TIDE_SUCCESS",
       "min": 1,
       "max": 2000,
-      "needs_metric": true
+      "needs_metric": false
     }, {
       "name": "g01-dga",
       "source_name": "G01Pack_DGA",
