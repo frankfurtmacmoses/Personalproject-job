@@ -37,6 +37,7 @@ logging:
   level: 10
 
 manhattan:
+  json_file: feeds_to_check.json
   log_group_name: feed-eaters-prod
   table_name: CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ
   sns_topic: arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod

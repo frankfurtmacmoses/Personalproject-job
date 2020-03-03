@@ -41,7 +41,7 @@ FEED_URL = settings(
     'https://console.aws.amazon.com/ecs/home?region=us-east-1#/'
     'clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services')
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
-JSON_NAME = "feeds_to_check.json"
+JSON_FILE = settings('manhattan.json_file')
 LOG_GROUP_NAME = settings('manhattan.log_group_name', 'feed-eaters-prod')
 TABLE_NAME = settings(
     'manhattan.table_name',
@@ -442,7 +442,7 @@ class Manhattan(Watchman):
         @return: <dict> a dictionary including feeds to check
         @return: <str> error message
         """
-        json_path = os.path.join(FILE_PATH, JSON_NAME)
+        json_path = os.path.join(FILE_PATH, JSON_FILE)
         try:
             with open(json_path) as file:
                 feeds_dict = json.load(file)
