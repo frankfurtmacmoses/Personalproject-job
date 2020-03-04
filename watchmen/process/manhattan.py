@@ -4,9 +4,9 @@ This script is designed to monitor Reaper's daily, hourly, and weekly feeds and 
 @author: Daryan Hanshew
 @email: dhanshew@infoblox.com
 
-Refactored with Watchman interface on October 3, 2019
-@author: Kayla Ramos
-@email: kramos@infoblox.com
+Refactored on March 4, 2020
+@author: Michael Garcia
+@email: garciam@infoblox.com
 """
 # Python imports
 from datetime import datetime, timedelta
@@ -23,6 +23,8 @@ from watchmen.common.watchman import Watchman
 from watchmen.config import settings
 from watchmen.utils.ecs import get_stuck_ecs_tasks
 from watchmen.utils.feeds import process_feeds_metrics, process_feeds_logs
+from watchmen.utils.sns_alerts import raise_alarm
+from watchmen.utils.s3 import get_content
 
 # Event Types
 HOURLY = "Hourly"
@@ -43,6 +45,9 @@ FEED_URL = settings(
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 JSON_FILE = settings('manhattan.json_file')
 LOG_GROUP_NAME = settings('manhattan.log_group_name', 'feed-eaters-prod')
+SNS_TOPIC_ARN = settings("manhattan.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
+S3_BUCKET = settings('manhattan.s3_bucket', 'cyber-intel-test')
+S3_PREFIX = settings('manhattan.s3_prefix')
 TABLE_NAME = settings(
     'manhattan.table_name',
     'CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ')
@@ -442,13 +447,31 @@ class Manhattan(Watchman):
         @return: <dict> a dictionary including feeds to check
         @return: <str> error message
         """
-        json_path = os.path.join(FILE_PATH, JSON_FILE)
+        key_name = "{}/{}".format(S3_PREFIX, JSON_FILE)
+
         try:
-            with open(json_path) as file:
-                feeds_dict = json.load(file)
+            data = get_content(key_name=key_name, bucket=S3_BUCKET)
+            feeds_dict = json.loads(data)
             return feeds_dict, None
-        except Exception as ex:
-            fmt = "Cannot load feeds to check from file:\n{}\nException: {}"
-            msg = fmt.format(json_path, type(ex).__name__)
-            self.logger.error(msg)
-            return None, msg
+        except Exception as s3_exception:
+            try:
+                # If the file could not be loaded from S3 send an alert, but still attempt to load the local
+                # (potentially out of date) file.
+                message = MESSAGES.get("exception_s3_load_failure_message").format(S3_BUCKET, key_name,
+                                                                                   type(s3_exception).__name__)
+                self.logger.error(message)
+                raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=message,
+                            subject=MESSAGES.get("exception_s3_load_failure_subject"))
+
+                with open(JSON_FILE) as file:
+                    feeds_dict = json.load(file)
+
+                return feeds_dict, None
+
+            except Exception as local_load_exception:
+                # If the local file could not be loaded, then return the traceback message. SNS alerts with exceptions
+                # will be sent.
+                message = MESSAGES.get("exception_local_load_failure_message").format(
+                    JSON_FILE, type(local_load_exception).__name__)
+                self.logger.error(message)
+                return None, message
