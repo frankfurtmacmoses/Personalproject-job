@@ -27,10 +27,6 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Metrics_and_KPI"
   },
-  "Neustar": {
-    "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
-  },
   "Newly Observed Data":{
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
