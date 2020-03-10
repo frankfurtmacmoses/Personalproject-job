@@ -265,74 +265,6 @@ class TestManhattan(unittest.TestCase):
             "no_metrics": self.example_no_metrics_feeds
         }]
 
-    @mock_sns
-    @mock_ecs
-    @patch('watchmen.process.manhattan.process_feeds_metrics')
-    @patch('watchmen.process.manhattan.process_feeds_logs')
-    @patch('watchmen.process.manhattan.Manhattan._load_feeds_to_check')
-    def test_find_bad_feeds(self, mock_load_feeds, mock_process_logs, mock_process_metrics):
-        """
-        test watchmen.process.manhattan :: Manhattan :: _find_bad_feeds
-        """
-        mock_load_feeds.return_value = self.example_feeds_dict, None
-        mock_process_logs.return_value = self.example_down_feeds
-        mock_process_metrics.return_value = self.example_out_of_range_feeds, self.example_no_metrics_feeds
-
-        event_types = [self.example_event_hourly,
-                       self.example_event_daily,
-                       self.example_event_weekly]
-
-        for event in event_types:
-            manhattan_obj = Manhattan(event=event, context=None)
-            mock_oor, mock_no_met = mock_process_metrics()
-            expected = (mock_process_logs(), mock_oor, mock_no_met), None
-            returned = manhattan_obj._find_bad_feeds()
-            self.assertTupleEqual(expected, returned)
-
-        # Exception finding down feeds and finding out of range feeds
-        tests_ex = [mock_process_logs, mock_process_metrics]
-        for test in tests_ex:
-            test.side_effect = Exception('failure')
-            expected_bad_feeds, expected_tb = (None, None), 'failure'
-            manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
-            bad_feeds, returned_tb = manhattan_obj._find_bad_feeds()
-            self.assertEqual(expected_bad_feeds, bad_feeds)
-            self.assertTrue(expected_tb in returned_tb)
-
-    @patch('watchmen.process.manhattan.Manhattan._load_feeds_to_check')
-    def test_find_bad_feeds_fails_loading(self, mock_load_feeds):
-        """
-        test watchmen.process.manhattan :: Manhattan :: _find_bad_feeds
-        test when load feeds returns nothing
-        """
-        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
-        mock_load_feeds.return_value = None, self.example_loading_error_msg
-        expected, expected_tb = (None, None, None), self.example_loading_error_msg
-        returned, returned_tb = manhattan_obj._find_bad_feeds()
-        self.assertEqual(expected, returned)
-        self.assertEqual(expected_tb, returned_tb)
-
-    @mock_sns
-    @patch('watchmen.process.manhattan.get_stuck_ecs_tasks')
-    def test_find_stuck_tasks(self, mock_get_stuck):
-        """
-        test watchmen.process.manhattan :: Manhattan :: _find_stuck_tasks
-        """
-        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
-
-        # Everything works well
-        mock_get_stuck.return_value = self.example_stuck_tasks
-        expected = mock_get_stuck()
-        returned, returned_tb = manhattan_obj._find_stuck_tasks()
-        self.assertTupleEqual((expected, None), (returned, returned_tb))
-
-        # Exception occurred
-        mock_get_stuck.side_effect = Exception('failure')
-        expected, expected_tb = None, 'failure'
-        returned, returned_tb = manhattan_obj._find_stuck_tasks()
-        self.assertEqual(expected, returned)
-        self.assertTrue(expected_tb in returned_tb)
-
     def test_check_invalid_event(self):
         """
         test watchmen.process.manhattan :: Manhattan :: _check_invalid_event
@@ -377,113 +309,6 @@ class TestManhattan(unittest.TestCase):
 
         # Assert pager result returned is correct:
         self.assertEqual(self.expected_invalid_event_pager_result, pager_result)
-
-    def test_create_summary(self):
-        """
-        test watchmen.process.manhattan :: Manhattan :: _create_summary
-        """
-        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
-        event = manhattan_obj.event
-
-        for test in self.example_tests:
-            stuck_tasks = test.get("stuck")
-            down = test.get("down")
-            out_of_range = test.get("oor")
-            no_metrics = test.get("no_metrics")
-
-            all_stuck = manhattan_obj._build_bad_tasks_message(stuck_tasks)
-            all_down = manhattan_obj._build_bad_tasks_message(down)
-            all_range = manhattan_obj._build_bad_tasks_message(out_of_range)
-            all_no = manhattan_obj._build_bad_tasks_message(no_metrics)
-
-            # If success, return success information
-            subject_line = MESSAGES.get("success_subject").format(event)
-            details_body = ""
-            success = True
-            message = MESSAGES.get("success_message")
-
-            # Check for stuck tasks
-            if stuck_tasks:
-                subject_line = "{} {}{}".format(
-                    event,
-                    MESSAGES.get("failure_subject"),
-                    " | Stuck Tasks"
-                )
-                details_body = "{}\n\n{}\n\n".format(
-                    MESSAGES.get("stuck_tasks_message").format(all_stuck, FEED_URL),
-                    const.LINE_SEPARATOR
-                )
-                message = "FAILURE: Stuck Tasks ---- "
-                success = False
-
-            # Check if any feeds are down.
-            if down:
-                if success:
-                    subject_line = "{} {}".format(
-                        event,
-                        MESSAGES.get("failure_subject"),
-                    )
-                    message = "FAILURE: "
-                subject_line += ' | Down'
-                details_body += '{}{}\n\n{}\n\n'.format(
-                    MESSAGES.get("failure_down_message"),
-                    all_down,
-                    const.LINE_SEPARATOR
-                )
-                message += "Down feeds ---- "
-                success = False
-
-            # Check if any feeds are out of threshold range.
-            if out_of_range:
-                if success:
-                    subject_line = "{} {}".format(
-                        event,
-                        MESSAGES.get("failure_subject"),
-                    )
-                    message = "FAILURE: "
-                subject_line += " | Out of Range"
-                details_body += '{}{}\n\n{}\n\n'.format(
-                    MESSAGES.get("failure_abnormal_message"),
-                    all_range,
-                    const.LINE_SEPARATOR
-                )
-                message += "Out of range feeds ---- "
-                success = False
-
-            # Check if any feeds have no metrics
-            if no_metrics:
-                if success:
-                    subject_line = "{} {}".format(
-                        event,
-                        MESSAGES.get("failure_subject"),
-                    )
-                    message = "FAILURE: "
-                subject_line += ' | No Metrics'
-                details_body += "{}".format(MESSAGES.get("no_metrics_message").format(all_no))
-                message += "Feeds with no metrics ---- "
-                success = False
-
-            # If check was not a success, need to add extra line to message for Pager Duty
-            if not success:
-                message += MESSAGES.get("check_email_message")
-
-            expected = {
-                "subject": subject_line,
-                "details": details_body,
-                "success": success,
-                'message': message,
-            }
-            returned = manhattan_obj._create_summary(stuck_tasks, (down, out_of_range, no_metrics), None)
-            self.assertEqual(expected, returned)
-
-        # If an exception occurred at some point in the process
-        stuck = None
-        bad = None
-        tb = self.example_tb_msg
-        expected = self.example_exception_summary
-        manhattan_obj.event_type = self.example_exception_summary.get('type')
-        returned = manhattan_obj._create_summary(stuck, bad, tb)
-        self.assertEqual(expected, returned)
 
     def test_create_results(self):
         """
@@ -611,6 +436,181 @@ class TestManhattan(unittest.TestCase):
                     expected.get("stuck_tasks").append(stuck.get("taskDefinitionArn"))
             result = manhattan_obj._create_snapshot(stucks, (down, oor, no_metrics))
             self.assertEqual(expected, result)
+
+    def test_create_summary(self):
+        """
+        test watchmen.process.manhattan :: Manhattan :: _create_summary
+        """
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+        event = manhattan_obj.event
+
+        for test in self.example_tests:
+            stuck_tasks = test.get("stuck")
+            down = test.get("down")
+            out_of_range = test.get("oor")
+            no_metrics = test.get("no_metrics")
+
+            all_stuck = manhattan_obj._build_bad_tasks_message(stuck_tasks)
+            all_down = manhattan_obj._build_bad_tasks_message(down)
+            all_range = manhattan_obj._build_bad_tasks_message(out_of_range)
+            all_no = manhattan_obj._build_bad_tasks_message(no_metrics)
+
+            # If success, return success information
+            subject_line = MESSAGES.get("success_subject").format(event)
+            details_body = ""
+            success = True
+            message = MESSAGES.get("success_message")
+
+            # Check for stuck tasks
+            if stuck_tasks:
+                subject_line = "{} {}{}".format(
+                    event,
+                    MESSAGES.get("failure_subject"),
+                    " | Stuck Tasks"
+                )
+                details_body = "{}\n\n{}\n\n".format(
+                    MESSAGES.get("stuck_tasks_message").format(all_stuck, FEED_URL),
+                    const.LINE_SEPARATOR
+                )
+                message = "FAILURE: Stuck Tasks ---- "
+                success = False
+
+            # Check if any feeds are down.
+            if down:
+                if success:
+                    subject_line = "{} {}".format(
+                        event,
+                        MESSAGES.get("failure_subject"),
+                    )
+                    message = "FAILURE: "
+                subject_line += ' | Down'
+                details_body += '{}{}\n\n{}\n\n'.format(
+                    MESSAGES.get("failure_down_message"),
+                    all_down,
+                    const.LINE_SEPARATOR
+                )
+                message += "Down feeds ---- "
+                success = False
+
+            # Check if any feeds are out of threshold range.
+            if out_of_range:
+                if success:
+                    subject_line = "{} {}".format(
+                        event,
+                        MESSAGES.get("failure_subject"),
+                    )
+                    message = "FAILURE: "
+                subject_line += " | Out of Range"
+                details_body += '{}{}\n\n{}\n\n'.format(
+                    MESSAGES.get("failure_abnormal_message"),
+                    all_range,
+                    const.LINE_SEPARATOR
+                )
+                message += "Out of range feeds ---- "
+                success = False
+
+            # Check if any feeds have no metrics
+            if no_metrics:
+                if success:
+                    subject_line = "{} {}".format(
+                        event,
+                        MESSAGES.get("failure_subject"),
+                    )
+                    message = "FAILURE: "
+                subject_line += ' | No Metrics'
+                details_body += "{}".format(MESSAGES.get("no_metrics_message").format(all_no))
+                message += "Feeds with no metrics ---- "
+                success = False
+
+            # If check was not a success, need to add extra line to message for Pager Duty
+            if not success:
+                message += MESSAGES.get("check_email_message")
+
+            expected = {
+                "subject": subject_line,
+                "details": details_body,
+                "success": success,
+                'message': message,
+            }
+            returned = manhattan_obj._create_summary(stuck_tasks, (down, out_of_range, no_metrics), None)
+            self.assertEqual(expected, returned)
+
+        # If an exception occurred at some point in the process
+        stuck = None
+        bad = None
+        tb = self.example_tb_msg
+        expected = self.example_exception_summary
+        manhattan_obj.event_type = self.example_exception_summary.get('type')
+        returned = manhattan_obj._create_summary(stuck, bad, tb)
+        self.assertEqual(expected, returned)
+
+    @mock_sns
+    @mock_ecs
+    @patch('watchmen.process.manhattan.process_feeds_metrics')
+    @patch('watchmen.process.manhattan.process_feeds_logs')
+    @patch('watchmen.process.manhattan.Manhattan._load_feeds_to_check')
+    def test_find_bad_feeds(self, mock_load_feeds, mock_process_logs, mock_process_metrics):
+        """
+        test watchmen.process.manhattan :: Manhattan :: _find_bad_feeds
+        """
+        mock_load_feeds.return_value = self.example_feeds_dict, None
+        mock_process_logs.return_value = self.example_down_feeds
+        mock_process_metrics.return_value = self.example_out_of_range_feeds, self.example_no_metrics_feeds
+
+        event_types = [self.example_event_hourly,
+                       self.example_event_daily,
+                       self.example_event_weekly]
+
+        for event in event_types:
+            manhattan_obj = Manhattan(event=event, context=None)
+            mock_oor, mock_no_met = mock_process_metrics()
+            expected = (mock_process_logs(), mock_oor, mock_no_met), None
+            returned = manhattan_obj._find_bad_feeds()
+            self.assertTupleEqual(expected, returned)
+
+        # Exception finding down feeds and finding out of range feeds
+        tests_ex = [mock_process_logs, mock_process_metrics]
+        for test in tests_ex:
+            test.side_effect = Exception('failure')
+            expected_bad_feeds, expected_tb = (None, None), 'failure'
+            manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+            bad_feeds, returned_tb = manhattan_obj._find_bad_feeds()
+            self.assertEqual(expected_bad_feeds, bad_feeds)
+            self.assertTrue(expected_tb in returned_tb)
+
+    @patch('watchmen.process.manhattan.Manhattan._load_feeds_to_check')
+    def test_find_bad_feeds_fails_loading(self, mock_load_feeds):
+        """
+        test watchmen.process.manhattan :: Manhattan :: _find_bad_feeds
+        test when load feeds returns nothing
+        """
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+        mock_load_feeds.return_value = None, self.example_loading_error_msg
+        expected, expected_tb = (None, None, None), self.example_loading_error_msg
+        returned, returned_tb = manhattan_obj._find_bad_feeds()
+        self.assertEqual(expected, returned)
+        self.assertEqual(expected_tb, returned_tb)
+
+    @mock_sns
+    @patch('watchmen.process.manhattan.get_stuck_ecs_tasks')
+    def test_find_stuck_tasks(self, mock_get_stuck):
+        """
+        test watchmen.process.manhattan :: Manhattan :: _find_stuck_tasks
+        """
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+
+        # Everything works well
+        mock_get_stuck.return_value = self.example_stuck_tasks
+        expected = mock_get_stuck()
+        returned, returned_tb = manhattan_obj._find_stuck_tasks()
+        self.assertTupleEqual((expected, None), (returned, returned_tb))
+
+        # Exception occurred
+        mock_get_stuck.side_effect = Exception('failure')
+        expected, expected_tb = None, 'failure'
+        returned, returned_tb = manhattan_obj._find_stuck_tasks()
+        self.assertEqual(expected, returned)
+        self.assertTrue(expected_tb in returned_tb)
 
     @patch('watchmen.process.manhattan.json.loads')
     @patch('watchmen.process.manhattan.json.load')
