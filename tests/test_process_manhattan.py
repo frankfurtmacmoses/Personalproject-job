@@ -18,7 +18,84 @@ class TestManhattan(unittest.TestCase):
         self.example_event_daily = {'Type': 'Daily'}
         self.example_event_hourly = {'Type': 'Hourly'}
         self.example_event_weekly = {'Type': 'Weekly'}
+        self.example_invalid_events = [
+            {'Type': 'hourly'},
+            {'Type': 'daily'},
+            {'Type': 'weekly'},
+            {'type': 'Hourly'},
+            {'type': 'Daily'},
+            {'type': 'Weekly'},
+            {'': ''},
+            {}
+        ]
         self.example_feed_name = "example_feed"
+        self.example_feeds_dict = {
+            "Hourly": [
+                {
+                    "name": "hourly_example",
+                    "source_name": "Hourly_Example",
+                    "metric_name": "IPV4_TIDE_SUCCESS",
+                    "min": 1,
+                    "max": 20000,
+                    "needs_metric": True
+                },
+            ],
+            "Daily": [
+                {
+                    "name": "daily_example",
+                    "source_name": "Daily_Example",
+                    "metric_name": "FQDN_TIDE_SUCCESS",
+                    "min": 40000,
+                    "max": 300000,
+                    "hour_submitted": "11",
+                    "needs_metric": True
+                },
+            ],
+            "Weekly": [
+                {
+                    "name": "weekly_example",
+                    "source_name": "Weekly_Example",
+                    "metric_name": "FQDN",
+                    "min": 250,
+                    "max": 450,
+                    "hour_submitted": "09",
+                    "days_to_subtract": 4,
+                    "needs_metric": True
+                }
+            ]
+        }
+        self.expected_invalid_event_email_result = {
+            'details': MESSAGES.get('exception_invalid_event_message'),
+            'disable_notifier': False,
+            'dt_created': '2020-12-15T00:00:00+00:00',
+            'dt_updated': '2020-12-15T00:00:00+00:00',
+            'is_ack': False,
+            'is_notified': False,
+            'message': MESSAGES.get('exception_message'),
+            'result_id': 0,
+            'snapshot': {},
+            'source': 'Manhattan',
+            'state': 'EXCEPTION',
+            'subject': MESSAGES.get('exception_invalid_event_subject'),
+            'success': False,
+            'target': 'Reaper Feeds'
+        }
+        self.expected_invalid_event_pager_result = {
+            'details': MESSAGES.get("exception_message"),
+            'disable_notifier': False,
+            'dt_created': '2020-12-15T00:00:00+00:00',
+            'dt_updated': '2020-12-15T00:00:00+00:00',
+            'is_ack': False,
+            'is_notified': False,
+            'message': MESSAGES.get("exception_message"),
+            'result_id': 0,
+            'snapshot': {},
+            'source': 'Manhattan',
+            'state': 'EXCEPTION',
+            'subject': MESSAGES.get("exception_invalid_event_subject"),
+            'success': False,
+            'target': 'Pager Duty'
+        }
         self.example_tb_msg = "Thingy stopped working"
         self.example_stuck_tasks = [{"taskDefinitionArn": "task1"}]
         self.example_found_bad_feeds = (["down_feed"], ["out_of_range"], ["no_metrics"])
@@ -192,10 +269,12 @@ class TestManhattan(unittest.TestCase):
     @mock_ecs
     @patch('watchmen.process.manhattan.process_feeds_metrics')
     @patch('watchmen.process.manhattan.process_feeds_logs')
-    def test_find_bad_feeds(self, mock_process_logs, mock_process_metrics):
+    @patch('watchmen.process.manhattan.Manhattan._load_feeds_to_check')
+    def test_find_bad_feeds(self, mock_load_feeds, mock_process_logs, mock_process_metrics):
         """
         test watchmen.process.manhattan :: Manhattan :: _find_bad_feeds
         """
+        mock_load_feeds.return_value = self.example_feeds_dict, None
         mock_process_logs.return_value = self.example_down_feeds
         mock_process_metrics.return_value = self.example_out_of_range_feeds, self.example_no_metrics_feeds
 
@@ -253,6 +332,51 @@ class TestManhattan(unittest.TestCase):
         returned, returned_tb = manhattan_obj._find_stuck_tasks()
         self.assertEqual(expected, returned)
         self.assertTrue(expected_tb in returned_tb)
+
+    def test_check_invalid_event(self):
+        """
+        test watchmen.process.manhattan :: Manhattan :: _check_invalid_event
+        Testing the method that checks the "event" parameter passed into the Manhattan object is valid.
+        """
+        # Method should return false whenever the event passed in is valid:
+        valid_event_tests = [
+            self.example_event_hourly,
+            self.example_event_daily,
+            self.example_event_weekly
+        ]
+
+        for valid_event in valid_event_tests:
+            manhattan_obj = Manhattan(event=valid_event, context=None)
+            returned = manhattan_obj._check_invalid_event()
+            self.assertFalse(returned)
+
+        # Method should return true whenever the event passed in is invalid:
+        for invalid_event in self.example_invalid_events:
+            manhattan_obj = Manhattan(event=invalid_event, context=None)
+            returned = manhattan_obj._check_invalid_event()
+            self.assertTrue(returned)
+
+    def test_create_invalid_event_results(self):
+        """
+        Test watchmen.process.manhattan :: Manhattan :: _create_invalid_event_results
+        """
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+        returned = manhattan_obj._create_invalid_event_results()
+
+        # The date created and date updated attributes of the result object have to be set manually to properly compare
+        # the expected and returned objects:
+        email_result = returned[0].to_dict()
+        pager_result = returned[1].to_dict()
+        email_result["dt_created"] = "2020-12-15T00:00:00+00:00"
+        email_result["dt_updated"] = "2020-12-15T00:00:00+00:00"
+        pager_result["dt_created"] = "2020-12-15T00:00:00+00:00"
+        pager_result["dt_updated"] = "2020-12-15T00:00:00+00:00"
+
+        # Assert email result returned is correct:
+        self.assertEqual(self.expected_invalid_event_email_result, email_result)
+
+        # Assert pager result returned is correct:
+        self.assertEqual(self.expected_invalid_event_pager_result, pager_result)
 
     def test_create_summary(self):
         """
@@ -488,14 +612,16 @@ class TestManhattan(unittest.TestCase):
             result = manhattan_obj._create_snapshot(stucks, (down, oor, no_metrics))
             self.assertEqual(expected, result)
 
+    @patch('watchmen.process.manhattan.json.loads')
     @patch('watchmen.process.manhattan.json.load')
-    def test_load_feeds_to_check(self, mock_load):
+    @patch('watchmen.process.manhattan.get_content')
+    def test_load_feeds_to_check(self, mock_get_content, mock_load, mock_loads):
         """
         test watchmen.process.manhattan :: Manhattan :: _load_feeds_to_check
         """
         manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
 
-        mock_load.return_value = self.example_json_file
+        mock_loads.return_value = self.example_json_file
         expected, expected_msg = self.example_json_file, None
         returned, returned_msg = manhattan_obj._load_feeds_to_check()
         self.assertEqual(expected, returned)
@@ -504,7 +630,9 @@ class TestManhattan(unittest.TestCase):
         # exception occurs
         ex_tests = [TimeoutError, TypeError, Exception, KeyError, ValueError]
         for exception in ex_tests:
+            # Make the initial json.load() for the S3 file fail, as well as the nested json.loads() for the local file.
             mock_load.side_effect = exception
+            mock_loads.side_effect = exception
             expected, expected_msg = None, exception().__class__.__name__
             returned, returned_msg = manhattan_obj._load_feeds_to_check()
             self.assertEqual(expected, returned)
