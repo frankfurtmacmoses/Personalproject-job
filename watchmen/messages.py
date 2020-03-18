@@ -48,6 +48,11 @@ MANHATTAN = {
                                        "CloudFormation file and CloudWatch events to ensure that the correct parameters"
                                        " are being sent. Metrics can not be checked with an invalid event parameter.",
     "exception_invalid_event_subject": "Manhattan Exception: Invalid CloudWatch Event!",
+    "exception_local_load_failure_message": "Cannot load feeds to check from file:\n{}\n\nException: {}",
+    "exception_s3_load_failure_message": "A failure occurred loading the feeds_to_check.json file from S3! The local "
+                                         "feeds_to_check.json file will be used instead. Please check the logs for more"
+                                         " details.\n\nS3 file location: {}/{}\n\nException: {}",
+    "exception_s3_load_failure_subject": "Manhattan Exception: Unable to Load S3 Feeds File!",
     "exception_message": "EXCEPTION occurred while checking feeds! Please check the email for more details!",
     "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
     "failure_abnormal_message": "One or more feeds are submitting abnormal amounts of domains:",

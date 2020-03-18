@@ -30,7 +30,9 @@ BUILD_ENV ?= test
 COVERAGE_DIR := htmlcov
 COVERAGE_REPORT := $(COVERAGE_DIR)/index.html
 ENDPOINTS_JSON := endpoints.json
+FEEDS_TO_CHECK_JSON := feeds_to_check.json
 JUPITER := jupiter
+MANHATTAN := manhattan
 PROCESS := process
 PROJECT := watchmen
 S3_PROD_BUCKET := cyber-intel
@@ -392,4 +394,14 @@ deploy-endpoints-test:
 deploy-endpoints-prod:
 	@echo "--- Deploying endpoints.json to prod S3 folder..."
 	aws s3 cp $(PROJECT)/$(PROCESS)/$(ENDPOINTS_JSON) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
+	@echo "--- Done."
+
+deploy-feeds-to-check-test:
+	@echo "--- Deploying feeds_to_check.json to test S3 folder..."
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(FEEDS_TO_CHECK_JSON) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(MANHATTAN)/$(FEEDS_TO_CHECK_JSON)
+	@echo "--- Done."
+
+deploy-feeds-to-check-prod:
+	@echo "--- Deploying feeds_to_check.json to prod S3 folder..."
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(FEEDS_TO_CHECK_JSON) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(MANHATTAN)/$(FEEDS_TO_CHECK_JSON)
 	@echo "--- Done."
