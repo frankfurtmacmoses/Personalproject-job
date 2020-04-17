@@ -32,7 +32,7 @@ JUPITER = {
     "not_enough_eps": "Jupiter: Too Few Endpoints",
     "not_enough_eps_message": "There are no valid endpoints to check or something is wrong with endpoint file.",
     "results_dne": "Results do not exist! There is nothing to check. Service Checker may not be working correctly. "
-                  "Please check logs and endpoint file to help identify the issue.",
+                   "Please check logs and endpoint file to help identify the issue.",
     "skip_message_format": "Notification is skipped at {}",
     "success_message": "All endpoints are healthy!",
     "success_subject": "Jupiter: Cyber Intel endpoints are working properly!",
@@ -60,7 +60,7 @@ MANHATTAN = {
     "failure_subject": "Manhattan Feeds Failure",
     "no_metrics_message": 'One or more feeds do not have metrics:{}',
     "stuck_tasks_message": 'One or more feeds have been running longer than a day:{}\n\n'
-                          'These feeds must be manually stopped within AWS console here: \n{}',
+                           'These feeds must be manually stopped within AWS console here: \n{}',
     "subject_exception_message": "Manhattan watchmen failed due to an exception!",
     "success_message": "SUCCESS: Feeds are up and running normally!",
     "success_subject": "{} feeds monitored by Manhattan are up and running!",
@@ -96,5 +96,37 @@ SLATER = {
     "quota_exceeded": "Quota for {} exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
     "success_details": "All the DomainTools quota checks ran successfully and were within the threshold.",
     "success_message": "SUCCESS: All DomainTools quota checks were within the threshold for today!",
-    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!",
+    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!",}
+
+RORSCHACH = {
+    "exception_subject": "Rorschach Exception: The Checking is Not Processed.",
+    "exception_checking_subject": "Rorschach Exception: The Checking for {} is Not Processed.",
+    "exception_invalid_event_subject": "Rorschach Exception: Invalid CloudWatch Event",
+    "exception_config_not_load_subject": "Rorschach Exception: Unable to Load S3 Targets File",
+    "exception_invalid_event_details": "An invalid event was passed from the CloudWatch event, please check the "
+                                       "CloudFormation file and CloudWatch events to ensure that the correct"
+                                       " parameters are being sent. S3 targets can not be checked with an invalid event"
+                                       " parameter.",
+    "exception_config_not_load_details": "Cannot load S3 targets from file:\n{}\nException: {}",
+    "exception_message": "Exception occurred when checking s3 targets! Please check email for more details.",
+    "success_message": "{} in S3 ran with no issues.",
+    "success_details": "All checking for {} pass. The data pipeline runs fine!",
+    "success_subject": "Rorschach Success: {} runs with no issue.",
+    "success_event_check": "The event parameter passed from Lambda is valid.",
+    "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
+    "failure_object_key_not_match": "There is at least one key not match with the prefix: {} and suffix: {}.\n",
+    "failure_file_empty": "This file: {} is empty for target data in S3.\n",
+    "failure_size_too_less": "The size of all files founded in {} is {} KB, which is less than expected total file "
+                             "size {} KB.\n",
+    "failure_count_too_less": "The number of objects founded in {} is {}, which is less than expected total objects "
+                              "count {}.\n",
+    "failure_bucket_not_found": "The bucket is not found here: {}.\n",
+    "failure_no_file_found_s3": "No file found here: {}.\n",
+    "failure_subject": "Rorschach Failure: {} Checking Not Passed",
+    "failure_message": "At least one checking is not passed. Please check details.",
+    "generic_failure_subject": "Generic S3 Rorshcach Failure: At Least One Target Has Failure!",
+    "generic_exception_subject": "Generic S3 Rorshcach Exception: At Least One Target Has Exception!",
+    "generic_fail_exception_subject": "Generic S3 Rorshcach Exception and Failure: At Least One Target Has Exception"
+                                      " and Failure!",
+    "generic_suceess_subject": "Generic S3 Rorshcach Success: All Targets Pass."
 }
