@@ -54,6 +54,7 @@ from watchmen.process.moloch import Moloch
 from watchmen.process.mothman import Mothman
 from watchmen.process.rorschach import Rorschach
 from watchmen.process.silhouette import Silhouette
+from watchmen.process.slater import Slater
 from watchmen.process.spectre import Spectre
 
 
@@ -148,6 +149,18 @@ def start_silhouette_watcher(event, context):
     """
     silhouette = Silhouette(event, context)
     results = silhouette.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
+
+
+def start_slater_watcher(event, context):
+    """
+    Start the slater watcher for DomainTools API quota.
+    :return: The context that the code is being run in.
+    """
+    slater = Slater(event, context)
+    results = slater.monitor()
     result_svc = ResultSvc(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
