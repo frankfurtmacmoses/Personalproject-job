@@ -18,53 +18,23 @@ Refactored on April, 2020
 
 # Python Imports
 import datetime as _datetime
-import pytz as _pytz
 import traceback as _traceback
 # External Libraries
+from watchmen import messages
 from watchmen.common.result import Result
 import watchmen.utils.s3 as _s3
 from watchmen.config import settings
 from watchmen.common.watchman import Watchman
 
-# Private Global Constants
-_EMPTY = 0
-_ERROR = -1
-_SUCCESS = 1
-_FILENAME = "rorschach_hancock_watcher"
-_SUBJECT_EXCEPTION_MESSAGE = "Rorschach failed due to an Exception!"
-_SUBJECT_MESSAGE = "Rorschach Detected: Farsight S3 Service Outage!"
-_ERROR_MESSAGE = "ERROR: "
-_NOTHING_RECENT_MESSAGE = _ERROR_MESSAGE + "No files found created recently.\n"
-_NOTHING_PARQUET_MESSAGE = _ERROR_MESSAGE + "No files founding containing .parquet extensions.\n"
-_EVERYTHING_ZERO_SIZE_MESSAGE = _ERROR_MESSAGE + "No .parquet files found with file sizes great than zero.\n"
-_SUCCESS_SUBJECT = "Rorschach: Farsight data found on S3!"
-_SUCCESS_MESSAGE = "Farsight data in S3 ran with no issues!"
-# Option Help Strings (Private, Global, Constant)
-_DEBUGHELP = "Used to enable debug level logging."
-_LOCALHELP = "Used to enable local spark mode, no parallelization."
-# Option Defaults
-_DEBUGDFLT = False
-_LOCALDFLT = False
-
-# Watchman profile
-TARGET = "Farsight Data"
+MESSAGES = messages.RORSCHACH
+HOURLY = "Hourly"
+DAILY = "Daily"
+ALL_EVENT_TYPES = [HOURLY, DAILY]
 
 
 class Rorschach(Watchman):
-    """
-    Rorschach class
-    """
-    sns_topic_arn = settings("rorschach.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
-    suffix_format = "year=%0Y/month=%0m/day=%0d"
-    prefix = settings("rorschach.path_prefix", "parquet/com.farsightsecurity.300021")
-    bucket = settings("rorschach.bucket_name", "bitaa")
-    offset = 3
-    # offset + pst:   we're looking for 2 hours back, BUT we want to subtract the 7 hour PST vs UTC too
-    # This is to make sure we don't look for "Tomorrow's" folder, before we're actually in Tomorrow...
-    dt_offset = _datetime.timedelta(hours=offset)
 
-    # pylint: disable=unused-argument
-    def __init__(self, event=None, context=None):
+    def __init__(self, event, context):
         """
         Constructor of Rorschach
         """
