@@ -3,16 +3,17 @@ Created on May 22, 2017
 # ' None of you seem to understand.  I'm not locked in here with you.
 #   You're locked in here with ME!'
 #  -Rorschach, The Watchmen 2009
-This script is designed to monitor Farsight data in S3.  Specifically looking to ensure that parquet
-data is flowing into the current day's folder in S3.  It should run every hour, and
-verify that the current day exists, and that parquet data in it is not very old.
+This Watchman is designed to generically monitor S3 targets across multiple schedules.
+This Watchman can a monitor a target for single or multiple file existence, single file
+size greater than zero, aggregate file size greater than a predefined value, and file count
+greater than a predefined value. The required checks for a target are determined in the config file 's3_targets.py.'
 
 @author: Dan Dalton
 @email: ddalton@infoblox.com
 
-Refactored on July 16 2019
-@author: Jinchi Zhang
-@email: jzhang@infoblox.com
+Refactored on April, 2020
+@author: Bonnie Zhang
+@email: zzhang@infoblox.com
 """
 
 # Python Imports
