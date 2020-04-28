@@ -439,31 +439,9 @@ class Rorschach(Watchman):
             details=details)
         return result
 
-    def _get_parquet_result(self):
         """
-        Gets the result from the parquet stream check.
-        Results can either be 'success', 'empty', or None indicating that a failure occurred.
-        Also return the traceback of the exception.
-        @return: <boo;l> <str>
-            <bool>: One the expected results or 'error' upon exception
-            <str>: traceback
         """
-        try:
-            my_result = self._summarize_parquet_stream()
-            self.logger.info(my_result)
-        except Exception as ex:
-            self.logger.error("ERROR Processing Data!\n")
-            self.traceback = _traceback.format_exc(ex)
-            self.logger.error(self.traceback)
-            msg = "An error occurred while checking the parquet at {} due to the following:" \
-                  "\n\n{}\n\n".format(self.check_time, self.traceback)
-            my_result = {
-                "success": None,
-                "subject": _SUBJECT_EXCEPTION_MESSAGE,
-                "details": msg + "\n\t%s\n\t%s" % (self.full_path, self.check_time)
-            }
 
-        return my_result
 
     def _process_all_files(self):
         """
