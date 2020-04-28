@@ -42,20 +42,6 @@ class Rorschach(Watchman):
         Constructor of Rorschach
         """
         super().__init__()
-        # Get the current Day and Time we care about
-        self.nothing_recent = True
-        self.nothing_parquet = True
-        self.everything_zero_size = True
-        self.traceback = None
-        self.now = _datetime.datetime.now(_pytz.utc)
-        self.logger.info("Current Time: %s" % self.now)
-        self.check_time = self.now - self.dt_offset
-        self.logger.info("Check Time: %s" % self.check_time)
-        self.suffix = self.check_time.strftime(self.suffix_format)
-        assert self.prefix is not None, "ERROR: PREFIX Environment variable is not defined!"
-        assert self.bucket is not None, "ERROR: BUCKET_NAME Environment variable is not defined!"
-        self.full_path = "{}/{}/".format(self.prefix, self.suffix)
-
         self.event = event.get("Type")
 
     def monitor(self):
