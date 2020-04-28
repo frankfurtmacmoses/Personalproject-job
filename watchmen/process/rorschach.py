@@ -27,6 +27,7 @@ from watchmen.config import settings
 from watchmen.common.watchman import Watchman
 
 MESSAGES = messages.RORSCHACH
+S3_TARGETS_FILE = settings('rorschach.yaml_file')
 HOURLY = "Hourly"
 DAILY = "Daily"
 ALL_EVENT_TYPES = [HOURLY, DAILY]
@@ -53,14 +54,24 @@ class Rorschach(Watchman):
         assert self.bucket is not None, "ERROR: BUCKET_NAME Environment variable is not defined!"
         self.full_path = "{}/{}/".format(self.prefix, self.suffix)
 
-    def monitor(self) -> [Result]:
+        self.event = event.get("Type")
+
+    def monitor(self):
         """
-        monitor the parquet data, and return the result
-        @return: <Result> Result ojbect
+        Monitors the s3 targets.
+        @return: <Result> List of Result objects
         """
-        summary = self._get_parquet_result()
-        result = self._create_result(summary)
-        return [result]
+        if self._check_invalid_event():
+            return self._create_invalid_event_results()
+
+        s3_targets = self._load_config(S3_TARGETS_FILE)
+        if None in s3_targets:
+            return self._create_config_not_load_results(s3_targets)
+
+        check_results = self._process_checking(s3_targets)
+        summary = self._create_summary(check_results)
+        results = self._create_result(summary)
+        return results
 
     def _create_result(self, summary):
         """
