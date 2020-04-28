@@ -481,32 +481,9 @@ class Rorschach(Watchman):
         """
 
 
-    def _process_all_files(self):
         """
-        Checks the date, size, and type of every file.
-        @return: true if there is at least one parquet, no zero file in the last X hours else False
         """
-        # Use paginator to ensure we get all contents (when contents > 1000)
-        contents = _s3.generate_pages(self.full_path, **{'bucket': self.bucket})
-        most_recent = None
-        count = 0
 
-        # Find the most recent file.
-        for key in contents:
-            if count == 0 or most_recent < key.get('LastModified'):
-                most_recent = key.get('LastModified')
-                latest_file = key
-            count += 1
-        self.logger.info("Searched through %d files." % count)
-        self.logger.info("Most Recent File was: %s - the check time was %s" % (most_recent, self.check_time))
-
-        # Determine that at least the most recent file is parquet, and not zero
-        if most_recent > self.check_time:
-            self.nothing_recent = False
-        if latest_file.get('Size') > 0:
-            self.everything_zero_size = False
-        if latest_file.get('Key').endswith('.parquet'):
-            self.nothing_parquet = False
 
     def _summarize_parquet_stream(self):
         """
