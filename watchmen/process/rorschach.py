@@ -268,6 +268,81 @@ class Rorschach(Watchman):
                 summary.append(summary_details)
         return summary
 
+    def _process_checking(self, s3_targets):
+        """
+        This method will conduct various checks for each S3 item under each target. The specific checks for each
+        item is determined from the config data. It is possible for there to be many targets
+        and each with multiple S3 items.
+        @return: A dict containing metadata about each check for all items and all targets.
+        @example: example_process_results = {
+            'target1': [],
+            'target2': [
+                {'object_key_not_match': (True, 1)},
+                {'at_least_one_file_empty': (True, ['some/path/to/something.parquet'])},
+                {'file_size_too_less': ('s3://bucket/some/path/to/', 0.2, 0.3)},
+                {'count_object_too_less': ('s3://bucket/some/path/to/', 2, 3)}],
+            'target3': [ {'no_file_found_s3': 'some/path/to/something.zip'}]}
+        """
+        process_result_dict = {}
+        # This goes through each target
+        for target in s3_targets:
+            self.logger.info("Checking target: {}".format(target))
+            item_result_list = []
+
+            # this is to ensure when multiple check items for one target
+            for item in target['items']:
+                # This is to validate the s3 bucket for each item
+                validate_bucket = _s3.check_bucket(item['bucket_name'])
+                if not validate_bucket['okay']:
+                    item_result_list.append({'no_file_found_s3': "s3://" + item['bucket_name']})
+                    continue
+
+                # This is to validate the existence of an object when only one file needed to be checked
+                if item.get('full_path'):
+                    generate_full_path = self._generate_key(item['full_path'], self.event)
+                    found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=generate_full_path)
+                    if not found_file:
+                        item_result_list.append({'no_file_found_s3': generate_full_path})
+                    continue
+
+                # This is to check multiple files when multiple files needed to be checked
+                prefix_generate = self._generate_key(item['prefix'], self.event)
+                full_path = 's3://' + item['bucket_name'] + '/' + prefix_generate
+                self.logger.info("Checking s3 path: {}".format(full_path))
+                contents = _s3.generate_pages(prefix_generate, **{'bucket': item['bucket_name']})
+                contents = list(contents)
+                count = len(contents)
+                if count == 0:
+                    item_result_list.append({'no_file_found_s3': full_path})
+                    continue
+
+                object_key_not_match = self._check_file_prefix_suffix(contents,
+                                                                      suffix=item['suffix'],
+                                                                      prefix=prefix_generate)
+                self.logger.info("Searched through {} files.".format(count))
+                if object_key_not_match:
+                    item_result_list.append({'object_key_not_match': (object_key_not_match, count)})
+                    continue
+
+                at_least_one_file_empty, empty_file_list = self._check_file_empty(contents)
+                if at_least_one_file_empty:
+                    item_result_list.append({'at_least_one_file_empty': (at_least_one_file_empty, empty_file_list)})
+
+                if item.get('check_total_size_kb'):
+                    file_size_too_less, total_size = self._check_file_size_too_less(contents,
+                                                                                    item['check_total_size_kb'])
+                    if file_size_too_less:
+                        item_result_list.append(
+                            {'file_size_too_less': (full_path, total_size, item['check_total_size_kb'])})
+
+                if item.get('check_total_object'):
+                    if count < item['check_total_object']:
+                        item_result_list.append(
+                            {'count_object_too_less': (full_path, count, item['check_total_object'])})
+
+            process_result_dict.update({target['target_name']: item_result_list})
+        return process_result_dict
+
     def _create_result(self, summary):
         """
         Create the result object
