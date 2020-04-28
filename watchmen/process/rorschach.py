@@ -478,14 +478,54 @@ class Rorschach(Watchman):
     @staticmethod
     def _generate_key(prefix_format, event):
         """
+        Method to generate prefix key for each target based on the event type.
+        @return: Prefix
         """
+        arg_dict = {'Hourly': 'hours', 'Daily': 'days'}
+        check_time = _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{arg_dict[event]: 1})
+        prefix = check_time.strftime(prefix_format)
 
+        return prefix
 
+    @staticmethod
+    def _check_file_prefix_suffix(contents, suffix, prefix):
         """
+        Method to check each files in the paginator for their prefix and suffix.
+        @return: True if at least one file key is not matched and the number of checked files.
         """
+        for file in contents:
+            if file is not None and prefix in file['Key'] and file.get('Key').endswith(suffix):
+                object_key_not_match = False
+            else:
+                object_key_not_match = True
+        return object_key_not_match
 
+    @staticmethod
+    def _check_file_empty(contents):
         """
+        Method to check each file for size larger than 0/emptiness.
+        @return: True if one file is empty and a list of empty files' keys and False otherwise.
         """
+        empty_file_list = []
+        for file in contents:
+            at_least_one_file_empty = False
+            file_empty = True
+            if file.get('Size') > 0:
+                file_empty = False
+            if file_empty:
+                at_least_one_file_empty = True
+                empty_file_list.append(file['Key'])
+        return at_least_one_file_empty, empty_file_list
 
-
-
+    @staticmethod
+    def _check_file_size_too_less(contents, con_total_size):
+        """
+        Method to check the total size of all files.
+        @return: True if the total size is less than the expected size and False otherwise along with the total_size
+        """
+        total_size = 0
+        for item in contents:
+            total_size += item.get('Size')
+        total_size = total_size / 1000  # This is to convert B to KB
+        file_size_too_less = total_size < con_total_size
+        return file_size_too_less, total_size
