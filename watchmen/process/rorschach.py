@@ -343,6 +343,64 @@ class Rorschach(Watchman):
             process_result_dict.update({target['target_name']: item_result_list})
         return process_result_dict
 
+    def _create_summary(self, process_result_dict):
+        """
+        Method to create a summary object for all s3 targets with details messages based on the check results summary.
+        @return: A list of dictionaries where each dict is a summary of the checking results of each target.
+        """
+        summary = []
+        for target_name in process_result_dict.keys():
+            try:
+                if process_result_dict[target_name] == []:
+                    summary_details = {
+                        "success": True,
+                        "subject": MESSAGES.get("success_subject").format(target_name),
+                        "details": MESSAGES.get("success_details").format(target_name),
+                        "message": MESSAGES.get("success_message").format(target_name),
+                        "target": target_name
+                    }
+                    summary.append(summary_details)
+                elif process_result_dict[target_name] != []:
+                    msg = ""
+                    for fail_items in process_result_dict[target_name]:
+                        if 'no_file_found_s3' in fail_items.keys():
+                            msg += MESSAGES.get('failure_no_file_found_s3').format(fail_items['no_file_found_s3'])
+                        if 'object_key_not_match' in fail_items.keys():
+                            msg += MESSAGES.get('failure_object_key_not_match')
+                        if 'at_least_one_file_empty' in fail_items.keys():
+                            for empty_file in fail_items['at_least_one_file_empty']:
+                                msg += MESSAGES.get('failure_file_empty').format(empty_file)
+                        if 'file_size_too_less' in fail_items.keys():
+                            results_size = fail_items['file_size_too_less']
+                            msg += MESSAGES.get('failure_size_too_less').format(results_size[0], results_size[1],
+                                                                                results_size[2])
+                        if 'count_object_too_less' in fail_items.keys():
+                            results_count = fail_items['count_object_too_less']
+                            msg += MESSAGES.get('failure_count_too_less').format(results_count[0], results_count[1],
+                                                                                 results_count[2])
+
+                    summary_details = {
+                        "message": MESSAGES.get("failure_message").format(target_name),
+                        "success": False,
+                        "subject": MESSAGES.get("failure_subject").format(target_name),
+                        "details": msg,
+                        "target": target_name
+                    }
+                    summary.append(summary_details)
+
+            except Exception as ex:
+                msg = "An error occurred while checking the target at due to the following:" \
+                      " {}: {}".format(type(ex).__name__, ex)
+                summary_details = {
+                    "message": MESSAGES.get("exception_message"),
+                    "success": None,
+                    "subject": MESSAGES.get("exception_subject"),
+                    "details": msg,
+                    "target": target_name
+                }
+                summary.append(summary_details)
+        return summary
+
     def _create_result(self, summary):
         """
         Create the result object
