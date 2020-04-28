@@ -123,8 +123,7 @@ class Rorschach(Watchman):
         Method to create the results for checking if the config file is successfully loaded.
         @return: One result object for the email SNS topic.
         """
-        exception_results = []
-        exception_results.append(Result(
+        return [Result(
             disable_notifier=False,
             state=Watchman.STATE.get("exception"),
             success=False,
@@ -134,9 +133,7 @@ class Rorschach(Watchman):
             details=MESSAGES.get("exception_config_not_load_details").format('s3_config.yaml', s3_target[1]),
             snapshot={},
             message=MESSAGES.get("exception_message"),
-        ))
-
-        return exception_results
+        )]
 
     def _process_checking(self, s3_targets):
         """
