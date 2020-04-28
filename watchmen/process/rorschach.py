@@ -484,47 +484,8 @@ class Rorschach(Watchman):
         """
         """
 
-
-    def _summarize_parquet_stream(self):
         """
-        check parquet stream
-        @return: A dict containing all notification information
         """
-        # Get the file list from S3
-        self.logger.info("Checking: %s" % self.full_path)
-        empty, contents = _s3.check_empty_folder(self.full_path, self.bucket)
 
-        if empty:
-            msg = "The S3 bucket for today is empty or missing!  %s" % self.full_path
-            return {
-                "success": False,
-                "subject": _SUBJECT_MESSAGE,
-                "details": msg
-            }
 
-        self.logger.info("The directory is not empty at:  %s" % self.full_path)
 
-        # Ensure the most recent file is within the specified duration.
-        self._process_all_files()
-
-        # If not - RAISE ALARM!
-        msg = ""
-        if self.nothing_recent:
-            msg += _NOTHING_RECENT_MESSAGE
-        if self.nothing_parquet:
-            msg += _NOTHING_PARQUET_MESSAGE
-        if self.everything_zero_size:
-            msg += _EVERYTHING_ZERO_SIZE_MESSAGE
-
-        if msg is "":
-            return {
-                "success": True,
-                "subject": _SUCCESS_SUBJECT,
-                "details": _SUCCESS_MESSAGE
-            }
-
-        return {
-            "success": False,
-            "subject": _SUBJECT_MESSAGE,
-            "details": msg
-        }
