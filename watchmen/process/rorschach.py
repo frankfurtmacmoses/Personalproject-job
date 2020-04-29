@@ -403,42 +403,80 @@ class Rorschach(Watchman):
 
     def _create_result(self, summary):
         """
-        Create the result object
-        @param summary: <dict> dictionary with three keys: "success", "subject", "details"
-        @return: <Result> result based on the parameters
+        Method to create a full result object based on the summary. This is used for sending email SNS topic when
+        the target's state is "failure" and "exception".
+        @return: One return object of all targets for the email SNS topics.
         """
         state_chart = {
             True: {
-                "message": _SUCCESS_MESSAGE,
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
             },
             False: {
-                "message": _SUBJECT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
             },
             None: {
-                "message": _SUBJECT_EXCEPTION_MESSAGE,
                 "success": None,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
             }
         }
-        check_result = summary.get("success")
-        subject = summary.get("subject")
-        details = summary.get("details")
-        parameters = state_chart.get(check_result)
-        result = Result(
+        results = []
+        msg = ''
+        failure = False
+        exception = False
+        for summary_item in summary:
+            check_result = summary_item.get("success")
+            if check_result is False:
+                failure = True
+            if check_result is None:
+                exception = True
+            msg += summary_item.get("subject") + "\n" + summary_item.get("details") + "\n\n"
+            subject = summary_item.get("subject")
+            details = summary_item.get("details")
+            target = summary_item.get("target")
+            message = summary_item.get("message")
+            parameters = state_chart.get(check_result)
+            results.append(Result(
+                **parameters,
+                subject=subject,
+                source=self.source,
+                target=target,
+                details=details,
+                message=message))
+
+        # this is used to create a generic result for email notification
+        if failure and exception:
+            message = MESSAGES.get("exception_message") + MESSAGES.get("failure_message")
+            subject = MESSAGES.get("generic_fail_exception_subject")
+            parameters = state_chart.get(None)
+        elif failure:
+            message = MESSAGES.get("failure_message")
+            subject = MESSAGES.get("generic_failure_subject")
+            parameters = state_chart.get(False)
+        elif exception:
+            message = MESSAGES.get("exception_message")
+            subject = MESSAGES.get("generic_exception_subject")
+            parameters = state_chart.get(None)
+        else:
+            message = MESSAGES.get("success_message").format('All targets')
+            subject = MESSAGES.get("generic_suceess_subject")
+            parameters = state_chart.get(True)
+        results.append(Result(
             **parameters,
             subject=subject,
             source=self.source,
-            target=TARGET,
-            details=details)
-        return result
+            target='Generic S3',
+            details=msg,
+            message=message))
 
+        return results
+
+    @staticmethod
+    def _generate_key(prefix_format, event):
         """
         """
 
