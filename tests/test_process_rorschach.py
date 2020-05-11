@@ -1,299 +1,485 @@
 import datetime
-import importlib
-from mock import patch
-import os
+from mock import patch, mock_open
 import pytz
 import unittest
 
-from watchmen.common.result import Result
-import watchmen.process.rorschach as rorschach
-from watchmen.process.rorschach import \
-    _EVERYTHING_ZERO_SIZE_MESSAGE, \
-    _NOTHING_PARQUET_MESSAGE, \
-    _NOTHING_RECENT_MESSAGE, \
-    _SUBJECT_EXCEPTION_MESSAGE, \
-    _SUBJECT_MESSAGE, \
-    _SUCCESS_SUBJECT, \
-    _SUCCESS_MESSAGE
+# from watchmen.common.result import Result
+from watchmen.process.rorschach import Rorschach
+from watchmen.process.rorschach import MESSAGES
 
 
 class TestRorschach(unittest.TestCase):
 
     def setUp(self):
-        self.year = 2017
-        self.month = 5
-        self.day = 24
-        self.hour = 8
-        self.minute = 0
-        self.example_now = datetime.datetime(
-            year=self.year, month=self.month, day=self.day,
-            hour=self.hour, minute=self.minute, tzinfo=pytz.utc)
-        self.example_offset = 5
-        self.example_dt_offset = datetime.timedelta(self.example_offset)
-        self.example_check_time = self.example_now - self.example_dt_offset
-
-        self.example_status = "A giant header was created"
-        self.example_exception_details = "Something really bad happened!"
-        self.example_traceback = "Fake traceback"
-        self.example_parquet_result = "Failure Occurred"
-
-        self.prefix_env = "parquet/com.farsightsecurity.300021"
-        self.bucket_env = "bitaa"
-        self.example_suffix = self.example_check_time.strftime(
-            rorschach.Rorschach.suffix_format)
-        self.example_full_path = os.sep.join([self.prefix_env, self.example_suffix]) + os.sep
-
-        self.example_details = "This is a Test, Ignore!"
-        self.example_arn = 'arn:aws:sns:us-east-1:405093580753:Hancock'
-        self.example_subject = "TEST: Example Subject Message"
-
-        self.msg_format = "\n\t%s\n\t%s" % (self.example_full_path, self.example_check_time)
-        self.not_recent_not_parquet_all_zero = \
-            rorschach._NOTHING_RECENT_MESSAGE + \
-            rorschach._NOTHING_PARQUET_MESSAGE + \
-            rorschach._EVERYTHING_ZERO_SIZE_MESSAGE + \
-            self.msg_format
-        self.not_parquet_all_zero = \
-            rorschach._NOTHING_PARQUET_MESSAGE + \
-            rorschach._EVERYTHING_ZERO_SIZE_MESSAGE + \
-            self.msg_format
-        self.all_zero = rorschach._EVERYTHING_ZERO_SIZE_MESSAGE + self.msg_format
-        self.example_fail_details = "some failure details"
-        self.example_fail_subject = "some failure subject"
-        self.example_result_dict = {
-                "details": self.example_fail_details,
-                "disable_notifier": False,
-                "dt_created": "2018-12-18T00:00:00+00:00",
-                "dt_updated": "2018-12-18T00:00:00+00:00",
-                "is_ack": False,
-                "is_notified": False,
-                "message": "Rorschach Detected: Farsight S3 Service Outage!",
-                "result_id": 0,
-                "snapshot": None,
-                "source": "Rorschach",
-                "state": "FAILURE",
-                "subject": "some failure subject",
-                "success": False,
-                "target": "Farsight Data",
+        self.example_event_daily = {'Type': 'Daily'}
+        self.example_event_hourly = {'Type': 'Hourly'}
+        self.example_invalid_events = [
+            {'Type': 'hourly'},
+            {'Type': 'daily'},
+            {'type': 'Hourly'},
+            {'type': 'Daily'},
+            {'': ''},
+            {}
+        ]
+        self.example_config_path = '../watchmen/process/s3_config.yaml'
+        self.expected_invalid_event_email_result = {
+            'details': MESSAGES.get("exception_invalid_event_details"),
+            'disable_notifier': False,
+            'dt_created': '2020-12-15T00:00:00+00:00',
+            'dt_updated': '2020-12-15T00:00:00+00:00',
+            'is_ack': False,
+            'is_notified': False,
+            'message': MESSAGES.get('exception_message'),
+            'result_id': 0,
+            'snapshot': {},
+            'source': 'Rorschach',
+            'state': 'EXCEPTION',
+            'subject': MESSAGES.get("exception_invalid_event_subject"),
+            'success': False,
+            'target': 'Generic S3'
         }
-
-        # example result dict with time but not str
-        self.example_result_dict_time = self.example_result_dict.copy()
-        self.example_result_dict_time["dt_created"] = self.example_check_time
-        self.example_result_dict_time["dt_updated"] = self.example_check_time
-        self.example_result = Result(**self.example_result_dict_time)
-
-        # adjust time in the reuslt for result
-        self.example_result.observed_time = "2018-12-18T00:00:00+00:00"
-        self.example_test_cases = {
-            'FFF': [{'LastModified': self.example_now - datetime.timedelta(5)},
-                    {'LastModified': self.example_now + datetime.timedelta(5),
-                     'Size': 100,
-                     'Key': 'some/path/to/something.parquet'},
-                    {'LastModified': self.example_now - datetime.timedelta(1)}],
-            'FFT': [{'LastModified': self.example_now + datetime.timedelta(5),
-                     'Size': 100,
-                     'Key': 'some/path/to/something'}],
-            'FTF': [{'LastModified': self.example_now + datetime.timedelta(5),
-                     'Size': 0,
-                     'Key': 'some/path/to/something.parquet'}],
-            'FTT': [{'LastModified': self.example_now + datetime.timedelta(5),
-                     'Size': 0,
-                     'Key': 'some/path/to/something'}],
-            'TFF': [{'LastModified': self.example_now - datetime.timedelta(5),
-                     'Size': 100,
-                     'Key': 'some/path/to/something.parquet'}],
-            'TFT': [{'LastModified': self.example_now - datetime.timedelta(5),
-                     'Size': 100,
-                     'Key': 'some/path/to/something'}],
-            'TTF': [{'LastModified': self.example_now - datetime.timedelta(5),
-                     'Size': 0,
-                     'Key': 'some/path/to/something.parquet'}],
-            'TTT': [{'LastModified': self.example_now - datetime.timedelta(5),
-                     'Size': 0,
-                     'Key': 'some/path/to/something'}]}
-
-    @patch('datetime.timedelta')
-    @patch('datetime.datetime')
-    def createWatcher(self, mock_datetime, mock_timedelta):
-        mock_datetime.now.return_value = self.example_now
-        mock_timedelta.return_value = self.example_dt_offset
-        importlib.reload(rorschach)
-        return rorschach.Rorschach(event=None, context=None)
-
-    @staticmethod
-    def resetWatcher(watcher):
-        watcher.nothing_recent = True
-        watcher.everything_zero_size = True
-        watcher.nothing_parquet = True
-        return watcher
-
-    def test_init_(self):
-        """
-        test watchmen.process.rorschach :: Rorschach :: __init__
-        """
-
-        # Positive test, test with Good prefix, bucket, check full path
-        watcher = self.createWatcher()
-        expected = self.example_full_path
-        return_result = watcher.full_path
-        self.assertEqual(expected, return_result)
-
-        # negative tests
-        negative_tests = [{
-            "prefix": None,
-            "bucket": self.bucket_env,
-        }, {
-            "prefix": self.prefix_env,
-            "bucket": None,
-        }, {
-            "prefix": None,
-            "bucket": None,
-        }]
-        for test in negative_tests:
-            rorschach.Rorschach.prefix = test.get("prefix")
-            rorschach.Rorschach.bucket = test.get("bucket")
-            self.assertRaises(AssertionError, rorschach.Rorschach)
-
-    @patch('watchmen.utils.s3.generate_pages')
-    def test_process_all_files(self, mock_generate_pages):
-        """
-        test watchmen.process.rorschach :: Rorschach :: _process_all_files
-        """
-        expected = {
-            'FFF': [False, False, False],
-            'FFT': [False, False, True],
-            'FTF': [False, True, False],
-            'FTT': [False, True, True],
-            'TFF': [True, False, False],
-            'TFT': [True, False, True],
-            'TTF': [True, True, False],
-            'TTT': [True, True, True],
+        self.expected_invalid_config_file_result = {
+            'details': 'Cannot load S3 targets from file:\ns3_config.yaml\nException: s3_config.yaml',
+            'disable_notifier': False,
+            'dt_created': '2020-12-15T00:00:00+00:00',
+            'dt_updated': '2020-12-15T00:00:00+00:00',
+            'is_ack': False,
+            'is_notified': False,
+            'message': MESSAGES.get('exception_message'),
+            'result_id': 0,
+            'snapshot': {},
+            'source': 'Rorschach',
+            'state': 'EXCEPTION',
+            'subject': MESSAGES.get("exception_config_not_load_subject"),
+            'success': False,
+            'target': 'Generic S3'
         }
-
-        watcher = self.createWatcher()
-
-        for key in expected:
-            b = expected[key]
-            watcher = self.resetWatcher(watcher)
-            mock_generate_pages.reset_mock()
-            mock_generate_pages.return_value = self.example_test_cases[key]
-            watcher._process_all_files()
-            fmt = "test '{}' expects nothing_recent: {}, everything_zero_size: {}, nothing_parquet: {}"
-            msg = fmt.format(key, b[0], b[1], b[2])
-            self.assertEqual(b[0], watcher.nothing_recent, msg)
-            self.assertEqual(b[1], watcher.everything_zero_size, msg)
-            self.assertEqual(b[2], watcher.nothing_parquet, msg)
-
-    @patch('watchmen.process.rorschach.Rorschach._process_all_files')
-    @patch('watchmen.utils.s3.check_empty_folder')
-    def test_summarize_parquet_stream(self, mock_check_empty_folder, mock_process_all_files):
-        """
-        test watchmen.process.rorschach :: Rorschach :: _summarize_parquet_stream
-        """
-        # Test with Empty Response!
-        mock_check_empty_folder.return_value = (True, None)
-        watcher = self.createWatcher()
-        watcher._process_all_files = mock_process_all_files
-        return_result = watcher._summarize_parquet_stream()
-        expected_result = {
-            "success": False,
-            "subject": _SUBJECT_MESSAGE,
-            "details": "The S3 bucket for today is empty or missing!  %s" % self.example_full_path
+        self.example_config_file = {
+            "Daily": [
+                {
+                    "target_name": "target1",
+                    "items": [
+                        {
+                            "bucket_name": "bucket",
+                            "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
+                            "suffix": ".parquet"
+                        }
+                    ]
+                },
+                {
+                    "target_name": "target2",
+                    "items": [
+                        {
+                            "bucket_name": "bucket",
+                            "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
+                            "suffix": ".parquet"
+                        }
+                    ]
+                }
+            ]}
+        self.process_checking_result = {"target1": [], "target2": []}
+        self.example_checking_cases = {
+            "success": {
+                "target_name": "target1",
+                "items": [
+                    {
+                        "bucket_name": "bucket",
+                        "prefix": "some/path/to/",
+                        "suffix": ".parquet",
+                        "check_total_object": 1,
+                        "check_total_size_kb": 0.1
+                    }
+                ]
+            },
+            "fail_file_not_found": {
+                "target_name": "target1",
+                "items": [
+                    {
+                        "bucket_name": "bucket",
+                        "prefix": "some/path/to/",
+                        "suffix": ".parquet"
+                    }
+                ]
+            },
+            "fail_key_not_match": {
+                "target_name": "target1",
+                "items": [
+                    {
+                        "bucket_name": "bucket",
+                        "prefix": "some/path/to/",
+                        "suffix": ".parquet"
+                    }
+                ]
+            },
+            "fail_file_size_count": {
+                "target_name": "target1",
+                "items": [
+                    {
+                        "bucket_name": "bucket",
+                        "prefix": "some/path/to/",
+                        "suffix": ".parquet",
+                        "check_total_object": 4,
+                        "check_total_size_kb": 0.3
+                    }
+                ]
+            },
+            "single_file_success": {
+                "target_name": "target1",
+                "items": [
+                    {
+                        "bucket_name": "bucket",
+                        "full_path": "some/path/to/something.parquet"
+                    }
+                ]},
+            "single_file_fail": {
+                "target_name": "target1",
+                "items": [
+                    {
+                        "bucket_name": "bucket",
+                        "full_path": "some/path/to/something.parquet"
+                    }
+                ]}
         }
-        self.assertEqual(expected_result, return_result)
-
-        # Test with all three True
-        mock_check_empty_folder.reset_mock()
-        mock_check_empty_folder.return_value = (False, [])
-        watcher.nothing_recent = True
-        watcher.nothing_parquet = True
-        watcher.everything_zero_size = True
-        return_result = watcher._summarize_parquet_stream()
-        # Create details
-        msg = ''
-        msg += _NOTHING_RECENT_MESSAGE
-        msg += _NOTHING_PARQUET_MESSAGE
-        msg += _EVERYTHING_ZERO_SIZE_MESSAGE
-        expected_result = {
-            "success": False,
-            "subject": _SUBJECT_MESSAGE,
-            "details": msg
+        self.example_checking_results = {
+            "success": {
+                'target': 'target1',
+                'keys': 'some/path/to/',
+                'pages': [{'Size': 100, 'Key': 'some/path/to/something.parquet'},
+                          {'Size': 100, 'Key': 'some/path/to/something.parquet'}],
+                'prefix_suffix': False,
+                'file_empty': (False, []),
+                'file_size': (False, 200),
+                'expected_result': []
+            },
+            "fail_file_not_found": {
+                'target': 'target1',
+                'keys': 'some/path/to/',
+                'pages': [],
+                'expected_result': [{'no_file_found_s3': 's3://bucket/some/path/to/'}]
+            },
+            "fail_key_not_match": {
+                'target': 'target1',
+                'keys': 'some/path/to/',
+                'pages': [{'Size': 100, 'Key': 'some/path/to/something.json'}],
+                'expected_result': [{'object_key_not_match': (True, 1)}]
+            },
+            "fail_file_size_count": {
+                'target': 'target1',
+                'keys': 'some/path/to/',
+                'pages': [{'Size': 100, 'Key': 'some/path/to/something.parquet'},
+                          {'Size': 100, 'Key': 'some/path/to/something.parquet'},
+                          {'Size': 0, 'Key': 'some/path/to/something.parquet'}],
+                'prefix_suffix': False,
+                'file_empty': (True, ['some/path/to/something.parquet']),
+                'file_size': (False, 0.2),
+                'expected_result': [{'at_least_one_file_empty': (True, ['some/path/to/something.parquet'])},
+                                    {'file_size_too_less': ('s3://bucket/some/path/to/', 0.2, 0.3)},
+                                    {'count_object_too_less': ('s3://bucket/some/path/to/', 3, 4)}]
+            },
+            "single_file_success": {
+                'target': 'target1',
+                'valid': True,
+                'keys': 'some/path/to/something.parquet',
+                'pages': [{'Size': 100, 'Key': 'some/path/to/something.parquet'}],
+                'full_path_result': [False, 'bucket/some/path/to/something.parquet'],
+                'expected_result': []
+            },
+            "single_file_fail": {
+                'target': 'target1',
+                'valid': False,
+                'keys': 'some/path/to/something.parquet',
+                'pages': [{'Size': 100, 'Key': 'some/path/to/some.parquet'}],
+                'full_path_result': [True, 'some/path/to/something.parquet'],
+                'expected_result': [
+                    {'no_file_found_s3': 'some/path/to/something.parquet'}]
+            }
         }
-        self.assertEqual(expected_result, return_result)
-
-        # Test with all three False
-        mock_check_empty_folder.reset_mock()
-        watcher.nothing_recent = False
-        watcher.nothing_parquet = False
-        watcher.everything_zero_size = False
-        mock_check_empty_folder.return_value = (False, [])
-        return_result = watcher._summarize_parquet_stream()
-        expected_result = {
+        self.example_success_summary = {
             "success": True,
-            'subject': _SUCCESS_SUBJECT,
-            "details": _SUCCESS_MESSAGE
+            "subject": MESSAGES.get("success_subject").format("target1"),
+            "details": MESSAGES.get("success_details").format("target1"),
+            "message": MESSAGES.get("success_message").format("target1"),
+            "target": "target1"
         }
-        self.assertEqual(expected_result, return_result)
+        self.create_summary_example = [self.example_success_summary,
+                                       self.example_success_summary]
+        self.example_process_results = {
+            'target1': [],
+            'target2': [
+                {'object_key_not_match': (True, 1)},
+                {'at_least_one_file_empty': (True,
+                                             ['some/path/to/something.parquet'])},
+                {'file_size_too_less': (
+                    's3://bucket/some/path/to/', 0.2, 0.3)},
+                {'count_object_too_less':
+                     ('s3://bucket/some/path/to/', 2, 3)}],
+            'target3': [
+                {'no_file_found_s3': 'some/path/to/something.zip'}]}
 
-    @patch('watchmen.process.rorschach._traceback.format_exc')
-    @patch('watchmen.process.rorschach.Rorschach._summarize_parquet_stream')
-    def test_get_parquet_result(self, mock_check, mock_trace):
-        """
-        test watchmen.process.rorschach :: Rorschach :: _get_parquet_result
-        """
-        mock_trace.return_value = self.example_traceback
-        mock_check.return_value = self.example_parquet_result
-        watcher = self.createWatcher()
-        watcher._summarize_parquet_stream = mock_check
-        expected = self.example_parquet_result
-        returned = watcher._get_parquet_result()
-        self.assertEqual(expected, returned)
+        self.example_summary_results = [{
+            "success": True,
+            "subject": MESSAGES.get("success_subject").format('target1'),
+            "details": MESSAGES.get("success_details").format('target1'),
+            "message": MESSAGES.get("success_message").format('target1'),
+            "target": 'target1'
+        },
+            {
+                "message": MESSAGES.get("failure_message").format('target2'),
+                "success": False,
+                "subject": MESSAGES.get("failure_subject").format('target2'),
+                "details": 'There is at least one key of the data in S3 is not matched with '
+                           'configuration.\n'
+                           'This file: True is empty for target data in S3.\n'
+                           'This file: '
+                           "['some/path/to/something.parquet'] "
+                           'is empty for target data in S3.\n'
+                           'The size of all files founded in '
+                           's3://bucket/some/path/to/ '
+                           'is 0.2 KB, which is less than expected total file size 0.3 KB.\n'
+                           'The number of objects founded in '
+                           's3://bucket/some/path/to/ '
+                           'is 2, which is less than expected total objects count 3.\n',
+                "target": 'target2'
+            },
+            {'details': 'No file found here: some/path/to/something.zip.\n',
+             'message': MESSAGES.get("failure_message").format('target3'),
+             'subject': MESSAGES.get("failure_subject").format('target3'),
+             'success': False,
+             'target': 'target3'}
 
-        mock_check.side_effect = Exception(self.example_exception_details)
-        msg = "An error occurred while checking the parquet at {} due to the following:\n\n{}\n\n".format(
-            self.example_check_time, self.example_traceback)
-        expected = {
+        ]
+        self.example_process_ex_results = {'target1': ['some']}
+        self.msg_process_ex_results = "An error occurred while checking the target at due to the following: " \
+                                      "AttributeError: 'str' object has no attribute 'keys'"
+        self.example_summary_ex_results = [{
+            "message": MESSAGES.get("exception_message"),
             "success": None,
-            "subject": _SUBJECT_EXCEPTION_MESSAGE,
-            "details": msg + "\n\t%s\n\t%s" % (self.example_full_path, self.example_check_time)
+            "subject": MESSAGES.get("exception_subject"),
+            "details": self.msg_process_ex_results,
+            "target": 'target1'
+        }]
+        self.example_case = {
+            'T': [{'success': True, 'subject': 'Rorschach Success', 'details': 'some details',
+                   'message': 'some message', 'target': 'target 1'},
+                  {'details': 'some details', 'disable_notifier': True, 'dt_created': '2020-12-15T00:00:00+00:00',
+                   'dt_updated': '2020-12-15T00:00:00+00:00', 'is_ack': False, 'is_notified': False,
+                   'message': 'some message', 'result_id': 0,
+                   'snapshot': None, 'source': 'Rorschach', 'state': 'SUCCESS', 'subject': 'Rorschach Success',
+                   'success': True, 'target': 'target 1'}],
+            'F': [{'success': False, 'subject': 'Rorschach Failure', 'details': 'some details',
+                   'message': 'some message', 'target': 'target 1'},
+                  {'details': 'some details', 'disable_notifier': False, 'dt_created': '2020-12-15T00:00:00+00:00',
+                   'dt_updated': '2020-12-15T00:00:00+00:00', 'is_ack': False, 'is_notified': False,
+                   'message': 'some message', 'result_id': 0,
+                   'snapshot': None, 'source': 'Rorschach', 'state': 'FAILURE', 'subject': 'Rorschach Failure',
+                   'success': False, 'target': 'target 1'}],
+            'E': [{'success': None, 'subject': 'Rorschach Exception',
+                   'details': 'some details', 'message': 'some message', 'target': 'target 1'},
+                  {'details': 'some details', 'disable_notifier': False, 'dt_created': '2020-12-15T00:00:00+00:00',
+                   'dt_updated': '2020-12-15T00:00:00+00:00', 'is_ack': False, 'is_notified': False,
+                   'message': 'some message', 'result_id': 0,
+                   'snapshot': None, 'source': 'Rorschach', 'state': 'EXCEPTION', 'subject': 'Rorschach Exception',
+                   'success': None, 'target': 'target 1'}]
         }
-        returned = watcher._get_parquet_result()
+        self.expected_result = {
+            'TT': [self.example_case.get('T')[0],
+                   self.example_case.get('T')[0]],
+            'TF': [self.example_case.get('T')[0],
+                   self.example_case.get('F')[0]],
+            'TE': [self.example_case.get('T')[0],
+                   self.example_case.get('E')[0]],
+            'EF': [self.example_case.get('F')[0],
+                   self.example_case.get('E')[0]]
+        }
+        self.expected_return = {
+            'TT': [self.example_case.get('T')[1],
+                   self.example_case.get('T')[1],
+                   {'details': 'Rorschach Success\nsome details\n\nRorschach Success\nsome details\n\n',
+                    'disable_notifier': True, 'dt_created': '2020-12-15T00:00:00+00:00',
+                    'dt_updated': '2020-12-15T00:00:00+00:00',
+                    'is_ack': False, 'is_notified': False,
+                    'message': MESSAGES.get("success_message").format('All targets'),
+                    'result_id': 0, 'snapshot': None, 'source': 'Rorschach', 'state': 'SUCCESS',
+                    'subject': MESSAGES.get("generic_suceess_subject"), 'success': True, 'target': 'Generic S3'}],
+            'TF': [self.example_case.get('T')[1],
+                   self.example_case.get('F')[1],
+                   {'details': 'Rorschach Success\nsome details\n\nRorschach Failure\nsome details\n\n',
+                    'disable_notifier': False, 'dt_created': '2020-12-15T00:00:00+00:00',
+                    'dt_updated': '2020-12-15T00:00:00+00:00',
+                    'is_ack': False,
+                    'is_notified': False, 'message': MESSAGES.get("failure_message"), 'result_id': 0, 'snapshot': None,
+                    'source': 'Rorschach',
+                    'state': 'FAILURE', 'subject': MESSAGES.get("generic_failure_subject"), 'success': False,
+                    'target': 'Generic S3'}],
+            'TE': [self.example_case.get('T')[1],
+                   self.example_case.get('E')[1],
+                   {'details': 'Rorschach Success\nsome details\n\nRorschach Exception\nsome details\n\n',
+                    'disable_notifier': False, 'dt_created': '2020-12-15T00:00:00+00:00',
+                    'dt_updated': '2020-12-15T00:00:00+00:00',
+                    'is_ack': False,
+                    'is_notified': False, 'message': MESSAGES.get("exception_message"), 'result_id': 0,
+                    'snapshot': None,
+                    'source': 'Rorschach',
+                    'state': 'EXCEPTION', 'subject': MESSAGES.get("generic_exception_subject"), 'success': None,
+                    'target': 'Generic S3'}],
+            'EF': [self.example_case.get('F')[1],
+                   self.example_case.get('E')[1],
+                   {'details': 'Rorschach Failure\nsome details\n\nRorschach Exception\nsome details\n\n',
+                    'disable_notifier': False, 'dt_created': '2020-12-15T00:00:00+00:00',
+                    'dt_updated': '2020-12-15T00:00:00+00:00',
+                    'is_ack': False,
+                    'is_notified': False,
+                    'message': MESSAGES.get("exception_message") + MESSAGES.get("failure_message"),
+                    'result_id': 0, 'snapshot': None, 'source': 'Rorschach',
+                    'state': 'EXCEPTION', 'subject': MESSAGES.get("generic_fail_exception_subject"), 'success': None,
+                    'target': 'Generic S3'}]}
+
+        self.example_contents = [{'Key': 'some/path/to/something.parquet', 'Size': 100},
+                                 {'Key': 'some/path/to/something.parquet', 'Size': 100},
+                                 {'Key': 'some/path/to/something.parquet', 'Size': 100},
+                                 {'Key': 'some/path/to/something.json', 'Size': 0}]
+
+    # def test_init_(self):
+
+    @patch('watchmen.process.rorschach.Rorschach._load_config')
+    @patch('watchmen.process.rorschach.Rorschach._process_checking')
+    @patch('watchmen.process.rorschach.Rorschach._create_summary')
+    @patch('watchmen.process.rorschach.Rorschach._create_result')
+    def test_monitor(self, mock_result, mock_summary, mock_checking, mock_config):
+
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+
+        mock_config.return_values = self.example_config_file.get('Daily')
+        mock_checking.return_values = self.process_checking_result
+        mock_summary.return_values = self.create_summary_example
+        mock_result.return_values = self.expected_return.get('TT')
+
+        expected = mock_result()
+        returned = rorschach_obj.monitor()
         self.assertEqual(expected, returned)
+
+    def test_check_invalid_event(self):
+        valid_event_tests = [
+            self.example_event_hourly,
+            self.example_event_daily
+        ]
+        for valid_event in valid_event_tests:
+            rorschach_obj = Rorschach(event=valid_event, context=None)
+            returned = rorschach_obj._check_invalid_event()
+            self.assertFalse(returned)
+
+        # Method should return true whenever the event passed in is invalid:
+        for invalid_event in self.example_invalid_events:
+            rorschach_obj = Rorschach(event=invalid_event, context=None)
+            returned = rorschach_obj._check_invalid_event()
+            self.assertTrue(returned)
+
+    def test_create_invalid_event_results(self):
+
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        returned = rorschach_obj._create_invalid_event_results()
+
+        # The date created and date updated attributes of the result object have to be set manually to properly compare
+        # the expected and returned objects:
+        email_result = returned[0].to_dict()
+        email_result["dt_created"] = "2020-12-15T00:00:00+00:00"
+        email_result["dt_updated"] = "2020-12-15T00:00:00+00:00"
+
+        # Assert email result returned is correct:
+        self.assertEqual(self.expected_invalid_event_email_result, email_result)
+
+    @patch('builtins.open', new_callable=mock_open())
+    @patch('watchmen.process.rorschach.yaml.load')
+    def test_load_config(self, mock_file, mock_open):
+
+        with mock_open as m:
+            rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+            returned = rorschach_obj._load_config(self.example_config_path)
+            m.assert_called_with('../watchmen/process/s3_config.yaml')
+
+        mock_open.side_effect = Exception
+        returned, returned_msg = rorschach_obj._load_config(self.example_config_path)
+        self.assertEqual(None, returned)
+        self.assertTrue(Exception, returned_msg)
+
+    def test_create_config_not_load_results(self):
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        s3_target = (None, 's3_config.yaml')
+        returned = rorschach_obj._create_config_not_load_results(s3_target)
+        # The date created and date updated attributes of the result object have to be set manually to properly compare
+        # the expected and returned objects:
+        email_result = returned[0].to_dict()
+        email_result["dt_created"] = "2020-12-15T00:00:00+00:00"
+        email_result["dt_updated"] = "2020-12-15T00:00:00+00:00"
+
+        self.assertEqual(self.expected_invalid_config_file_result, email_result)
+
+    @patch('watchmen.process.rorschach._s3.generate_pages')
+    @patch('watchmen.process.rorschach.Rorschach._generate_key')
+    @patch('watchmen.process.rorschach._s3.validate_file_on_s3')
+    @patch('watchmen.process.rorschach._s3.check_bucket')
+    def test_process_checking(self, mock_bucket, mock_valid, mock_keys, mock_pages):
+
+        for key in self.example_checking_cases:
+            target = [self.example_checking_cases[key]]
+            result = self.example_checking_results[key]
+            mock_bucket.return_value = {'okay': True, 'err': None}
+            mock_valid.return_value = result.get('valid')
+            mock_keys.return_value = result.get('keys')
+            mock_pages.return_value = result.get('pages')
+            expected = {result.get('target'): result.get('expected_result')}
+            rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+            returned = rorschach_obj._process_checking(target)
+            self.assertEqual(returned, expected)
+
+    def test_create_summary(self):
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        returned = rorschach_obj._create_summary(self.example_process_results)
+        self.assertEqual(returned, self.example_summary_results)
+
+        returned_exception = rorschach_obj._create_summary(self.example_process_ex_results)
+        self.assertEqual(returned_exception, self.example_summary_ex_results)
 
     def test_create_result(self):
-        """
-        test watchmen.process.rorschach :: Rorschach :: _create_result
-        """
-        watcher = self.createWatcher()
-        summary = {"success": False, "details": self.example_fail_details, "subject": self.example_fail_subject}
-        result_dict = watcher._create_result(summary).to_dict()
-        expected = self.example_result_dict
+        for key in self.expected_return:
+            example_summary = self.expected_result[key]
+            example_result = self.expected_return[key]
+            rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+            returned = rorschach_obj._create_result(example_summary)
+            emp = []
+            for obj in returned:
+                obj = obj.to_dict()
+                obj['dt_created'] = '2020-12-15T00:00:00+00:00'  # '2020-12-15T00:00:00+00:00'
+                obj['dt_updated'] = '2020-12-15T00:00:00+00:00'  # '2020-12-15T00:00:00+00:00'
+                emp.append(obj)
+            self.assertEqual(emp, example_result)
 
-        # since rorschach does not give observed time, we don't test the time here
+    def test_generate_key(self):
+        prefix_format = 'some/path/year=%0Y/month=%0m/day=%0d/'
+        check_time = datetime.datetime.now(pytz.utc) - datetime.timedelta(**{'days': 1})
+        expected = check_time.strftime(prefix_format)
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        event = self.example_event_daily.get('Type')
+        returned = rorschach_obj._generate_key(prefix_format, event)
+        self.assertEqual(expected, returned)
 
-        result_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
-        result_dict["dt_updated"] = "2018-12-18T00:00:00+00:00"
+    def test_check_file_prefix_suffix(self):
+        suffix = '.parquet'
+        prefix = 'some/path/to/'
+        expected = True
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        returned = rorschach_obj._check_file_prefix_suffix(self.example_contents, suffix, prefix)
+        self.assertEqual(expected, returned)
 
-        self.assertDictEqual(expected, result_dict)
+    def test_check_file_empty(self):
+        expected = (True, ['some/path/to/something.json'])
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        returned = rorschach_obj._check_file_empty(self.example_contents)
+        self.assertEqual(expected, returned)
 
-    @patch('watchmen.process.rorschach.Rorschach._get_parquet_result')
-    def test_monitor(self, mock_get_parquet):
-        """
-        test watchmen.process.rorschach :: Rorschach :: monitor
-        """
-        watcher = self.createWatcher()
-        mock_get_parquet.return_value = {
-            "success": False,
-            "details": self.example_fail_details,
-            "subject": self.example_fail_subject,
-        }
-        watcher._get_parquet_result = mock_get_parquet
-        expected = self.example_result_dict
-        result = watcher.monitor()[0].to_dict()
-
-        # since rorschach does not give observed time, we don't test the time here
-        result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        result["dt_updated"] = "2018-12-18T00:00:00+00:00"
-
-        self.assertDictEqual(expected, result)
+    def test_check_file_size_too_less(self):
+        con_total_size = 0.4
+        expected = (True, 0.3)
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        returned = rorschach_obj._check_file_size_too_less(self.example_contents, con_total_size)
+        self.assertEqual(expected, returned)
