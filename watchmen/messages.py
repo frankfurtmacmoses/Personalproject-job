@@ -84,3 +84,17 @@ MOTHMAN = {
     "failure_short_message": "FAILURE: S3 file(s) do not exist or files are the same size.",
     "failure_subject": "FAILURE: ForeverMail S3 Files Error"
 }
+
+SLATER = {
+    "exception_details": "There was an exception retrieving the quota information from the "
+                         "DomainTools API.\n\nTraceback"
+                         " of exception:\n{}",
+    "exception_message": "EXCEPTION: Unable to check DomainTools quotas, please check logs!",
+    "exception_subject": "EXCEPTION: Unable to check DomainTools Quotas!",
+    "failure_message": "FAILURE: A quota was exceeded, please check the logs for more information!",
+    "failure_subject": "WARNING: DomainTools Quota Exceeded!",
+    "quota_exceeded": "Quota for {} exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
+    "success_details": "All the DomainTools quota checks ran successfully and were within the threshold.",
+    "success_message": "SUCCESS: All DomainTools quota checks were within the threshold for today!",
+    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!",
+}

@@ -7,6 +7,14 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Domain_Counts_Metrics"
   },
+  "DomainTools Email": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:DomainTools_Quota_Email"
+  },
+  "DomainTools Pager": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:DomainTools_Quota_Pager"
+  },
   "Farsight Data": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"

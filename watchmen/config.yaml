@@ -69,6 +69,13 @@ silhouette:
   path_prefix: analytics/lookalike/prod/results/
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
+slater:
+  api_key: AQICAHgBtb0SZhoZJa0NRdEJtBKhwIPnNwIJwKkl1vAEW6J5QQFX8KbGeiR7/8wXuQsCpyPEAAAAezB5BgkqhkiG9w0BBwagbDBqAgEAMGUGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMncCU650SquoypWNCAgEQgDhU4rx80yjG8hcwQCa4vz6OsrVH6VmHWVY1IEx8y5NoWO6DOFws5YCnC9OZ/ZqiG1k1co52ifEoGA==
+  host: api.domaintools.com
+  uri: /v1/account
+  api_username: IID_dev
+  threshold_start: 50
+
 spectre:
   bucket_name: cyber-intel
   path_prefix: hancock/georgia_tech/
