@@ -68,7 +68,7 @@ Resources:
       Handler: handler.start_jupiter_watcher
       MemorySize: 256
       Role: !GetAtt WatchmenLambdaExecutionRole.Arn
-      Timeout: 30
+      Timeout: 300
       Tags:
         - Key: Owner
           Value: CyberIntel
