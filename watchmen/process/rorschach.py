@@ -23,14 +23,14 @@ import yaml
 import traceback
 
 # External Libraries
-from watchmen import messages
+from watchmen import const, messages
 from watchmen.common.result import Result
 import watchmen.utils.s3 as _s3
 from watchmen.config import settings
 from watchmen.common.watchman import Watchman
 
 MESSAGES = messages.RORSCHACH
-S3_TARGETS_FILE = settings('rorschach.yaml_file')
+ENVIRONMENT = settings("ENVIRONMENT", "test")
 HOURLY = "Hourly"
 DAILY = "Daily"
 ALL_EVENT_TYPES = [HOURLY, DAILY]
@@ -53,9 +53,9 @@ class Rorschach(Watchman):
         if self._check_invalid_event():
             return self._create_invalid_event_results()
 
-        s3_targets = self._load_config(S3_TARGETS_FILE)
-        if None in s3_targets:
-            return self._create_config_not_load_results(s3_targets)
+        s3_targets, tb = self._load_config()
+        if tb:
+            return self._create_config_not_load_results(tb)
 
         check_results = self._process_checking(s3_targets)
         summary = self._create_summary(check_results)
@@ -94,24 +94,28 @@ class Rorschach(Watchman):
             message=MESSAGES.get("exception_message"),
         )]
 
-    def _load_config(self, path):
+    def _load_config(self):
         """
         Method to load the .yaml config file that contains configuration details of each s3 target.
         @return: a tuple of the s3 targets, None or None, traceback upon exception
         """
         try:
+            path = 's3_targets_{}.yaml'.format(ENVIRONMENT)
+
             with open(path) as f:
                 s3_targets = yaml.load(f, Loader=yaml.FullLoader)
             s3_targets = s3_targets.get(self.event)
-            return s3_targets
+            return s3_targets, None
         except Exception as ex:
-            self.logger.error("ERROR Processing Data!\n")
+            self.logger.error("ERROR Processing Data!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
-            return None, ex
+            tb = traceback.format_exc()
+            return None, tb
 
-    def _create_config_not_load_results(self, s3_target):
+    def _create_config_not_load_results(self, tb):
         """
-        Method to create the results for checking if the config file is successfully loaded.
+        Method to create the Result object if the config file did not successfully loaded.
         @return: One result object for the email SNS topic.
         """
         return [Result(
@@ -121,7 +125,7 @@ class Rorschach(Watchman):
             subject=MESSAGES.get("exception_config_not_load_subject"),
             source=self.source,
             target="Generic S3",
-            details=MESSAGES.get("exception_config_not_load_details").format('s3_config.yaml', s3_target[1]),
+            details=MESSAGES.get("exception_config_not_load_details").format('s3_config.yaml', tb),
             snapshot={},
             message=MESSAGES.get("exception_message"),
         )]
@@ -476,5 +480,3 @@ class Rorschach(Watchman):
         except Exception as ex:
             tb = traceback.format_exc()
             return None, None, tb
-
-
