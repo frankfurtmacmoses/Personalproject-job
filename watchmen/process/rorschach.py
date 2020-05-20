@@ -465,15 +465,15 @@ class Rorschach(Watchman):
     def _check_file_prefix_suffix(contents, suffix, prefix):
         """
         Method to check each files in the paginator for their prefix and suffix.
-        @return: True if at least one file key is not matched and the number of checked files.
+        @return: True if at least one file key is matches and a possible traceback.
         """
         try:
-            is_file_key_match = True
+            prefix_suffix_match = False
 
             for file in contents:
                 if file and prefix in file['Key'] and file.get('Key').endswith(suffix):
-                    is_file_key_match = False
-            return is_file_key_match, None
+                    prefix_suffix_match = True
+            return prefix_suffix_match, None
         except Exception as ex:
             tb = traceback.format_exc()
             return None, tb
