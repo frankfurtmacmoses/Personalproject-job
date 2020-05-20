@@ -234,13 +234,14 @@ class Rorschach(Watchman):
 
                 # Check if aggregate file size is greater than 0 or the minimum size specified in the config file
                 if item.get('check_total_size_kb'):
-                    is_size_less_than_threshold, total_size, tb = self._check_file_size_too_less(contents,
-                                                                                    item.get('check_total_size_kb'))
+                    is_total_size_less_than_threshold, total_size, tb = self._compare_total_file_size_to_threshold(
+                        contents, item.get('check_total_size_kb'))
                     if tb:
                         failed_check_items.update({'exception': tb})
-                    if is_size_less_than_threshold:
+                    if is_total_size_less_than_threshold:
                         failed_check_items.update(
-                            {'file_size_too_less': (full_path, total_size, item.get('check_total_size_kb'))})
+                            {'total_file_size_below_threshold': (full_path, total_size, item.get('check_total_size_kb'))
+                             })
 
                 # Check if the aggregate file count is greater than 0 or the minimum size specified in the config file
                 if item.get('check_total_object'):
@@ -498,7 +499,7 @@ class Rorschach(Watchman):
             return None, None, tb
 
     @staticmethod
-    def _check_file_size_too_less(contents, size_threshold):
+    def _compare_total_file_size_to_threshold(contents, size_threshold):
         """
         Method to check the total size of all files.
         @return: True if the total size is less than the expected size and False otherwise along with the total_size
