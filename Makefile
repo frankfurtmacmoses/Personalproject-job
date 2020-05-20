@@ -386,6 +386,18 @@ deploy-prod: clean
 	@echo
 	@echo "- DONE :$@"
 
+deploy-rorschach-test: clean
+	@echo
+	BUILD_ENV=test BUCKET=cyber-intel-test DEPLOY_FILE=cf_rorschach.yaml FEATURE=rorschach $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE: $@"
+
+deploy-rorschach-prod: clean
+	@echo
+	BUILD_ENV=prod BUCKET=ib-cyberint-prod-deploys DEPLOY_FILE=cf_rorschach.yaml FEATURE=rorschach $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE: $@"
+
 deploy-endpoints-test:
 	@echo "--- Deploying endpoints.json to test S3 folder..."
 	aws s3 cp $(PROJECT)/$(PROCESS)/$(ENDPOINTS_JSON) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
