@@ -25,7 +25,7 @@ FEATURE="${FEATURE:-${PROJECT}}"
 BUCKET="${BUCKET:-cyber-intel-test}"
 BUILD_ENV="${BUILD_ENV:-test}"
 BUILD_PACKAGE="${FEATURE}-lambdas-${BUILD_ENV}.zip"
-CF_STACK_NAME="CyberInt-${PROJECT}-${BUILD_ENV}"
+CF_STACK_NAME="CyberInt-${FEATURE}-${BUILD_ENV}"
 DEPLOY_FILE="${DEPLOY_FILE:-cloudformation.yaml}"
 
 DRY_RUN_ONLY="${DRY_RUN_ONLY:-false}"
