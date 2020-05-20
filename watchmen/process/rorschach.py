@@ -135,91 +135,125 @@ class Rorschach(Watchman):
         This method will conduct various checks for each S3 item under each target. The specific checks for each
         item is determined from the config data. It is possible for there to be many targets
         and each with multiple S3 items.
-        @return: A dict containing metadata about each check for all items and all targets.
-        @example return: example_process_results = {
-            'target1': [],
-            'target2': [
-                {'object_key_not_match': (True, 1)},
-                {'at_least_one_file_empty': (True, ['some/path/to/something.parquet'])},
-                {'file_size_too_less': ('s3://bucket/some/path/to/', 0.2, 0.3)},
-                {'count_object_too_less': ('s3://bucket/some/path/to/', 2, 3)}],
-            'target3': [ {'no_file_found_s3': 'some/path/to/something.zip'}]}
+        @return: A dict containing metadata about the failed checks and items for all items and all targets.
+        @example return: example_processed_targets =
+        {
+            'target3': [
+                (item1 metdata dict, check results for item 1 metadata dict),
+                (item5 metdata dict, check results for item 5 metadata dict),
+            ],
+            'target9': [
+                (item4 metadata dict, check results for item 4 metadata)
+            ]
+
+        }
+
+        The item metadata dict will be the exact same as the config data for that item.
+        The check result metadata dict can look like the following:
+        {
+            'bucket_not_found': s3/bucket
+            'prefix_suffix_not_match': (prefix, suffix)
+            'exception': traceback
+        }
+
         """
-        process_result_dict = {}
+        processed_targets = {}
 
         # This goes through each target
         for target in s3_targets:
-            item_result_list = []
-
-            # this is to ensure when multiple check items for one target
+            items_failed = []
+            # This checks each item and the various check attributes it has
             for item in target['items']:
-                # This is to validate the s3 bucket for each item
-                validate_bucket = _s3.check_bucket(item['bucket_name']) # {'okay': True, 'err': None}
-                if not validate_bucket['okay']:
-                    item_result_list.append({'bucket_not_found': "s3://" + item['bucket_name']})
+                failed_check_items = {}
+
+                # Validate the s3 bucket for each item
+                bucket_name = item.get('bucket_name')
+                # The check bucket will need refactoring because there's no way to differentiate exception from failure
+                is_valid_bucket = _s3.check_bucket(bucket_name) # {'okay': True, 'err': None}
+                # An error occurred trying to find the bucket
+                if is_valid_bucket.get('err'):
+                    failed_check_items.update({'exception': is_valid_bucket['err']})
+                    items_failed.append((item, failed_check_items))
                     continue
-                elif validate_bucket['err']:
-                    item_result_list.append({'exception': validate_bucket['err']})
+                # Bucket was not found
+                if not is_valid_bucket.get('okay'):
+                    failed_check_items.update({'bucket_not_found': 's3://{}'.format(bucket_name)})
+                    items_failed.append((item, failed_check_items))
                     continue
 
-                # This is to validate the existence of an object when only one file needed to be checked
+                # Check for file existence
+                # If an item has the attribute 'full_path', this indicates that we are only checking one file,
+                # so we will only need to do an existence check at the moment. Adding file size checks for single
+                # files will be added later.
                 if item.get('full_path'):
-                    found_file, generate_full_path, tb = self._check_single_file_existence(item)
-                    if not found_file:
-                        item_result_list.append({'no_file_found_s3': generate_full_path})
+                    found_file, full_path_with_bucket, tb = self._check_single_file_existence(item)
                     if tb:
-                        item_result_list.append({'exception': tb})
-                    continue
-
-                # This is to check multiple files when multiple files needed to be checked
-                contents, count, prefix_generate, full_path, tb = self._generate_contents(item)
-                if count == 0:
-                    item_result_list.append({'no_file_found_s3': full_path})
-                    continue
-                if tb:
-                    item_result_list.append({'exception': tb})
-                    continue
-
-                # This is to check the most recent N files if it's specified in config file
-                if item.get('check_most_recent_file'):
-                    contents = self._check_most_recent_file(contents, item['check_most_recent_file'])
-
-                # This is to check every files in contents to ensure the key prefix and suffix are matched
-                is_file_key_not_match, tb = self._check_file_prefix_suffix(contents, item['suffix'], prefix_generate)
-                if is_file_key_not_match:
-                    item_result_list.append({'object_key_not_match': (item['prefix'], item['suffix'])})
-                if tb:
-                    item_result_list.append({'exception': tb})
-                    continue
-
-                # This is to check every files in contents to ensure size is not 0
-                at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
-                if at_least_one_file_empty:
-                    item_result_list.append({'at_least_one_file_empty': (at_least_one_file_empty, empty_file_list)})
-                if tb:
-                    item_result_list.append({'exception': tb})
-                    continue
-
-                # This is to check the total file size if the key is specified in config file
-                if item.get('check_total_size_kb'):
-                    is_size_less_than_threshold, total_size, tb = self._check_file_size_too_less(contents,
-                                                                                    item['check_total_size_kb'])
-                    if is_size_less_than_threshold:
-                        item_result_list.append(
-                            {'file_size_too_less': (full_path, total_size, item['check_total_size_kb'])})
-                    if tb:
-                        item_result_list.append({'exception': tb})
+                        failed_check_items.update({'exception': tb})
+                        items_failed.append((item, failed_check_items))
                         continue
 
-                # This is to check the total file count if the key is specified in config file
+                    if not found_file:
+                        failed_check_items.update({'no_file_found': full_path_with_bucket})
+                        items_failed.append((item, failed_check_items))
+                        continue
+
+                    continue
+
+                # This is to check multiple files existence since we know it doesn't have a 'full_path' attribute
+                contents, count, prefix_generate, full_path, tb = self._generate_contents(item)
+                if tb:
+                    failed_check_items.update({'exception': tb})
+                    items_failed.append((item, failed_check_items))
+                    continue
+
+                if not count:
+                    failed_check_items.update({'no_file_found_s3': full_path})
+                    items_failed.append((item, failed_check_items))
+                    continue
+
+                # At this point, we know that the file exists, so we can do the other checks on it.
+
+                # Check the most recent N files, and, if provided, use a specified value from config file
+                # This will replace our contents to a specified range instead of everything in the path.
+                if item.get('check_most_recent_file'):
+                    contents = self._check_most_recent_file(contents, item.get('check_most_recent_file'))
+
+                # Check every file in contents to ensure the key prefix and suffix match
+                prefix_suffix_match, tb = self._check_file_prefix_suffix(contents, item.get('suffix'), prefix_generate)
+                if tb:
+                    exception_list.append(tb)
+                if prefix_suffix_match is False:
+                    failed_check_items.update({'prefix_suffix_not_match': (item.get('prefix'), item.get('suffix'))})
+
+                # Check each individual file in contents to ensure all files have a size greater than 0
+                at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
+                if tb:
+                    failed_check_items.update({'exception': tb})
+                if at_least_one_file_empty:
+                    failed_check_items.update({'at_least_one_file_empty': (at_least_one_file_empty, empty_file_list)})
+
+                # Check if aggregate file size is greater than 0 or the minimum size specified in the config file
+                if item.get('check_total_size_kb'):
+                    is_size_less_than_threshold, total_size, tb = self._check_file_size_too_less(contents,
+                                                                                    item.get('check_total_size_kb'))
+                    if tb:
+                        failed_check_items.update({'exception': tb})
+                    if is_size_less_than_threshold:
+                        failed_check_items.update(
+                            {'file_size_too_less': (full_path, total_size, item.get('check_total_size_kb'))})
+
+                # Check if the aggregate file count is greater than 0 or the minimum size specified in the config file
                 if item.get('check_total_object'):
-                    if count < item['check_total_object']:
-                        item_result_list.append(
+                    if count < item.get('check_total_object'):
+                        failed_check_items.update(
                             {'count_object_too_less': (full_path, count, item['check_total_object'])})
 
-            process_result_dict.update({target['target_name']: item_result_list})
+                if failed_check_items:
+                    items_failed.append((item, failed_check_items))
+            if items_failed:
+                processed_targets.update({target.get('target_name'): items_failed})
 
-        return process_result_dict
+        return processed_targets
 
     def _create_summary(self, process_result_dict):
         """
