@@ -138,14 +138,22 @@ class Rorschach(Watchman):
         @return: A dict containing metadata about the failed checks and items for all items and all targets.
         @example return: example_processed_targets =
         {
-            'target3': [
-                (item1 metdata dict, check results for item 1 metadata dict),
-                (item5 metdata dict, check results for item 5 metadata dict),
-            ],
-            'target9': [
+            'target1': {
+                'success': True,
+                'failed_checks': [],
+            },
+            'target2': {
+                'success': False,
+                'failed_checks': [
+                    (item1 metdata dict, check results for item 1 metadata dict),
+                    (item5 metdata dict, check results for item 5 metadata dict),
+                ],
+            }
+            'target3': {
+                'success': None,
+                'failed_checks': [
                 (item4 metadata dict, check results for item 4 metadata)
             ]
-
         }
 
         The item metadata dict will be the exact same as the config data for that item.
@@ -162,9 +170,12 @@ class Rorschach(Watchman):
         # This goes through each target
         for target in s3_targets:
             items_failed = []
+            all_checks_are_exceptions = True
+
             # This checks each item and the various check attributes it has
             for item in target['items']:
                 failed_check_items = {}
+                exception_list = []
 
                 # Validate the s3 bucket for each item
                 bucket_name = item.get('bucket_name')
@@ -179,6 +190,7 @@ class Rorschach(Watchman):
                 if not is_valid_bucket.get('okay'):
                     failed_check_items.update({'bucket_not_found': 's3://{}'.format(bucket_name)})
                     items_failed.append((item, failed_check_items))
+                    all_checks_are_exceptions = False
                     continue
 
                 # Check for file existence
@@ -195,6 +207,7 @@ class Rorschach(Watchman):
                     if not found_file:
                         failed_check_items.update({'no_file_found': full_path_with_bucket})
                         items_failed.append((item, failed_check_items))
+                        all_checks_are_exceptions = False
                         continue
 
                     continue
@@ -209,6 +222,7 @@ class Rorschach(Watchman):
                 if not count:
                     failed_check_items.update({'no_file_found_s3': full_path})
                     items_failed.append((item, failed_check_items))
+                    all_checks_are_exceptions = False
                     continue
 
                 # At this point, we know that the file exists, so we can do the other checks on it.
@@ -224,35 +238,61 @@ class Rorschach(Watchman):
                     exception_list.append(tb)
                 if prefix_suffix_match is False:
                     failed_check_items.update({'prefix_suffix_not_match': (item.get('prefix'), item.get('suffix'))})
+                    all_checks_are_exceptions = False
 
                 # Check each individual file in contents to ensure all files have a size greater than 0
                 at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
                 if tb:
-                    failed_check_items.update({'exception': tb})
+                    exception_list.append(tb)
                 if at_least_one_file_empty:
                     failed_check_items.update({'at_least_one_file_empty': (at_least_one_file_empty, empty_file_list)})
+                    all_checks_are_exceptions = False
 
                 # Check if aggregate file size is greater than 0 or the minimum size specified in the config file
                 if item.get('check_total_size_kb'):
                     is_total_size_less_than_threshold, total_size, tb = self._compare_total_file_size_to_threshold(
                         contents, item.get('check_total_size_kb'))
                     if tb:
-                        failed_check_items.update({'exception': tb})
+                        exception_list.append(tb)
                     if is_total_size_less_than_threshold:
                         failed_check_items.update(
                             {'total_file_size_below_threshold': (full_path, total_size, item.get('check_total_size_kb'))
                              })
+                        all_checks_are_exceptions = False
 
                 # Check if the aggregate file count is greater than 0 or the minimum size specified in the config file
                 if item.get('check_total_object'):
                     if count < item.get('check_total_object'):
                         failed_check_items.update(
                             {'count_object_too_less': (full_path, count, item['check_total_object'])})
+                        all_checks_are_exceptions = False
 
+                # Check for exceptions
+                if exception_list:
+                    failed_check_items.update({'exception': exception_list})
+                # Check for any failures/exceptions
                 if failed_check_items:
                     items_failed.append((item, failed_check_items))
+
+            # Keep track of which targets passed, failed, and only had exceptions
             if items_failed:
-                processed_targets.update({target.get('target_name'): items_failed})
+                processed_targets.update(
+                    {
+                        target.get('target_name'):
+                            {
+                             'success': None if all_checks_are_exceptions else False,
+                             'failed_checks': items_failed
+                            }
+                    })
+            else:
+                processed_targets.update(
+                    {
+                        target.get('target_name'):
+                            {
+                                'success': True,
+                                'failed_checks': items_failed
+                            }
+                    })
 
         return processed_targets
 
