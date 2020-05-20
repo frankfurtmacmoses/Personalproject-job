@@ -376,13 +376,13 @@ build-test-only:
 
 deploy-test: clean
 	@echo
-	BUILD_ENV=test BUCKET=cyber-intel-test $(MAKE_DEPLOY)
+	BUILD_ENV=test BUCKET=cyber-intel-test DEPLOY_FILE=cloudformation.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
 deploy-prod: clean
 	@echo
-	BUILD_ENV=prod BUCKET=cyber-intel $(MAKE_DEPLOY)
+	BUILD_ENV=prod BUCKET=cyber-intel DEPLOY_FILE=cloudformation.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
