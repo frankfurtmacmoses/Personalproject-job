@@ -66,7 +66,7 @@ class Rorschach(Watchman):
     def _check_invalid_event(self):
         """
         Method to check that the event passed in from the Lambda has the correct parameters. If there is no "Type"
-        parameter passed in, or the "Type" does not equal any of the expected values ("Hourly", "Daily"), then the
+        parameter passed in, or the "Type" does not equal any of the allowed event types, then the
         event parameter is invalid.
         @return: True if the event parameter passed from the Lambda is invalid, false if the event parameter is valid.
         """
@@ -80,7 +80,7 @@ class Rorschach(Watchman):
     def _create_invalid_event_results(self):
         """
         Method to create the results for the scenario when the Lambda sends in invalid event parameters.
-        @return: One return object for the email SNS topic.
+        @return: List of a single Result object to be sent to the Generic S3 target
         """
         return [Result(
             disable_notifier=False,
@@ -96,8 +96,8 @@ class Rorschach(Watchman):
 
     def _load_config(self, path):
         """
-        Method to load the .yaml config file that contains configuration details of each s3 targets.
-        @return: json object if the file can be successfully loaded, else None
+        Method to load the .yaml config file that contains configuration details of each s3 target.
+        @return: a tuple of the s3 targets, None or None, traceback upon exception
         """
         try:
             with open(path) as f:
