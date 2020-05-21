@@ -1,0 +1,26 @@
+Hourly:
+- target_name: Farsight Data
+  items:
+  - bucket_name: bitaa
+    prefix: parquet/com.farsightsecurity.300021/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    check_most_recent_file: 1
+
+Daily:
+- target_name: Georgia Tech S3
+  items:
+  - bucket_name: cyber-intel
+    full_path: hancock/georgia_tech/%0Y/%0m/gt_mpdns_%0Y%0m%0d.zip
+    offset: 4
+- target_name: Poseidon DNS Data
+  items:
+  - bucket_name: ib-customer-data-usa-va
+    prefix: parquet-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+- target_name: Poseidon Northstar DNS Data
+  items:
+  - bucket_name: ib-customer-data-usa-va
+    prefix: parquet-northstar-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    check_total_object: 0
+    check_total_size_kb: 0
