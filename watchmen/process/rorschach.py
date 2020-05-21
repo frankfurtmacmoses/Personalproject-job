@@ -296,16 +296,16 @@ class Rorschach(Watchman):
 
         return processed_targets
 
-    def _create_summary(self, process_result_dict):
+    def _create_summary(self, processed_targets):
         """
         Method to create a summary object for all s3 targets with details messages based on the check results summary.
         @return: A list of dictionaries where each dict is a summary of the checking results of each target.
         """
         summary = []
 
-        for target_name in process_result_dict:
-
-            if process_result_dict[target_name] == []:
+        for target_name in processed_targets:
+            # Create the successful summaries
+            if processed_targets[target_name].get('success'):
                 summary_details = {
                     "success": True,
                     "subject": MESSAGES.get("success_subject").format(target_name),
@@ -315,43 +315,70 @@ class Rorschach(Watchman):
                 }
                 summary.append(summary_details)
 
-            elif process_result_dict[target_name] != []:
-                msg = ""
-                has_exception = False
-                for fail_items in process_result_dict[target_name]:
-                    if 'exception' in fail_items:
-                        msg += fail_items['exception']
-                        has_exception = True
-                    if 'bucket_not_found' in fail_items:
-                        msg += MESSAGES.get('failure_bucket_not_found').format(fail_items['bucket_not_found'])
-                    if 'no_file_found_s3' in fail_items:
-                        msg += MESSAGES.get('failure_no_file_found_s3').format(fail_items['no_file_found_s3'])
-                    if 'object_key_not_match' in fail_items:
-                        results_key = fail_items['object_key_not_match']
-                        msg += MESSAGES.get('failure_object_key_not_match').format(results_key[0], results_key[1])
-                    if 'at_least_one_file_empty' in fail_items:
-                        for empty_file in fail_items['at_least_one_file_empty']:
-                            msg += MESSAGES.get('failure_file_empty').format(empty_file)
-                    if 'file_size_too_less' in fail_items:
-                        results_size = fail_items['file_size_too_less']
-                        msg += MESSAGES.get('failure_size_too_less').format(results_size[0], results_size[1],
-                                                                            results_size[2])
-                    if 'count_object_too_less' in fail_items:
-                        results_count = fail_items['count_object_too_less']
-                        msg += MESSAGES.get('failure_count_too_less').format(results_count[0], results_count[1],
-                                                                             results_count[2])
-
-                if has_exception:
+            # Create the exceptions only summaries
+            if processed_targets[target_name].get('success') is None:
+                exception_list = ""
+                for item in processed_targets[target_name].get('failed_checks'):
+                    exception_list += '{}{}: {}\n'.format(item[0].get('bucket_name'),
+                                                          item[0].get('prefix'),
+                                                          item[1].get('exception'))
                     summary_details = {
                         "message": MESSAGES.get("exception_message"),
                         "success": None,
                         "subject": MESSAGES.get("exception_checking_subject").format(target_name),
-                        "details": msg,
+                        "details": MESSAGES.get('exception_details').format(exception_list),
                         "target": target_name
                     }
                     summary.append(summary_details)
 
-                else:
+            # Create failures and exceptions summaries
+            if processed_targets[target_name].get('success') is not None and \
+                    not processed_targets[target_name].get('success'):
+                exception_list = ''
+                failure_list = ''
+                for item in processed_targets[target_name].get('failed_checks'):
+                    item_data = item[0]
+                    check_data = item[1]
+
+                    # Check for the failures
+                    if 'bucket_not_found' in check_data:
+                        failure_list += MESSAGES.get('failure_bucket_not_found').format(item_data.get('bucket'))
+                    if 'no_file_found_s3' in check_data:
+                        failure_list += MESSAGES.get('failure_no_file_found_s3').format(item_data.get(
+                            'full_path') if item_data.get('full_path') else item_data.get('prefix'))
+                    if 'prefix_suffix_not_match' in check_data:
+                        failure_list += MESSAGES.get('failure_prefix_suffix_not_match').format(item_data.get('prefix'),
+                                                                                               item_data.get('suffix'))
+                    if 'at_least_one_file_empty' in check_data:
+                        empty_file_list = ''
+                        for empty_file in check_data.get('at_least_one_file_empty')[1]:
+                            empty_file_list += MESSAGES.get('failure_file_empty').format(empty_file)
+                        failure_list += empty_file_list
+                    if 'total_file_size_below_threshold' in check_data:
+                        failure_list += MESSAGES.get('failure_total_file_size_below_threshold').format(
+                            check_data.get('total_file_size_below_threshold')[0],
+                            check_data.get('total_file_size_below_threshold')[1],
+                            check_data.get('total_file_size_below_threshold')[2])
+                    if 'count_object_too_less' in check_data:
+                        failure_list += MESSAGES.get('failure_count_too_less').format(
+                            check_data.get('count_object_too_less')[0],
+                            check_data.get('count_object_too_less')[1],
+                            check_data.get('count_object_too_less')[2])
+
+                    # Check for exceptions
+                    if 'exception' in check_data:
+                        for ex in check_data.get('exception'):
+                            exception_list += '{}{}: {}\n'.format(item_data[0].get('bucket_name'),
+                                                                  item_data[0].get('prefix'),
+                                                                  ex)
+
+                    # Create details string
+                    msg = ''
+                    if failure_list:
+                        msg += (MESSAGES.get('failure_details').format(failure_list) + '\n\n')
+                    if exception_list:
+                        msg += MESSAGES.get('exception_details').format(exception_list)
+
                     summary_details = {
                         "message": MESSAGES.get("failure_message").format(target_name),
                         "success": False,
@@ -362,7 +389,6 @@ class Rorschach(Watchman):
                     summary.append(summary_details)
 
         return summary
-
 
     def _create_result(self, summary):
         """
@@ -555,3 +581,4 @@ class Rorschach(Watchman):
         except Exception as ex:
             tb = traceback.format_exc()
             return None, None, tb
+

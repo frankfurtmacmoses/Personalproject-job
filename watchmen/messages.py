@@ -109,20 +109,23 @@ RORSCHACH = {
                                        " parameter.",
     "exception_config_not_load_details": "Cannot load S3 targets from file:\n{}\nException: {}",
     "exception_message": "Exception occurred when checking s3 targets! Please check email for more details.",
+    "exception_details": "The following paths threw exceptions during their checks:\n{}",
     "success_message": "{} in S3 ran with no issues.",
     "success_details": "All checking for {} pass. The data pipeline runs fine!",
     "success_subject": "Rorschach Success: {} runs with no issue.",
     "success_event_check": "The event parameter passed from Lambda is valid.",
     "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
-    "failure_object_key_not_match": "There is at least one key not match with the prefix: {} and suffix: {}.\n",
+    "failure_prefix_suffix_not_match": "There is at least one key did not match the expected "
+                                       "prefix: {} and suffix: {}.\n",
     "failure_file_empty": "This file: {} is empty for target data in S3.\n",
-    "failure_size_too_less": "The size of all files founded in {} is {} KB, which is less than expected total file "
+    "failure_total_file_size_below_threshold": "The size of all files founded in {} is {} KB, which is less than expected total file "
                              "size {} KB.\n",
     "failure_count_too_less": "The number of objects founded in {} is {}, which is less than expected total objects "
                               "count {}.\n",
     "failure_bucket_not_found": "The bucket is not found here: {}.\n",
     "failure_no_file_found_s3": "No file found here: {}.\n",
     "failure_subject": "Rorschach Failure: {} Checking Not Passed",
+    "failure_details": "The following S3 paths failed their checks:\n{}",
     "failure_message": "At least one checking is not passed. Please check details.",
     "generic_failure_subject": "Generic S3 Rorshcach Failure: At Least One Target Has Failure!",
     "generic_exception_subject": "Generic S3 Rorshcach Exception: At Least One Target Has Exception!",
