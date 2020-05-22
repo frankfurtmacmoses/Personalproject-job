@@ -13,7 +13,6 @@ script_name="${script_file##*/}"
 script_base="$( cd "$( echo "${script_file%/*}/.." )" && pwd )"
 script_path="$( cd "$( echo "${script_file%/*}" )" && pwd )"
 
-deploy_file="cloudformation.yaml"
 deploy_path="${script_base}/cloudformation"
 builds_path="${script_base}/builds"
 
@@ -26,8 +25,8 @@ FEATURE="${FEATURE:-${PROJECT}}"
 BUCKET="${BUCKET:-cyber-intel-test}"
 BUILD_ENV="${BUILD_ENV:-test}"
 BUILD_PACKAGE="${FEATURE}-lambdas-${BUILD_ENV}.zip"
-CF_STACK_NAME="CyberInt-${PROJECT}-${BUILD_ENV}"
-
+CF_STACK_NAME="CyberInt-${FEATURE}-${BUILD_ENV}"
+DEPLOY_FILE="${DEPLOY_FILE:-cloudformation.yaml}"
 
 DRY_RUN_ONLY="${DRY_RUN_ONLY:-false}"
 
@@ -119,7 +118,7 @@ function check_cf_stack_status() {
 function deploy_stack() {
   local _cmd_="${1:-create}"
   local _env_="${BUILD_ENV}"
-  local _yml_="${deploy_file}"
+  local _yml_="${DEPLOY_FILE}"
   local _chk_="aws cloudformation validate-template --template-body file://${_yml_}"
   local _cli_="aws cloudformation ${_cmd_}-stack
     --capabilities CAPABILITY_NAMED_IAM
@@ -181,8 +180,8 @@ function do_build_and_upload() {
 
   ${_aws_s3_cli}
 
-  _aws_s3_cli="${_aws_s3_cmd} ${deploy_path}/${deploy_file}
-    ${_aws_s3_dir}/${deploy_file}"
+  _aws_s3_cli="${_aws_s3_cmd} ${deploy_path}/${DEPLOY_FILE}
+    ${_aws_s3_dir}/${DEPLOY_FILE}"
   echo ""
   echo "Uploading CloudFormation template"
   echo "......................................................................."

@@ -376,15 +376,27 @@ build-test-only:
 
 deploy-test: clean
 	@echo
-	BUILD_ENV=test BUCKET=cyber-intel-test $(MAKE_DEPLOY)
+	BUILD_ENV=test BUCKET=cyber-intel-test DEPLOY_FILE=cloudformation.yaml FEATURE=watchmen $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
 deploy-prod: clean
 	@echo
-	BUILD_ENV=prod BUCKET=cyber-intel $(MAKE_DEPLOY)
+	BUILD_ENV=prod BUCKET=cyber-intel DEPLOY_FILE=cloudformation.yaml FEATURE=watchmen $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
+
+deploy-rorschach-test: clean
+	@echo
+	BUILD_ENV=test BUCKET=cyber-intel-test DEPLOY_FILE=cf_rorschach.yaml FEATURE=rorschach $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE: $@"
+
+deploy-rorschach-prod: clean
+	@echo
+	BUILD_ENV=prod BUCKET=ib-cyberint-prod-deploys DEPLOY_FILE=cf_rorschach.yaml FEATURE=rorschach $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE: $@"
 
 deploy-endpoints-test:
 	@echo "--- Deploying endpoints.json to test S3 folder..."
