@@ -1,0 +1,51 @@
+Hourly:
+- target_name: test_invalid_bucket
+  items:
+  - bucket_name: cyber-intel-tes
+
+- target_name: test_single_file
+  items:
+  - bucket_name: cyber-intel-test
+    full_path: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/single_file/example.json
+    offset: 2
+
+Daily:
+- target_name: test_file_not_found
+  items:
+  - bucket_name: cyber-intel-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/empty_folder
+    suffix: .parquet
+
+# This will empty files, and total files size & total objects count
+- target_name: test_multiple_files
+  items:
+  - bucket_name: cyber-intel-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/
+    suffix: .json
+    check_total_object: 10
+    check_total_size_kb: 5
+
+- target_name: test_key_not_match
+  items:
+  - bucket_name: cyber-intel-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files_wrong_key/
+    suffix: .json
+
+- target_name: test_multiple_items
+  items:
+  - bucket_name: cyber-intel-test
+    full_path: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/single_file/example.json
+  - bucket_name: cyber-intel-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/success/
+    suffix: .json
+    check_total_object: 0
+    check_total_size_kb: 0
+
+- target_name: test_success
+  items:
+  - bucket_name: cyber-intel-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/success/
+    suffix: .json
+    check_total_object: 2
+    check_total_size_kb: 1
+    check_most_recent_file: 4

@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "Rorschach Watchmen monitors several data sources in Poseidon data lake for issues and outages."
+Mappings:
+  EnvMap:
+    test:
+      Description: This environment is in atg-infoblox for testing purpose.
+      Bucket: cyber-intel-test
+      BuildFile: watchmen-lambdas-test.zip
+    prod:
+      Description: This environment is in saas-infoblox for only monitoring the s3 buckets in saas-infoblox. This will need to access atg-infoblox for future deployment.
+      Bucket: ib-cyberint-prod-deploys
+      BuildFile: watchmen-lambdas-prod.zip
+Parameters:
+  Env:
+    Description: Environment to be deployed.
+    Type: String
+  BuildsPrefix:
+    Description: The S3 prefix that contains the Watchmen builds.
+    Type: String
+Conditions:
+  IsProd: !Equals [ !Ref Env, prod ]
+Resources:
+  WatchmenRorschachLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-Rorscach-${Env}
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors s3 targets hourly and daily.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
+      Handler: handler.start_rorschach_watcher
+      MemorySize: 256
+      Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+      Timeout: 60
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-rorschach
+        - Key: Env
+          Value: !Ref Env
+  RorschachHourlyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A hourly event that kicks off hourly Rorschach Watchman
+      ScheduleExpression: cron(0 * * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
+      Targets:
+        - Id: RorschachHourlyScheduler
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+          Input: '{"Type": "Hourly"}'
+  RorschachDailyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A daily event that kicks off daily Rorschach Watchman
+      ScheduleExpression: cron(0 15 * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
+      Targets:
+        - Id: RorschachDailyScheduler
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+          Input: '{"Type": "Daily"}'
+  InvokeRorschachHourlyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachHourlyScheduledEvent.Arn
+  InvokeRorschachDailyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
+  WatchmenLambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub WatchmenLambdaExecutionRole-${Env}
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub WatchmenLambdaExecutionRole-${Env}
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                Resource:
+                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va/*", "arn:aws:s3:::cyber-intel-test/*"]
+                  - !If [IsProd, "arn:aws:s3:::cyber-intel/hancock/georgia_tech/*", "arn:aws:s3:::cyber-intel-test/*"]
+                  - !If [IsProd, "arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*", "arn:aws:s3:::cyber-intel-test/*"]
