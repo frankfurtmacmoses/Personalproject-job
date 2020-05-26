@@ -96,7 +96,7 @@ SLATER = {
     "quota_exceeded": "Quota for {} exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
     "success_details": "All the DomainTools quota checks ran successfully and were within the threshold.",
     "success_message": "SUCCESS: All DomainTools quota checks were within the threshold for today!",
-    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!",}
+    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!", }
 
 RORSCHACH = {
     "exception_subject": "Rorschach Exception: The Checking is Not Processed.",
@@ -105,9 +105,9 @@ RORSCHACH = {
     "exception_config_not_load_subject": "Rorschach Exception: Unable to Load S3 Targets File",
     "exception_invalid_event_details": "An invalid event was passed from the CloudWatch event, please check the "
                                        "CloudFormation file and CloudWatch events to ensure that the correct"
-                                       " parameters are being sent. S3 targets can not be checked with an invalid event"
-                                       " parameter.",
-    "exception_config_not_load_details": "Cannot load S3 targets from file:\n{}\nException: {}",
+                                       " parameters are being sent. S3 targets can not be checked with an invalid "
+                                       "event parameter.",
+    "exception_config_not_load_details": "Cannot load S3 targets from file:\nException: {}",
     "exception_message": "Exception occurred when checking s3 targets! Please check email for more details.",
     "exception_details": "The following paths threw exceptions during their checks:\n{}",
     "success_message": "{} in S3 ran with no issues.",
@@ -118,8 +118,8 @@ RORSCHACH = {
     "failure_prefix_suffix_not_match": "There is at least one key did not match the expected "
                                        "prefix: {} and suffix: {}.\n",
     "failure_file_empty": "This file: {} is empty for target data in S3.\n",
-    "failure_total_file_size_below_threshold": "The size of all files founded in {} is {} KB, which is less than expected total file "
-                             "size {} KB.\n",
+    "failure_total_file_size_below_threshold": "The size of all files founded in {} is {} KB, which is less than"
+                                               " expected total file size {} KB.\n",
     "failure_count_too_less": "The number of objects founded in {} is {}, which is less than expected total objects "
                               "count {}.\n",
     "failure_bucket_not_found": "The bucket is not found here: {}.\n",
