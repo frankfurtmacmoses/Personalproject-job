@@ -18,6 +18,7 @@ Refactored on April, 2020
 
 # Python Imports
 import datetime as _datetime
+import os
 import pytz
 import yaml
 import traceback
@@ -31,6 +32,9 @@ from watchmen.common.watchman import Watchman
 
 MESSAGES = messages.RORSCHACH
 ENVIRONMENT = settings("ENVIRONMENT", "test")
+CONFIG_NAME = 's3_targets_{}.yaml'.format(ENVIRONMENT)
+CONFIG_PATH = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), CONFIG_NAME)
 HOURLY = "Hourly"
 DAILY = "Daily"
 ALL_EVENT_TYPES = [HOURLY, DAILY]
@@ -100,9 +104,7 @@ class Rorschach(Watchman):
         @return: a tuple of the s3 targets, None or None, traceback upon exception
         """
         try:
-            path = 's3_targets_{}.yaml'.format(ENVIRONMENT)
-
-            with open(path) as f:
+            with open(CONFIG_PATH) as f:
                 s3_targets = yaml.load(f, Loader=yaml.FullLoader)
             s3_targets = s3_targets.get(self.event)
             return s3_targets, None
@@ -125,16 +127,16 @@ class Rorschach(Watchman):
             subject=MESSAGES.get("exception_config_not_load_subject"),
             source=self.source,
             target="Generic S3",
-            details=MESSAGES.get("exception_config_not_load_details").format('s3_config.yaml', tb),
+            details=MESSAGES.get("exception_config_not_load_details").format(tb),
             snapshot={},
             message=MESSAGES.get("exception_message"),
         )]
 
     def _process_checking(self, s3_targets):
         """
-        This method will conduct various checks for each S3 item under each target. The specific checks for each
-        item is determined from the config data. It is possible for there to be many targets
-        and each with multiple S3 items.
+        Method to conduct various checks for each S3 item under each target. The specific checks for each
+        item is determined from the config data. It is possible for there to be many targets and each
+        with multiple S3 items.
         @return: A dict containing metadata about the failed checks and items for all items and all targets.
         @example return: example_processed_targets =
         {
@@ -180,7 +182,7 @@ class Rorschach(Watchman):
                 # Validate the s3 bucket for each item
                 bucket_name = item.get('bucket_name')
                 # The check bucket will need refactoring because there's no way to differentiate exception from failure
-                is_valid_bucket = _s3.check_bucket(bucket_name) # {'okay': True, 'err': None}
+                is_valid_bucket = _s3.check_bucket(bucket_name)  # {'okay': True, 'err': None}
                 # An error occurred trying to find the bucket
                 if is_valid_bucket.get('err'):
                     failed_check_items.update({'exception': is_valid_bucket['err']})
@@ -205,7 +207,7 @@ class Rorschach(Watchman):
                         continue
 
                     if not found_file:
-                        failed_check_items.update({'no_file_found': full_path_with_bucket})
+                        failed_check_items.update({'no_file_found_s3': full_path_with_bucket})
                         items_failed.append((item, failed_check_items))
                         all_checks_are_exceptions = False
                         continue
@@ -280,8 +282,8 @@ class Rorschach(Watchman):
                     {
                         target.get('target_name'):
                             {
-                             'success': None if all_checks_are_exceptions else False,
-                             'failed_checks': items_failed
+                                'success': None if all_checks_are_exceptions else False,
+                                'failed_checks': items_failed
                             }
                     })
             else:
@@ -342,7 +344,7 @@ class Rorschach(Watchman):
 
                     # Check for the failures
                     if 'bucket_not_found' in check_data:
-                        failure_list += MESSAGES.get('failure_bucket_not_found').format(item_data.get('bucket'))
+                        failure_list += MESSAGES.get('failure_bucket_not_found').format(item_data.get('bucket_name'))
                     if 'no_file_found_s3' in check_data:
                         failure_list += MESSAGES.get('failure_no_file_found_s3').format(item_data.get(
                             'full_path') if item_data.get('full_path') else item_data.get('prefix'))
@@ -368,9 +370,9 @@ class Rorschach(Watchman):
                     # Check for exceptions
                     if 'exception' in check_data:
                         for ex in check_data.get('exception'):
-                            exception_list += '{}{}: {}\n'.format(item_data[0].get('bucket_name'),
-                                                                  item_data[0].get('prefix'),
-                                                                  ex)
+                            exception_list += '{}/{}: {}\n'.format(item_data.get('bucket_name'),
+                                                                   item_data.get('prefix'),
+                                                                   ex)
 
                     # Create details string
                     msg = ''
@@ -465,8 +467,7 @@ class Rorschach(Watchman):
 
         return results
 
-    @staticmethod
-    def _generate_key(prefix_format, event, offset = 1):
+    def _generate_key(self, prefix_format, event, offset=1):
         """
         Method to generate prefix key for each target based on the event type.
         @return: Prefix
@@ -478,18 +479,19 @@ class Rorschach(Watchman):
             return prefix, None
         except Exception as ex:
             tb = traceback.format_exc()
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, tb
 
     def _generate_contents(self, item):
         """
-        Method to generate contents for the given s3 path configuration
-        @return:
+        Method to generate contents for the given s3 path configuration.
+        @return: The files contents, files count, generated file prefix, file path and possible traceback.
         """
         try:
             if item.get('offset'):
-                prefix_generate, tb = Rorschach._generate_key(item['prefix'], self.event, item['offset'])
+                prefix_generate, tb = self._generate_key(item['prefix'], self.event, item['offset'])
             else:
-                prefix_generate, tb = Rorschach._generate_key(item['prefix'], self.event)
+                prefix_generate, tb = self._generate_key(item['prefix'], self.event)
             full_path = 's3://' + item['bucket_name'] + '/' + prefix_generate
             self.logger.info("Checking s3 path: {}".format(full_path))
             contents = _s3.generate_pages(prefix_generate, **{'bucket': item['bucket_name']})
@@ -499,54 +501,56 @@ class Rorschach(Watchman):
             return contents, count, prefix_generate, full_path, None
         except Exception as ex:
             tb = traceback.format_exc()
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, None, None, tb
 
     def _check_single_file_existence(self, item):
         """
-        Method to check if a single file exists
-        @return:
+        Method to check if a single file exists.
+        @return: True if the file exists and False otherwise with a file path.
         """
         try:
             if item.get('offset'):
-                generate_full_path, tb = Rorschach._generate_key(item['full_path'], self.event, item['offset'])
+                generate_full_path, tb = self._generate_key(item['full_path'], self.event, item['offset'])
             else:
-                generate_full_path, tb = Rorschach._generate_key(item['full_path'], self.event)
+                generate_full_path, tb = self._generate_key(item['full_path'], self.event)
             found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=generate_full_path)
             return found_file, generate_full_path, None
         except Exception as ex:
             tb = traceback.format_exc()
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, tb
 
-    @staticmethod
-    def _check_most_recent_file(contents, check_most_recent_file):
+    def _check_most_recent_file(self, contents, check_most_recent_file):
         """
         Method to subset the contents to the most recent N files that need to be checked.
-        @return: the subset of the contents
+        @return: The most recent contents.
         """
-        get_last_modified = lambda key: int(key['LastModified'].strftime('%s'))
+
+        def get_last_modified(key): return int(key['LastModified'].strftime('%s'))
+
         most_recent_contents = [obj for obj in sorted(contents, key=get_last_modified, reverse=True)]
         contents = most_recent_contents[0:check_most_recent_file]
         return contents
 
-    @staticmethod
-    def _check_file_prefix_suffix(contents, suffix, prefix):
+    def _check_file_prefix_suffix(self, contents, suffix, prefix):
         """
         Method to check each files in the paginator for their prefix and suffix.
         @return: True if at least one file key is matches and a possible traceback.
         """
         try:
-            prefix_suffix_match = False
+            prefix_suffix_match = True
 
             for file in contents:
-                if file and prefix in file['Key'] and file.get('Key').endswith(suffix):
-                    prefix_suffix_match = True
+                if not file or prefix not in file['Key'] or not file.get('Key').endswith(suffix):
+                    prefix_suffix_match = False
             return prefix_suffix_match, None
         except Exception as ex:
             tb = traceback.format_exc()
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, tb
 
-    @staticmethod
-    def _check_file_empty(contents):
+    def _check_file_empty(self, contents):
         """
         Method to check each file for size larger than 0/emptiness.
         @return: True if one file is empty and a list of empty files' keys and False otherwise.
@@ -562,10 +566,10 @@ class Rorschach(Watchman):
             return at_least_one_file_empty, empty_file_list, None
         except Exception as ex:
             tb = traceback.format_exc()
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, tb
 
-    @staticmethod
-    def _compare_total_file_size_to_threshold(contents, size_threshold):
+    def _compare_total_file_size_to_threshold(self, contents, size_threshold):
         """
         Method to check the total size of all files.
         @return: True if the total size is less than the expected size and False otherwise along with the total_size
@@ -580,5 +584,5 @@ class Rorschach(Watchman):
             return is_size_less_than_threshold, total_size, None
         except Exception as ex:
             tb = traceback.format_exc()
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, tb
-
