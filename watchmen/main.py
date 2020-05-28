@@ -52,7 +52,6 @@ from watchmen.process.manhattan import Manhattan
 from watchmen.process.metropolis import Metropolis
 from watchmen.process.moloch import Moloch
 from watchmen.process.mothman import Mothman
-from watchmen.process.rorschach import Rorschach
 from watchmen.process.silhouette import Silhouette
 from watchmen.process.slater import Slater
 from watchmen.process.spectre import Spectre
@@ -125,18 +124,6 @@ def start_mothman_watcher(event, context):
     """
     mothman = Mothman(event, context)
     results = mothman.monitor()
-    result_svc = ResultSvc(results)
-    result_svc.send_alert()
-    return result_svc.create_lambda_message()
-
-
-def start_rorschach_watcher(event, context):
-    """
-    Start the rorschach watcher for parquet data in S3.
-    :return: The context that the code is being run in.
-    """
-    rorschach = Rorschach(event, context)
-    results = rorschach.monitor()
     result_svc = ResultSvc(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()

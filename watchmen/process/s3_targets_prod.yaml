@@ -7,11 +7,6 @@ Hourly:
     check_most_recent_file: 1
 
 Daily:
-- target_name: Georgia Tech S3
-  items:
-  - bucket_name: cyber-intel
-    full_path: hancock/georgia_tech/%0Y/%0m/gt_mpdns_%0Y%0m%0d.zip
-    offset: 4
 - target_name: Poseidon DNS Data
   items:
   - bucket_name: ib-customer-data-usa-va
