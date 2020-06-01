@@ -55,6 +55,10 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Slowdrip_Metrics"
   },
+   "Smartlisting":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Smartlisting"
+   },
   "VirusTotal Email":{
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Email"

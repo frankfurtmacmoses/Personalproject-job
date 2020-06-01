@@ -33,6 +33,26 @@ class MainTester(unittest.TestCase):
             target="Fake target",
         )]
 
+    @patch('watchmen.process.comedian.Comedian')
+    @patch('watchmen.process.comedian.Comedian.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_comedian_watcher(self, mock_alert, mock_monitor, mock_comedian):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
+        returned = main.start_comedian_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.crookshanks.Crookshanks')
+    @patch('watchmen.process.crookshanks.Crookshanks.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_crookshanks_watcher(self, mock_alert, mock_monitor, mock_crookshanks):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
+        returned = main.start_crookshanks_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
     @patch('watchmen.process.jupiter.Jupiter')
     @patch('watchmen.process.jupiter.Jupiter.monitor')
     @patch('watchmen.common.result_svc.ResultSvc.send_alert')
@@ -73,14 +93,14 @@ class MainTester(unittest.TestCase):
         returned = main.start_moloch_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
-    @patch('watchmen.process.rorschach.Rorschach')
-    @patch('watchmen.process.rorschach.Rorschach.monitor')
+    @patch('watchmen.process.mothman.Mothman')
+    @patch('watchmen.process.mothman.Mothman.monitor')
     @patch('watchmen.common.result_svc.ResultSvc.send_alert')
-    def test_start_rorschach_watcher(self, mock_alert, mock_monitor, mock_rorschach):
+    def test_start_mothman_watcher(self, mock_alert, mock_monitor, mock_mothman):
         mock_monitor.return_value = self.example_result_list
 
         expected = self.example_lambda_message + const.LINE_SEPARATOR
-        returned = main.start_rorschach_watcher(self.event, self.context)
+        returned = main.start_mothman_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
     @patch('watchmen.process.silhouette.Silhouette')

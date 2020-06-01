@@ -47,6 +47,7 @@ Refactored on 2019-11-07:
 """
 from watchmen.common.result_svc import ResultSvc
 from watchmen.process.comedian import Comedian
+from watchmen.process.crookshanks import Crookshanks
 from watchmen.process.jupiter import Jupiter
 from watchmen.process.manhattan import Manhattan
 from watchmen.process.metropolis import Metropolis
@@ -64,6 +65,18 @@ def start_comedian_watcher(event, context):
     """
     comedian = Comedian(event, context)
     results = comedian.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
+
+
+def start_crookshanks_watcher(event, context):
+    """
+    Start the Crookshanks watcher for the Smartlisting Feeds.
+    :return: The context that the code is being run in.
+    """
+    crookshanks = Crookshanks(event, context)
+    results = crookshanks.monitor()
     result_svc = ResultSvc(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()

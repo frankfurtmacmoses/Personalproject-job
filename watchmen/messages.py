@@ -20,6 +20,22 @@ COMEDIAN = {
     "success_subject": "SUCCESS: All VirusTotal Quotas Within Threshold!",
 }
 
+CROOKSHANKS = {
+    "exception_message": "The following source(s) received an error: \n\n {} \n"
+                         "Please check the logs for more details!",
+    "exception_subject": "EXCEPTION: There was an error while checking for the smartlists!",
+    "failure_exception_message": "The following source(s) do not have smartlists: \n\n {} \n\n"
+                                 "The following source(s) received an error: \n\n{}",
+    "failure_exception_subject": "FAILURE and EXCEPTION: A failure and exception occurred during the smartlists check",
+    "failure_message": "The following source(s) do not have smartlists: \n\n {}",
+    "failure_subject": "FAILURE: Smartlisting file(s) do not exist in S3!",
+    "log_exception_message": "Failed due to an exception: \n\n{}",
+    "log_fail_exception_msg": "Failure(s):\n {} \n\n Exception(s):\n {}",
+    "log_failure_message": "Failure(s): \n\n{}",
+    "success_message": "All smartlisting files can be found in S3!",
+    "success_subject": "SUCCESS: All expected smartlisting files exists in S3!",
+}
+
 JUPITER = {
     "bad_endpoints_message": "There are endpoints with no path variable, please check the endpoints files locally and "
                              "in S3!",
@@ -96,7 +112,8 @@ SLATER = {
     "quota_exceeded": "Quota for {} exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
     "success_details": "All the DomainTools quota checks ran successfully and were within the threshold.",
     "success_message": "SUCCESS: All DomainTools quota checks were within the threshold for today!",
-    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!", }
+    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!"
+}
 
 RORSCHACH = {
     "exception_subject": "Rorschach Exception: The Checking is Not Processed.",
@@ -118,8 +135,8 @@ RORSCHACH = {
     "failure_prefix_suffix_not_match": "There is at least one key did not match the expected "
                                        "prefix: {} and suffix: {}.\n",
     "failure_file_empty": "This file: {} is empty for target data in S3.\n",
-    "failure_total_file_size_below_threshold": "The size of all files founded in {} is {} KB, which is less than"
-                                               " expected total file size {} KB.\n",
+    "failure_total_file_size_below_threshold": "The size of all files founded in {} is {} KB, which is less than "
+                                               "expected total file size {} KB.\n",
     "failure_count_too_less": "The number of objects founded in {} is {}, which is less than expected total objects "
                               "count {}.\n",
     "failure_bucket_not_found": "The bucket is not found here: {}.\n",
