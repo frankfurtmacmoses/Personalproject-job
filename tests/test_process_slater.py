@@ -34,11 +34,8 @@ class TestSlater(unittest.TestCase):
             "details": MESSAGES.get("exception_details").format(self.traceback),
             "disable_notifier": False,
             "dt_created": "2020-04-18T00:00:00+00:00",
-            "dt_updated": "2020-04-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_message"),
-            "source": "Slater",
+            "short_message": MESSAGES.get("exception_message"),
+            "watchman_name": "Slater",
             "result_id": 0,
             "snapshot": {},
             "state": "EXCEPTION",
@@ -49,11 +46,8 @@ class TestSlater(unittest.TestCase):
             "details": MESSAGES.get("exception_details").format(self.traceback),
             "disable_notifier": False,
             "dt_created": "2020-04-18T00:00:00+00:00",
-            "dt_updated": "2020-04-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_message"),
-            "source": "Slater",
+            "short_message": MESSAGES.get("exception_message"),
+            "watchman_name": "Slater",
             "result_id": 0,
             "snapshot": {},
             "state": "EXCEPTION",
@@ -65,7 +59,7 @@ class TestSlater(unittest.TestCase):
         self.success_parameters = {
                 "details": self.details,
                 "disable_notifier": True,
-                "message": MESSAGES.get("success_message"),
+                "short_message": MESSAGES.get("success_message"),
                 "snapshot": self.in_range_quotas,
                 "state": "SUCCESS",
                 "subject": MESSAGES.get("success_subject"),
@@ -75,11 +69,8 @@ class TestSlater(unittest.TestCase):
             "details": MESSAGES.get("success_details"),
             "disable_notifier": True,
             "dt_created": "2020-04-18T00:00:00+00:00",
-            "dt_updated": "2020-04-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("success_message"),
-            "source": "Slater",
+            "short_message": MESSAGES.get("success_message"),
+            "watchman_name": "Slater",
             "result_id": 0,
             "snapshot": self.in_range_quotas,
             "state": "SUCCESS",
@@ -90,11 +81,8 @@ class TestSlater(unittest.TestCase):
             "details": MESSAGES.get("success_details"),
             "disable_notifier": True,
             "dt_created": "2020-04-18T00:00:00+00:00",
-            "dt_updated": "2020-04-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("success_message"),
-            "source": "Slater",
+            "short_message": MESSAGES.get("success_message"),
+            "watchman_name": "Slater",
             "result_id": 0,
             "snapshot": self.in_range_quotas,
             "state": "SUCCESS",
@@ -120,11 +108,8 @@ class TestSlater(unittest.TestCase):
             "details": MESSAGES.get("exception_details").format(self.traceback),
             "disable_notifier": False,
             "dt_created": "2020-04-18T00:00:00+00:00",
-            "dt_updated": "2020-04-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_message"),
-            "source": "Slater",
+            "short_message": MESSAGES.get("exception_message"),
+            "watchman_name": "Slater",
             "result_id": 0,
             "snapshot": {},
             "state": "EXCEPTION",
@@ -135,11 +120,8 @@ class TestSlater(unittest.TestCase):
             "details": MESSAGES.get("exception_details").format(self.traceback),
             "disable_notifier": False,
             "dt_created": "2020-04-18T00:00:00+00:00",
-            "dt_updated": "2020-04-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_message"),
-            "source": "Slater",
+            "short_message": MESSAGES.get("exception_message"),
+            "watchman_name": "Slater",
             "result_id": 0,
             "snapshot": {},
             "state": "EXCEPTION",
@@ -172,10 +154,8 @@ class TestSlater(unittest.TestCase):
             returned_email_result = returned_results[1].to_dict()
 
             returned_pager_result["dt_created"] = "2020-04-18T00:00:00+00:00"
-            returned_pager_result["dt_updated"] = "2020-04-18T00:00:00+00:00"
 
             returned_email_result["dt_created"] = "2020-04-18T00:00:00+00:00"
-            returned_email_result["dt_updated"] = "2020-04-18T00:00:00+00:00"
 
             self.assertEqual(expected_results[0], returned_pager_result)
             self.assertEqual(expected_results[1], returned_email_result)
@@ -225,10 +205,8 @@ class TestSlater(unittest.TestCase):
         returned_email_result = returned[1].to_dict()
 
         returned_pager_result["dt_created"] = "2020-04-18T00:00:00+00:00"
-        returned_pager_result["dt_updated"] = "2020-04-18T00:00:00+00:00"
 
         returned_email_result["dt_created"] = "2020-04-18T00:00:00+00:00"
-        returned_email_result["dt_updated"] = "2020-04-18T00:00:00+00:00"
 
         self.assertEqual(expected[0], returned_pager_result)
         self.assertEqual(expected[1], returned_email_result)
@@ -264,10 +242,8 @@ class TestSlater(unittest.TestCase):
         returned_email_result = returned[1].to_dict()
 
         returned_pager_result["dt_created"] = "2020-04-18T00:00:00+00:00"
-        returned_pager_result["dt_updated"] = "2020-04-18T00:00:00+00:00"
 
         returned_email_result["dt_created"] = "2020-04-18T00:00:00+00:00"
-        returned_email_result["dt_updated"] = "2020-04-18T00:00:00+00:00"
 
         self.assertEqual(expected[0], returned_pager_result)
         self.assertEqual(expected[1], returned_email_result)
