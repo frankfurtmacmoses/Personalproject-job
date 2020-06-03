@@ -36,7 +36,7 @@ class TestComedian(unittest.TestCase):
         self.parameters = {
                 "details": self.details,
                 "disable_notifier": True,
-                "message": MESSAGES.get("success_short_message"),
+                "short_message": MESSAGES.get("success_short_message"),
                 "snapshot": self.in_range_quotas,
                 "state": "SUCCESS",
                 "subject": MESSAGES.get("success_subject"),
@@ -46,11 +46,8 @@ class TestComedian(unittest.TestCase):
             "details": MESSAGES.get("success_details"),
             "disable_notifier": True,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("success_short_message"),
-            "source": "Comedian",
+            "short_message": MESSAGES.get("success_short_message"),
+            "watchman_name": "Comedian",
             "result_id": 0,
             "snapshot": self.in_range_quotas,
             "state": "SUCCESS",
@@ -61,11 +58,8 @@ class TestComedian(unittest.TestCase):
             "details": MESSAGES.get("success_details"),
             "disable_notifier": True,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("success_short_message"),
-            "source": "Comedian",
+            "short_message": MESSAGES.get("success_short_message"),
+            "watchman_name": "Comedian",
             "result_id": 0,
             "snapshot": self.in_range_quotas,
             "state": "SUCCESS",
@@ -91,11 +85,8 @@ class TestComedian(unittest.TestCase):
             "details": self.exceeded_quota_message,
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("failure_short_message"),
-            "source": "Comedian",
+            "short_message": MESSAGES.get("failure_short_message"),
+            "watchman_name": "Comedian",
             "result_id": 0,
             "snapshot": self.out_of_range_quotas,
             "state": "FAILURE",
@@ -106,11 +97,8 @@ class TestComedian(unittest.TestCase):
             "details": self.exceeded_quota_message,
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("failure_short_message"),
-            "source": "Comedian",
+            "short_message": MESSAGES.get("failure_short_message"),
+            "watchman_name": "Comedian",
             "result_id": 0,
             "snapshot": self.out_of_range_quotas,
             "state": "FAILURE",
@@ -123,11 +111,8 @@ class TestComedian(unittest.TestCase):
             "details": MESSAGES.get("exception_details").format(self.traceback),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_short_message"),
-            "source": "Comedian",
+            "short_message": MESSAGES.get("exception_short_message"),
+            "watchman_name": "Comedian",
             "result_id": 0,
             "snapshot": {},
             "state": "EXCEPTION",
@@ -138,11 +123,8 @@ class TestComedian(unittest.TestCase):
             "details": MESSAGES.get("exception_details").format(self.traceback),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_short_message"),
-            "source": "Comedian",
+            "short_message": MESSAGES.get("exception_short_message"),
+            "watchman_name": "Comedian",
             "result_id": 0,
             "snapshot": {},
             "state": "EXCEPTION",
@@ -181,10 +163,8 @@ class TestComedian(unittest.TestCase):
             returned_email_result = returned_results[1].to_dict()
 
             returned_pager_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-            returned_pager_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
             returned_email_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-            returned_email_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
             self.assertEqual(expected_results[0], returned_pager_result)
             self.assertEqual(expected_results[1], returned_email_result)
@@ -251,10 +231,8 @@ class TestComedian(unittest.TestCase):
         returned_email_result = returned[1].to_dict()
 
         returned_pager_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        returned_pager_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         returned_email_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        returned_email_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected[0], returned_pager_result)
         self.assertEqual(expected[1], returned_email_result)
