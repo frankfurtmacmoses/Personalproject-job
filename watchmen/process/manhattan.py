@@ -85,10 +85,10 @@ class Manhattan(Watchman):
         return results
 
     def _build_bad_tasks_message(self, task_list):
-        message = ""
+        short_message = ""
         for task in task_list:
-            message += "\n\t- {}".format(task)
-        return message
+            short_message += "\n\t- {}".format(task)
+        return short_message
 
     def _check_invalid_event(self):
         """
@@ -116,11 +116,11 @@ class Manhattan(Watchman):
             state=Watchman.STATE.get("exception"),
             success=False,
             subject=MESSAGES.get("exception_invalid_event_subject"),
-            source=self.source,
+            watchman_name=self.watchman_name,
             target=TARGET,
             details=MESSAGES.get("exception_invalid_event_message"),
             snapshot={},
-            message=MESSAGES.get("exception_message"),
+            short_message=MESSAGES.get("exception_message"),
         ))
 
         # result for Pager Duty SNS
@@ -129,12 +129,12 @@ class Manhattan(Watchman):
             state=Watchman.STATE.get("exception"),
             success=False,
             subject=MESSAGES.get("exception_invalid_event_subject"),
-            source=self.source,
+            watchman_name=self.watchman_name,
             target=PAGER_TARGET,
             # Pager Duty requires a short message
             details=MESSAGES.get("exception_message"),
             snapshot={},
-            message=MESSAGES.get("exception_message"),
+            short_message=MESSAGES.get("exception_message"),
         ))
 
         return exception_results
@@ -166,17 +166,17 @@ class Manhattan(Watchman):
         check_result = summary.get("success")
         subject = summary.get("subject")
         details = summary.get("details")
-        message = summary.get("message")
+        short_message = summary.get("short_message")
         parameters = parameter_chart.get(check_result)
         results.append(Result(
             **parameters,
             success=check_result,
             subject=subject,
-            source=self.source,
+            watchman_name=self.watchman_name,
             target=TARGET,
             details=details,
             snapshot=snapshot,
-            message=message,
+            short_message=short_message,
         ))
 
         # result for Pager Duty SNS
@@ -184,12 +184,12 @@ class Manhattan(Watchman):
             **parameters,
             success=check_result,
             subject=subject,
-            source=self.source,
+            watchman_name=self.watchman_name,
             target=PAGER_TARGET,
             # Pager Duty requires a short message
-            details=message,
+            details=short_message,
             snapshot=snapshot,
-            message=message,
+            short_message=short_message,
         ))
 
         return results
@@ -235,7 +235,7 @@ class Manhattan(Watchman):
                 "subject": MESSAGES.get("subject_exception_message"),
                 "details": tb,
                 "success": None,
-                "message": MESSAGES.get("exception_message"),
+                "short_message": MESSAGES.get("exception_message"),
             }
 
         down = bad_feeds[0]
@@ -251,7 +251,7 @@ class Manhattan(Watchman):
         subject_line = MESSAGES.get("success_subject").format(event)
         details_body = ""
         success = True
-        message = MESSAGES.get("success_message")
+        short_message = MESSAGES.get("success_message")
 
         # Check for stuck tasks
         if stuck_tasks:
@@ -264,7 +264,7 @@ class Manhattan(Watchman):
                 MESSAGES.get("stuck_tasks_message").format(all_stuck, FEED_URL),
                 const.LINE_SEPARATOR
             )
-            message = "FAILURE: Stuck Tasks" + const.LINE_SEPARATOR
+            short_message = "FAILURE: Stuck Tasks" + const.LINE_SEPARATOR
             success = False
 
         # Check if any feeds are down.
@@ -274,14 +274,14 @@ class Manhattan(Watchman):
                     event,
                     MESSAGES.get("failure_subject"),
                 )
-                message = "FAILURE: "
+                short_message = "FAILURE: "
             subject_line += ' | Down'
             details_body += '{}{}\n\n{}\n\n'.format(
                 MESSAGES.get("failure_down_message"),
                 all_down,
                 const.LINE_SEPARATOR
             )
-            message += "Down feeds" + const.LINE_SEPARATOR
+            short_message += "Down feeds" + const.LINE_SEPARATOR
             success = False
 
         # Check if any feeds are out of threshold range.
@@ -291,14 +291,14 @@ class Manhattan(Watchman):
                     event,
                     MESSAGES.get("failure_subject"),
                 )
-                message = "FAILURE: "
+                short_message = "FAILURE: "
             subject_line += " | Out of Range"
             details_body += '{}{}\n\n{}\n\n'.format(
                 MESSAGES.get("failure_abnormal_message"),
                 all_range,
                 const.LINE_SEPARATOR
             )
-            message += "Out of range feeds" + const.LINE_SEPARATOR
+            short_message += "Out of range feeds" + const.LINE_SEPARATOR
             success = False
 
         # Check if any feeds have no metrics
@@ -308,21 +308,21 @@ class Manhattan(Watchman):
                     event,
                     MESSAGES.get("failure_subject"),
                 )
-                message = "FAILURE: "
+                short_message = "FAILURE: "
             subject_line += ' | No Metrics'
             details_body += "{}".format(MESSAGES.get("no_metrics_message").format(all_no))
-            message += "Feeds with no metrics" + const.LINE_SEPARATOR
+            short_message += "Feeds with no metrics" + const.LINE_SEPARATOR
             success = False
 
         # If check was not a success, need to add extra line to message for Pager Duty
         if not success:
-            message += MESSAGES.get("check_email_message")
+            short_message += MESSAGES.get("check_email_message")
 
         return {
             "subject": subject_line,
             "details": details_body,
             "success": success,
-            "message": message,
+            "short_message": short_message,
         }
 
     @staticmethod
@@ -457,10 +457,10 @@ class Manhattan(Watchman):
             try:
                 # If the file could not be loaded from S3 send an alert, but still attempt to load the local
                 # (potentially out of date) file.
-                message = MESSAGES.get("exception_s3_load_failure_message").format(S3_BUCKET, key_name,
-                                                                                   type(s3_exception).__name__)
-                self.logger.error(message)
-                raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=message,
+                short_message = MESSAGES.get("exception_s3_load_failure_message").format(S3_BUCKET, key_name,
+                                                                                         type(s3_exception).__name__)
+                self.logger.error(short_message)
+                raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=short_message,
                             subject=MESSAGES.get("exception_s3_load_failure_subject"))
 
                 with open(JSON_FILE) as file:
@@ -471,7 +471,7 @@ class Manhattan(Watchman):
             except Exception as local_load_exception:
                 # If the local file could not be loaded, then return the traceback message. SNS alerts with exceptions
                 # will be sent.
-                message = MESSAGES.get("exception_local_load_failure_message").format(
+                short_message = MESSAGES.get("exception_local_load_failure_message").format(
                     JSON_FILE, type(local_load_exception).__name__)
-                self.logger.error(message)
-                return None, message
+                self.logger.error(short_message)
+                return None, short_message

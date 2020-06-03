@@ -68,13 +68,10 @@ class TestManhattan(unittest.TestCase):
             'details': MESSAGES.get('exception_invalid_event_message'),
             'disable_notifier': False,
             'dt_created': '2020-12-15T00:00:00+00:00',
-            'dt_updated': '2020-12-15T00:00:00+00:00',
-            'is_ack': False,
-            'is_notified': False,
-            'message': MESSAGES.get('exception_message'),
+            'short_message': MESSAGES.get('exception_message'),
             'result_id': 0,
             'snapshot': {},
-            'source': 'Manhattan',
+            'watchman_name': 'Manhattan',
             'state': 'EXCEPTION',
             'subject': MESSAGES.get('exception_invalid_event_subject'),
             'success': False,
@@ -84,13 +81,10 @@ class TestManhattan(unittest.TestCase):
             'details': MESSAGES.get("exception_message"),
             'disable_notifier': False,
             'dt_created': '2020-12-15T00:00:00+00:00',
-            'dt_updated': '2020-12-15T00:00:00+00:00',
-            'is_ack': False,
-            'is_notified': False,
-            'message': MESSAGES.get("exception_message"),
+            'short_message': MESSAGES.get("exception_message"),
             'result_id': 0,
             'snapshot': {},
-            'source': 'Manhattan',
+            'watchman_name': 'Manhattan',
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_invalid_event_subject"),
             'success': False,
@@ -107,13 +101,13 @@ class TestManhattan(unittest.TestCase):
             "subject": self.example_fail_subject,
             "details": "Message Body: things failed\nthis also failed\nEverything keeps failing!",
             "success": False,
-            "message": MESSAGES.get("failure_down_message"),
+            "short_message": MESSAGES.get("failure_down_message"),
         }
         self.example_exception_summary = {
             "subject": MESSAGES.get("subject_exception_message"),
             "details": self.example_tb_msg,
             "success": None,
-            "message": MESSAGES.get("exception_message"),
+            "short_message": MESSAGES.get("exception_message"),
         }
         self.example_notification = "The job was done"
         self.example_watcher_group = "group"
@@ -131,13 +125,10 @@ class TestManhattan(unittest.TestCase):
                 "details": self.example_fail_details,
                 "disable_notifier": False,
                 "dt_created": "2018-12-18T00:00:00+00:00",
-                "dt_updated": "2018-12-18T00:00:00+00:00",
-                "is_ack": False,
-                "is_notified": False,
-                "message": MESSAGES.get("failure_down_message"),
+                "short_message": MESSAGES.get("failure_down_message"),
                 "result_id": 0,
                 "snapshot": self.example_snapshot,
-                "source": "Manhattan",
+                "watchman_name": "Manhattan",
                 "state": "FAILURE",
                 "subject": self.example_fail_subject,
                 "success": False,
@@ -147,13 +138,10 @@ class TestManhattan(unittest.TestCase):
             "details": MESSAGES.get("failure_down_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("failure_down_message"),
+            "short_message": MESSAGES.get("failure_down_message"),
             "result_id": 0,
             "snapshot": self.example_snapshot,
-            "source": "Manhattan",
+            "watchman_name": "Manhattan",
             "state": "FAILURE",
             "subject": self.example_fail_subject,
             "success": False,
@@ -165,13 +153,10 @@ class TestManhattan(unittest.TestCase):
             "details": self.example_tb_msg,
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_message"),
+            "short_message": MESSAGES.get("exception_message"),
             "result_id": 0,
             "snapshot": {},
-            "source": "Manhattan",
+            "watchman_name": "Manhattan",
             "state": "EXCEPTION",
             "subject": MESSAGES.get("subject_exception_message"),
             "success": None,
@@ -181,13 +166,10 @@ class TestManhattan(unittest.TestCase):
             "details": MESSAGES.get("exception_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_message"),
+            "short_message": MESSAGES.get("exception_message"),
             "result_id": 0,
             "snapshot": {},
-            "source": "Manhattan",
+            "watchman_name": "Manhattan",
             "state": "EXCEPTION",
             "subject": MESSAGES.get("subject_exception_message"),
             "success": None,
@@ -199,13 +181,10 @@ class TestManhattan(unittest.TestCase):
                        "\n\n* when finding stuck tasks: exception in finding stuck tasks!",
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("exception_message"),
+            "short_message": MESSAGES.get("exception_message"),
             "result_id": 0,
             "snapshot": {},
-            "source": "Manhattan",
+            "watchman_name": "Manhattan",
             "state": "EXCEPTION",
             "subject": "Manhattan watchmen failed due to an exception!",
             "success": None,
@@ -300,9 +279,7 @@ class TestManhattan(unittest.TestCase):
         email_result = returned[0].to_dict()
         pager_result = returned[1].to_dict()
         email_result["dt_created"] = "2020-12-15T00:00:00+00:00"
-        email_result["dt_updated"] = "2020-12-15T00:00:00+00:00"
         pager_result["dt_created"] = "2020-12-15T00:00:00+00:00"
-        pager_result["dt_updated"] = "2020-12-15T00:00:00+00:00"
 
         # Assert email result returned is correct:
         self.assertEqual(self.expected_invalid_event_email_result, email_result)
@@ -325,7 +302,6 @@ class TestManhattan(unittest.TestCase):
         expected = self.example_result_dict
         # since manhattan does not give observed time, we don't test the time here
         email_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        email_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(expected, email_result)
 
@@ -333,7 +309,6 @@ class TestManhattan(unittest.TestCase):
         expected = self.example_pager_result_dict
         # since manhattan does not give observed time, we don't test the time here
         pager_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        pager_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(expected, pager_result)
 
@@ -354,7 +329,6 @@ class TestManhattan(unittest.TestCase):
         expected = self.example_email_result_dict_ex
         # since manhattan does not give observed time, we don't test the time here
         email_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        email_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(expected, email_result)
 
@@ -362,7 +336,6 @@ class TestManhattan(unittest.TestCase):
         expected = self.example_pager_result_dict_ex
         # since manhattan does not give observed time, we don't test the time here
         pager_result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        pager_result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(expected, pager_result)
 
@@ -459,7 +432,7 @@ class TestManhattan(unittest.TestCase):
             subject_line = MESSAGES.get("success_subject").format(event)
             details_body = ""
             success = True
-            message = MESSAGES.get("success_message")
+            short_message = MESSAGES.get("success_message")
 
             # Check for stuck tasks
             if stuck_tasks:
@@ -472,7 +445,7 @@ class TestManhattan(unittest.TestCase):
                     MESSAGES.get("stuck_tasks_message").format(all_stuck, FEED_URL),
                     const.LINE_SEPARATOR
                 )
-                message = "FAILURE: Stuck Tasks ---- "
+                short_message = "FAILURE: Stuck Tasks ---- "
                 success = False
 
             # Check if any feeds are down.
@@ -482,14 +455,14 @@ class TestManhattan(unittest.TestCase):
                         event,
                         MESSAGES.get("failure_subject"),
                     )
-                    message = "FAILURE: "
+                    short_message = "FAILURE: "
                 subject_line += ' | Down'
                 details_body += '{}{}\n\n{}\n\n'.format(
                     MESSAGES.get("failure_down_message"),
                     all_down,
                     const.LINE_SEPARATOR
                 )
-                message += "Down feeds ---- "
+                short_message += "Down feeds ---- "
                 success = False
 
             # Check if any feeds are out of threshold range.
@@ -499,14 +472,14 @@ class TestManhattan(unittest.TestCase):
                         event,
                         MESSAGES.get("failure_subject"),
                     )
-                    message = "FAILURE: "
+                    short_message = "FAILURE: "
                 subject_line += " | Out of Range"
                 details_body += '{}{}\n\n{}\n\n'.format(
                     MESSAGES.get("failure_abnormal_message"),
                     all_range,
                     const.LINE_SEPARATOR
                 )
-                message += "Out of range feeds ---- "
+                short_message += "Out of range feeds ---- "
                 success = False
 
             # Check if any feeds have no metrics
@@ -516,21 +489,21 @@ class TestManhattan(unittest.TestCase):
                         event,
                         MESSAGES.get("failure_subject"),
                     )
-                    message = "FAILURE: "
+                    short_message = "FAILURE: "
                 subject_line += ' | No Metrics'
                 details_body += "{}".format(MESSAGES.get("no_metrics_message").format(all_no))
-                message += "Feeds with no metrics ---- "
+                short_message += "Feeds with no metrics ---- "
                 success = False
 
             # If check was not a success, need to add extra line to message for Pager Duty
             if not success:
-                message += MESSAGES.get("check_email_message")
+                short_message += MESSAGES.get("check_email_message")
 
             expected = {
                 "subject": subject_line,
                 "details": details_body,
                 "success": success,
-                'message': message,
+                'short_message': short_message,
             }
             returned = manhattan_obj._create_summary(stuck_tasks, (down, out_of_range, no_metrics), None)
             self.assertEqual(expected, returned)
