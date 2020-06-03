@@ -26,29 +26,23 @@ class TestRorschach(unittest.TestCase):
             'details': MESSAGES.get("exception_invalid_event_details"),
             'disable_notifier': False,
             'dt_created': '2020-12-15T00:00:00+00:00',
-            'dt_updated': '2020-12-15T00:00:00+00:00',
-            'is_ack': False,
-            'is_notified': False,
-            'message': MESSAGES.get('exception_message'),
+            'short_message': MESSAGES.get('exception_message'),
             'result_id': 0,
             'snapshot': {},
-            'source': 'Rorschach',
+            'watchman_name': 'Rorschach',
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_invalid_event_subject"),
             'success': False,
             'target': 'Generic S3'
         }
         self.expected_invalid_config_file_result = {
-            'details': "Cannot load S3 targets from file:\ns3_config.yaml\nException: (None, 's3_config.yaml')",
+            'details': "Cannot load S3 targets from file: s3_targets_test.yaml\nException: (None, 's3_config.yaml')",
             'disable_notifier': False,
             'dt_created': '2020-12-15T00:00:00+00:00',
-            'dt_updated': '2020-12-15T00:00:00+00:00',
-            'is_ack': False,
-            'is_notified': False,
-            'message': MESSAGES.get('exception_message'),
+            'short_message': MESSAGES.get('exception_message'),
             'result_id': 0,
             'snapshot': {},
-            'source': 'Rorschach',
+            'watchman_name': 'Rorschach',
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_config_not_load_subject"),
             'success': False,
@@ -71,7 +65,7 @@ class TestRorschach(unittest.TestCase):
             "success": True,
             "subject": MESSAGES.get("success_subject").format("target1"),
             "details": MESSAGES.get("success_details").format("target1"),
-            "message": MESSAGES.get("success_message").format("target1"),
+            "short_message": MESSAGES.get("success_message").format("target1"),
             "target": "target1"
         }]
         self.example_contents = [{
@@ -91,7 +85,7 @@ class TestRorschach(unittest.TestCase):
             'Size': 0,
             'LastModified': datetime.datetime(2020, 5, 20, 0, 23, 29)
         }]
-        self.example_process_checking_cases  = {
+        self.example_process_checking_cases = {
             'success_multi_items': {
                 "input": [{
                     "target_name": 'target1',
@@ -436,14 +430,14 @@ class TestRorschach(unittest.TestCase):
         }
         self.example_create_summary_results = {
             'success_multi_items': [{
-                "message": MESSAGES.get("success_message").format('target1'),
+                "short_message": MESSAGES.get("success_message").format('target1'),
                 "success": True,
                 "subject": MESSAGES.get("success_subject").format('target1'),
                 "details": MESSAGES.get("success_details").format('target1'),
                 "target": 'target1'
             }],
             'fail_items': [{
-                "message": MESSAGES.get("failure_message").format('target2'),
+                "short_message": MESSAGES.get("failure_message").format('target2'),
                 "success": False,
                 "subject": MESSAGES.get("failure_subject").format('target2'),
                 "details": (MESSAGES.get('failure_details').format(
@@ -454,7 +448,7 @@ class TestRorschach(unittest.TestCase):
                 "target": 'target2'
             }],
             'fail_found_bucket': [{
-                "message": MESSAGES.get("failure_message").format('target3'),
+                "short_message": MESSAGES.get("failure_message").format('target3'),
                 "success": False,
                 "subject": MESSAGES.get("failure_subject").format('target3'),
                 "details": (MESSAGES.get('failure_details').format(
@@ -462,7 +456,7 @@ class TestRorschach(unittest.TestCase):
                 "target": 'target3'
             }],
             'ex_found_bucket': [{
-                "message": MESSAGES.get("exception_message"),
+                "short_message": MESSAGES.get("exception_message"),
                 "success": None,
                 "subject": MESSAGES.get("exception_checking_subject").format('target4'),
                 "details": MESSAGES.get('exception_details').format(
@@ -470,7 +464,7 @@ class TestRorschach(unittest.TestCase):
                 "target": 'target4'
             }],
             'fail_full_path': [{
-                "message": MESSAGES.get("failure_message").format('target5'),
+                "short_message": MESSAGES.get("failure_message").format('target5'),
                 "success": False,
                 "subject": MESSAGES.get("failure_subject").format('target5'),
                 "details": (MESSAGES.get('failure_details').format(
@@ -478,7 +472,7 @@ class TestRorschach(unittest.TestCase):
                 "target": 'target5'
             }],
             'fail_ex_items': [{
-                "message": MESSAGES.get("failure_message").format('target10'),
+                "short_message": MESSAGES.get("failure_message").format('target10'),
                 "success": False,
                 "subject": MESSAGES.get("failure_subject").format('target10'),
                 "details": ((MESSAGES.get('failure_details').format(MESSAGES.get('failure_file_empty').format(
@@ -492,19 +486,16 @@ class TestRorschach(unittest.TestCase):
                 'success': True,
                 'subject': 'Rorschach Success',
                 'details': 'some details',
-                'message': 'some message',
+                'short_message': 'some message',
                 'target': 'target 1'
             }, {
                 'details': 'some details',
                 'disable_notifier': True,
                 'dt_created': '2020-12-15T00:00:00+00:00',
-                'dt_updated': '2020-12-15T00:00:00+00:00',
-                'is_ack': False,
-                'is_notified': False,
-                'message': 'some message',
+                'short_message': 'some message',
                 'result_id': 0,
                 'snapshot': None,
-                'source': 'Rorschach',
+                'watchman_name': 'Rorschach',
                 'state': 'SUCCESS',
                 'subject': 'Rorschach Success',
                 'success': True,
@@ -514,19 +505,16 @@ class TestRorschach(unittest.TestCase):
                 'success': False,
                 'subject': 'Rorschach Failure',
                 'details': 'some details',
-                'message': 'some message',
+                'short_message': 'some message',
                 'target': 'target 1'
             }, {
                 'details': 'some details',
                 'disable_notifier': False,
                 'dt_created': '2020-12-15T00:00:00+00:00',
-                'dt_updated': '2020-12-15T00:00:00+00:00',
-                'is_ack': False,
-                'is_notified': False,
-                'message': 'some message',
+                'short_message': 'some message',
                 'result_id': 0,
                 'snapshot': None,
-                'source': 'Rorschach',
+                'watchman_name': 'Rorschach',
                 'state': 'FAILURE',
                 'subject': 'Rorschach Failure',
                 'success': False,
@@ -536,19 +524,16 @@ class TestRorschach(unittest.TestCase):
                 'success': None,
                 'subject': 'Rorschach Exception',
                 'details': 'some details',
-                'message': 'some message',
+                'short_message': 'some message',
                 'target': 'target 1'
             }, {
                 'details': 'some details',
                 'disable_notifier': False,
                 'dt_created': '2020-12-15T00:00:00+00:00',
-                'dt_updated': '2020-12-15T00:00:00+00:00',
-                'is_ack': False,
-                'is_notified': False,
-                'message': 'some message',
+                'short_message': 'some message',
                 'result_id': 0,
                 'snapshot': None,
-                'source': 'Rorschach',
+                'watchman_name': 'Rorschach',
                 'state': 'EXCEPTION',
                 'subject': 'Rorschach Exception',
                 'success': None,
@@ -575,13 +560,10 @@ class TestRorschach(unittest.TestCase):
                        'details': 'Rorschach Success\nsome details\n\nRorschach Success\nsome details\n\n',
                        'disable_notifier': True,
                        'dt_created': '2020-12-15T00:00:00+00:00',
-                       'dt_updated': '2020-12-15T00:00:00+00:00',
-                       'is_ack': False,
-                       'is_notified': False,
-                       'message': MESSAGES.get("success_message").format('All targets'),
+                       'short_message': MESSAGES.get("success_message").format('All targets'),
                        'result_id': 0,
                        'snapshot': None,
-                       'source': 'Rorschach',
+                       'watchman_name': 'Rorschach',
                        'state': 'SUCCESS',
                        'subject': MESSAGES.get("generic_suceess_subject"),
                        'success': True,
@@ -593,13 +575,10 @@ class TestRorschach(unittest.TestCase):
                        'details': 'Rorschach Success\nsome details\n\nRorschach Failure\nsome details\n\n',
                        'disable_notifier': False,
                        'dt_created': '2020-12-15T00:00:00+00:00',
-                       'dt_updated': '2020-12-15T00:00:00+00:00',
-                       'is_ack': False,
-                       'is_notified': False,
-                       'message': MESSAGES.get("failure_message"),
+                       'short_message': MESSAGES.get("failure_message"),
                        'result_id': 0,
                        'snapshot': None,
-                       'source': 'Rorschach',
+                       'watchman_name': 'Rorschach',
                        'state': 'FAILURE',
                        'subject': MESSAGES.get("generic_failure_subject"),
                        'success': False,
@@ -611,13 +590,10 @@ class TestRorschach(unittest.TestCase):
                        'details': 'Rorschach Success\nsome details\n\nRorschach Exception\nsome details\n\n',
                        'disable_notifier': False,
                        'dt_created': '2020-12-15T00:00:00+00:00',
-                       'dt_updated': '2020-12-15T00:00:00+00:00',
-                       'is_ack': False,
-                       'is_notified': False,
-                       'message': MESSAGES.get("exception_message"),
+                       'short_message': MESSAGES.get("exception_message"),
                        'result_id': 0,
                        'snapshot': None,
-                       'source': 'Rorschach',
+                       'watchman_name': 'Rorschach',
                        'state': 'EXCEPTION',
                        'subject': MESSAGES.get("generic_exception_subject"),
                        'success': None,
@@ -629,13 +605,10 @@ class TestRorschach(unittest.TestCase):
                        'details': 'Rorschach Failure\nsome details\n\nRorschach Exception\nsome details\n\n',
                        'disable_notifier': False,
                        'dt_created': '2020-12-15T00:00:00+00:00',
-                       'dt_updated': '2020-12-15T00:00:00+00:00',
-                       'is_ack': False,
-                       'is_notified': False,
-                       'message': MESSAGES.get("exception_message") + MESSAGES.get("failure_message"),
+                       'short_message': MESSAGES.get("exception_message") + MESSAGES.get("failure_message"),
                        'result_id': 0,
                        'snapshot': None,
-                       'source': 'Rorschach',
+                       'watchman_name': 'Rorschach',
                        'state': 'EXCEPTION',
                        'subject': MESSAGES.get("generic_fail_exception_subject"),
                        'success': None,
@@ -673,7 +646,6 @@ class TestRorschach(unittest.TestCase):
         returned = rorschach_obj.monitor()
         returned = returned[0].to_dict()
         returned['dt_created'] = '2020-12-15T00:00:00+00:00'
-        returned['dt_updated'] = '2020-12-15T00:00:00+00:00'
         self.assertEqual(self.expected_invalid_event_email_result, returned)
 
         # check a case with s3 target file not loaded
@@ -683,7 +655,6 @@ class TestRorschach(unittest.TestCase):
         returned = rorschach_obj.monitor()
         returned = returned[0].to_dict()
         returned['dt_created'] = '2020-12-15T00:00:00+00:00'
-        returned['dt_updated'] = '2020-12-15T00:00:00+00:00'
         self.assertEqual(self.expected_invalid_config_file_result, returned)
 
     def test_check_invalid_event(self):
@@ -714,7 +685,6 @@ class TestRorschach(unittest.TestCase):
         returned = rorschach_obj._create_invalid_event_results()
         returned = returned[0].to_dict()
         returned["dt_created"] = "2020-12-15T00:00:00+00:00"
-        returned["dt_updated"] = "2020-12-15T00:00:00+00:00"
         self.assertEqual(self.expected_invalid_event_email_result, returned)
 
     @patch('builtins.open', new_callable=mock_open())
@@ -748,7 +718,6 @@ class TestRorschach(unittest.TestCase):
         returned = rorschach_obj._create_config_not_load_results(s3_target)
         returned = returned[0].to_dict()
         returned["dt_created"] = "2020-12-15T00:00:00+00:00"
-        returned["dt_updated"] = "2020-12-15T00:00:00+00:00"
         self.assertEqual(self.expected_invalid_config_file_result, returned)
 
     @patch('watchmen.process.rorschach.Rorschach._generate_contents')
@@ -763,9 +732,11 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _process_checking
         """
-        for key in self.example_process_checking_cases :
-            input = self.example_process_checking_cases .get(key).get('input')  # input each edge case for processing checking
-            mock_result = self.example_process_checking_cases .get(key).get('return')  # the expected mock results of each edge case
+        for key in self.example_process_checking_cases:
+            input = self.example_process_checking_cases .get(key).get('input')
+            # input each edge case for processing checking
+            mock_result = self.example_process_checking_cases .get(key).get('return')
+            # the expected mock results of each edge case
 
             mock_bucket.return_value = mock_result.get('bucket_result')
             mock_full_path.return_value = mock_result.get('full_path')
@@ -806,7 +777,6 @@ class TestRorschach(unittest.TestCase):
             for obj in returned:
                 obj = obj.to_dict()
                 obj['dt_created'] = '2020-12-15T00:00:00+00:00'
-                obj['dt_updated'] = '2020-12-15T00:00:00+00:00'
                 example_result_list.append(obj)
             self.assertEqual(example_result_list, result)
 
