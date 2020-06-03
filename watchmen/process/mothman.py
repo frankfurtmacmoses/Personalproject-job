@@ -176,9 +176,9 @@ class Mothman(Watchman):
         result = Result(
             details=parameters.get("details"),
             disable_notifier=parameters.get("disable_notifier"),
-            message=parameters.get("message"),
+            short_message=parameters.get("short_message"),
             snapshot={},
-            source=self.source,
+            watchman_name=self.watchman_name,
             state=parameters.get("state"),
             subject=parameters.get("subject"),
             success=parameters.get("success"),
@@ -192,14 +192,14 @@ class Mothman(Watchman):
         :param success: Boolean indicating success of the file checks. True if successful, False if unsuccessful,
                         None if exception.
         :param details: String containing details of the file check.
-        :return: A dictionary containing "details", "disable_notifier", "message", "state", "subject", "success", and
-                "target".
+        :return: A dictionary containing "details", "disable_notifier", "short_message", "state", "subject",
+                "success", and "target".
         """
         parameter_chart = {
             None: {
                 "details": details,
                 "disable_notifier": False,
-                "message": MESSAGES.get("exception_subject"),
+                "short_message": MESSAGES.get("exception_subject"),
                 "state": Watchman.STATE.get("exception"),
                 "subject": MESSAGES.get("exception_subject"),
                 "success": False,
@@ -208,7 +208,7 @@ class Mothman(Watchman):
             True: {
                 "details": details,
                 "disable_notifier": True,
-                "message": MESSAGES.get("success_short_message"),
+                "short_message": MESSAGES.get("success_short_message"),
                 "state": Watchman.STATE.get("success"),
                 "subject": MESSAGES.get("success_subject"),
                 "success": True,
@@ -217,7 +217,7 @@ class Mothman(Watchman):
             False: {
                 "details": details,
                 "disable_notifier": False,
-                "message": MESSAGES.get("failure_short_message"),
+                "short_message": MESSAGES.get("failure_short_message"),
                 "state": Watchman.STATE.get("failure"),
                 "subject": MESSAGES.get("failure_subject"),
                 "success": False,
