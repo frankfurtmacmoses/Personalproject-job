@@ -25,11 +25,11 @@ class MainTester(unittest.TestCase):
 
         self.example_lambda_message = "Messages that are in the list of results."
         self.example_result_list = [Result(
-            message=self.example_lambda_message,
+            short_message=self.example_lambda_message,
             success=True,
             state="SUCCESS",
             subject="Success subject.",
-            source="Example source",
+            watchman_name="Example source",
             target="Fake target",
         )]
 
