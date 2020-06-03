@@ -202,23 +202,23 @@ class Metropolis(Watchman):
         disable_notifier = success
 
         if has_outlier and has_exception:
-            message = GENERIC + FAILURE_EXCEPTION_MESSAGE
+            short_message = GENERIC + FAILURE_EXCEPTION_MESSAGE
             subject = GENERIC_FAIL_AND_EXCEPTION_SUBJECT
             state = Watchman.STATE.get("exception")
         elif has_outlier and not has_exception:
-            message = GENERIC + FAILURE_MESSAGE
+            short_message = GENERIC + FAILURE_MESSAGE
             subject = GENERIC_FAIL_SUBJECT
             state = Watchman.STATE.get("failure")
         elif not has_outlier and has_exception:
-            message = GENERIC + EXCEPTION_MESSAGE
+            short_message = GENERIC + EXCEPTION_MESSAGE
             subject = GENERIC_EXCEPTION_SUBJECT
             state = Watchman.STATE.get("exception")
         else:
-            message = GENERIC + SUCCESS_MESSAGE
+            short_message = GENERIC + SUCCESS_MESSAGE
             subject = GENERIC_SUCCESS_SUBJECT
             state = Watchman.STATE.get("success")
         result = self._create_result(
-            message=message,
+            short_message=short_message,
             success=success,
             disable_notifier=disable_notifier,
             state=state,
@@ -241,7 +241,7 @@ class Metropolis(Watchman):
             tb = "No rows with today's date exist."
         details = NOT_LOADED_DETAILS.format(date, DATA_FILE, tb)
         result = self._create_result(
-            message=NOT_LOADED_MESSAGE,
+            short_message=NOT_LOADED_MESSAGE,
             success=False,
             disable_notifier=False,
             state=Watchman.STATE.get("exception"),
@@ -266,7 +266,7 @@ class Metropolis(Watchman):
             parameters = self._create_summary_parameters(True, process_name)
 
         result = self._create_result(
-            message=parameters.get("message"),
+            short_message=parameters.get("short_message"),
             target=parameters.get("target"),
             success=parameters.get("success"),
             disable_notifier=disable_notifier,
@@ -278,7 +278,7 @@ class Metropolis(Watchman):
 
         return result
 
-    def _create_result(self, success, disable_notifier, state, subject, details, snapshot, target, message):
+    def _create_result(self, success, disable_notifier, state, subject, details, snapshot, target, short_message):
         """
         Creates the result object.
         :param success: <bool> whether the file was found, false upon exception, otherwise false
@@ -288,16 +288,16 @@ class Metropolis(Watchman):
         :param details: <str> content for the notification
         :param snapshot: <list> row(s) being monitored.
         :param target: <string> The SNS topic.
-        :param message: <string> The short message returned to the lambda.
+        :param short_message: <string> The short message returned to the lambda.
         :return: <Result> result based on the parameters
         """
         result = Result(
-            message=message,
+            short_message=short_message,
             success=success,
             disable_notifier=disable_notifier,
             state=state,
             subject=subject,
-            source=self.source,
+            watchman_name=self.watchman_name,
             snapshot=snapshot,
             target=target,
             details=details)
@@ -323,7 +323,7 @@ class Metropolis(Watchman):
             disable_notifier: whether we should disable the notifier
             state: state of result
             subject: subject for long notification
-            message: short message describing whether the target is considered successful
+            short_message: short message describing whether the target is considered successful
             target: The SNS topic that will be notified if an exception or failure occurred.
         :param threshold_check: <bool> result of checking threshold, None upon exception
         :param process_name: <str> process name
@@ -335,7 +335,7 @@ class Metropolis(Watchman):
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
                 "subject": EXCEPTION_SUBJECT.format(process_name),
-                "message": EXCEPTION_MESSAGE,
+                "short_message": EXCEPTION_MESSAGE,
                 "target": TARGETS.get(process_name)
             },
             True: {
@@ -343,7 +343,7 @@ class Metropolis(Watchman):
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
                 "subject": SUCCESS_SUBJECT.format(process_name),
-                "message": SUCCESS_MESSAGE,
+                "short_message": SUCCESS_MESSAGE,
                 "target": TARGETS.get(process_name)
             },
             False: {
@@ -351,7 +351,7 @@ class Metropolis(Watchman):
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
                 "subject": FAILURE_SUBJECT.format(process_name),
-                "message": FAILURE_MESSAGE,
+                "short_message": FAILURE_MESSAGE,
                 "target": TARGETS.get(process_name)
             },
         }

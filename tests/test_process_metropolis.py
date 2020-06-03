@@ -40,7 +40,7 @@ class TestMetropolis(unittest.TestCase):
         self.example_process_name = 'domain_counts'
         self.example_result_list = ['result1', 'result2', self.example_generic_result]
         self.example_snapshot = 'some snapshot'
-        self.example_source = 'Metropolis'
+        self.example_watchman_name = 'Metropolis'
         self.example_state = 'FAILURE'
         self.example_traceback = 'some exception'
         self.example_target = 'some target'
@@ -125,18 +125,15 @@ class TestMetropolis(unittest.TestCase):
             "disable_notifier": False,
             "state": self.example_state,
             "subject": FAILURE_SUBJECT.format(self.example_process_name),
-            "message": FAILURE_MESSAGE,
+            "short_message": FAILURE_MESSAGE,
             "target": "Domain Counts Metrics"
         }
         self.example_result_dict = {
             "details": self.example_details,
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": "Example message",
-            "source": self.example_source,
+            "short_message": "Example message",
+            "watchman_name": self.example_watchman_name,
             "result_id": 0,
             "snapshot": self.example_snapshot,
             "state": self.example_state,
@@ -148,13 +145,10 @@ class TestMetropolis(unittest.TestCase):
             "details": self.example_details,
             "disable_notifier": "to be changed",
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": "NO MESSAGE",
+            "short_message": "NO MESSAGE",
             "result_id": 0,
             "snapshot": self.example_snapshot,
-            "source": self.example_source,
+            "watchman_name": self.example_watchman_name,
             "state": "to be changed",
             "subject": "to be changed",
             "success": False,
@@ -164,13 +158,10 @@ class TestMetropolis(unittest.TestCase):
             "details": NOT_LOADED_DETAILS.format(self.example_date, DATA_FILE, self.example_traceback),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": NOT_LOADED_MESSAGE,
+            "short_message": NOT_LOADED_MESSAGE,
             "result_id": 0,
             "snapshot": {},
-            "source": self.example_source,
+            "watchman_name": self.example_watchman_name,
             "state": "EXCEPTION",
             "subject": NOT_LOADED_SUBJECT,
             "success": False,
@@ -288,25 +279,25 @@ class TestMetropolis(unittest.TestCase):
             "subject": GENERIC_SUCCESS_SUBJECT,
             "state": "SUCCESS",
             "success": True,
-            "message": GENERIC + SUCCESS_MESSAGE
+            "short_message": GENERIC + SUCCESS_MESSAGE
         }, {
             "checks": [True, False, True],
             "subject": GENERIC_FAIL_SUBJECT,
             "state": "FAILURE",
             "success": False,
-            "message": GENERIC + FAILURE_MESSAGE
+            "short_message": GENERIC + FAILURE_MESSAGE
         }, {
             "checks": [None, True, True],
             "subject": GENERIC_EXCEPTION_SUBJECT,
             "state": "EXCEPTION",
             "success": False,
-            "message": GENERIC + EXCEPTION_MESSAGE
+            "short_message": GENERIC + EXCEPTION_MESSAGE
         }, {
             "checks": [True, False, None],
             "subject": GENERIC_FAIL_AND_EXCEPTION_SUBJECT,
             "state": "EXCEPTION",
             "success": False,
-            "message": GENERIC + FAILURE_EXCEPTION_MESSAGE
+            "short_message": GENERIC + FAILURE_EXCEPTION_MESSAGE
         }]
 
         for test in tests:
@@ -320,7 +311,7 @@ class TestMetropolis(unittest.TestCase):
             expected["state"] = test.get("state")
             expected["success"] = test.get("success")
             expected["disable_notifier"] = test.get("success")
-            expected["message"] = test.get("message")
+            expected["short_message"] = test.get("short_message")
 
             returned_dict = self._create_metropolis()._create_generic_result(
                 generic_checks=generic_checks,
@@ -331,7 +322,6 @@ class TestMetropolis(unittest.TestCase):
             # since metropolis does not give observed time, we don't test the time here
 
             returned_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
-            returned_dict["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
             self.assertEqual(expected, returned_dict)
 
@@ -347,7 +337,6 @@ class TestMetropolis(unittest.TestCase):
         # since metropolis does not give observed time, we don't test the time here
 
         returned_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
-        returned_dict["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected_dict, returned_dict)
 
@@ -364,14 +353,13 @@ class TestMetropolis(unittest.TestCase):
             details=self.example_details,
             snapshot=self.example_snapshot,
             target=self.example_target,
-            message=self.example_message
+            short_message=self.example_message
         )
         returned_dict = returned.to_dict()
 
         # since metropolis does not give observed time, we don't test the time here
 
         returned_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
-        returned_dict["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected_dict, returned_dict)
 
@@ -473,7 +461,6 @@ class TestMetropolis(unittest.TestCase):
                                                                  self.example_exception_msg)
             # since metropolis does not give observed time, we don't test the time here
             returned_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
-            returned_dict["dt_updated"] = "2018-12-18T00:00:00+00:00"
             self.assertEqual(expected_dict, returned_dict)
 
     @patch('watchmen.utils.s3.get_content')
