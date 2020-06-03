@@ -28,13 +28,10 @@ class TestSpectre(unittest.TestCase):
                        "Tech logs!",
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": "Spectre monitor failed, please check S3 and Georgia Tech logs!",
+            "short_message": "Spectre monitor failed, please check S3 and Georgia Tech logs!",
             "result_id": 0,
             "snapshot": None,
-            "source": "Spectre",
+            "watchman_name": "Spectre",
             "state": "FAILURE",
             "subject": "Spectre Georgia Tech data monitor detected a failure!",
             "success": False,
@@ -94,7 +91,6 @@ class TestSpectre(unittest.TestCase):
             self.example_details_chart.get(False)).to_dict()
         # since spectre does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"
-        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(result, expected)
 
@@ -123,6 +119,5 @@ class TestSpectre(unittest.TestCase):
 
         # since spectre does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"
-        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertDictEqual(result, expected)
