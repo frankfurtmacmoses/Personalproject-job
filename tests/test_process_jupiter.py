@@ -20,13 +20,10 @@ class TestJupiter(unittest.TestCase):
             "details": MESSAGES.get("not_enough_eps_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("bad_endpoints_message") + const.LINE_SEPARATOR,
+            "short_message": MESSAGES.get("bad_endpoints_message") + const.LINE_SEPARATOR,
             "result_id": 0,
             "snapshot": {},
-            "source": "Jupiter",
+            "watchman_name": "Jupiter",
             "state": "EXCEPTION",
             "subject": MESSAGES.get("not_enough_eps"),
             "success": False,
@@ -56,13 +53,10 @@ class TestJupiter(unittest.TestCase):
             "details": MESSAGES.get("not_enough_eps_message"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("not_enough_eps_message"),
+            "short_message": MESSAGES.get("not_enough_eps_message"),
             "result_id": 0,
             "snapshot": {},
-            "source": "Jupiter",
+            "watchman_name": "Jupiter",
             "state": "EXCEPTION",
             "subject": MESSAGES.get("not_enough_eps"),
             "success": False,
@@ -80,13 +74,10 @@ class TestJupiter(unittest.TestCase):
             "details": self.example_failure_message,
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("success_message"),
+            "short_message": MESSAGES.get("success_message"),
             "result_id": 0,
             "snapshot": {},
-            "source": "Jupiter",
+            "watchman_name": "Jupiter",
             "state": "FAILURE",
             "subject": MESSAGES.get("failure_subject"),
             "success": False,
@@ -122,13 +113,10 @@ class TestJupiter(unittest.TestCase):
             "details": MESSAGES.get("success_message"),
             "disable_notifier": True,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("success_message"),
+            "short_message": MESSAGES.get("success_message"),
             "result_id": 0,
             "snapshot": {},
-            "source": "Jupiter",
+            "watchman_name": "Jupiter",
             "state": "SUCCESS",
             "subject": MESSAGES.get("success_subject"),
             "success": True,
@@ -189,7 +177,7 @@ class TestJupiter(unittest.TestCase):
             "failed_nocal_endpoints_msg": "",
             "failed_endpoints_not_using_cal": False,
             "failed_endpoints_using_cal": False,
-            "message": "Everything passed",
+            "short_message": "Everything passed",
             "subject": "Happy subject line",
             "success": True,
         }
@@ -199,7 +187,7 @@ class TestJupiter(unittest.TestCase):
                                           "endpoints that do not use the calendar.",
             "failed_endpoints_not_using_cal": True,
             "failed_endpoints_using_cal": False,
-            "message": "Contains Failures",
+            "short_message": "Contains Failures",
             "subject": "Sad subject line",
             "success": False,
         }
@@ -209,7 +197,7 @@ class TestJupiter(unittest.TestCase):
                                           "endpoints that do not use the calendar.",
             "failed_endpoints_not_using_cal": True,
             "failed_endpoints_using_cal": True,
-            "message": "Contains Failures",
+            "short_message": "Contains Failures",
             "subject": "Sad subject line",
             "success": False,
         }
@@ -219,7 +207,7 @@ class TestJupiter(unittest.TestCase):
                                           "endpoints that do not use the calendar.",
             "failed_endpoints_not_using_cal": False,
             "failed_endpoints_using_cal": True,
-            "message": "Contains Failures",
+            "short_message": "Contains Failures",
             "subject": "Sad subject line",
             "success": False,
         }
@@ -230,17 +218,17 @@ class TestJupiter(unittest.TestCase):
         # - When it is not notification time and there are failed endpoints that do not use the calendar.
         failed_endpoints_tests = [{
             "notification_time": False, "summarized_result": failure,
-            "expected": failure.get('message'),
+            "expected": failure.get('short_message'),
         }, {
             "notification_time": True, "summarized_result": failure_based_on_notification_time,
-            "expected": failure_based_on_notification_time.get('message'),
+            "expected": failure_based_on_notification_time.get('short_message'),
         }, {
             "notification_time": False, "summarized_result": failure_based_on_notification_time,
             "expected": failure_based_on_notification_time.get('failed_nocal_endpoints_msg'),
         }]
 
         # Success is true:
-        expected = True, success.get('message')
+        expected = True, success.get('short_message')
         returned = jupiter_obj._check_skip_notification_(success)
         self.assertEqual(expected, returned)
 
@@ -265,7 +253,6 @@ class TestJupiter(unittest.TestCase):
         expected = self.example_exception_result
         returned = jupiter_obj._create_invalid_endpoints_result().to_dict()
         returned["dt_created"] = "2018-12-18T00:00:00+00:00"
-        returned["dt_updated"] = "2018-12-18T00:00:00+00:00"
         self.assertEqual(expected, returned)
 
     def test_get_result_parameters(self):
@@ -347,7 +334,6 @@ class TestJupiter(unittest.TestCase):
             mock_skip_notif.return_value = check_result, details
             returned = jupiter_obj.monitor()[0].to_dict()
             returned["dt_created"] = "2018-12-18T00:00:00+00:00"
-            returned["dt_updated"] = "2018-12-18T00:00:00+00:00"
             self.assertEqual(expected, returned)
 
     @patch('watchmen.process.jupiter.raise_alarm')
@@ -380,19 +366,20 @@ class TestJupiter(unittest.TestCase):
         test_results = [{
             "results": self.example_no_failures, "expected": {
                 "failed_nocal_endpoints_msg": "", "failed_endpoints_not_using_cal": False,
-                "failed_endpoints_using_cal": False, "message": MESSAGES.get("success_message"),
+                "failed_endpoints_using_cal": False, "short_message": MESSAGES.get("success_message"),
                 "subject": MESSAGES.get("success_subject"), "success": True,
             }
         }, {
             "results": self.example_failed, "expected": {
                 "failed_nocal_endpoints_msg": failed_message, "failed_endpoints_not_using_cal": True,
-                "failed_endpoints_using_cal": False, "message": failed_message, "subject": failed_subject,
+                "failed_endpoints_using_cal": False, "short_message": failed_message, "subject": failed_subject,
                 "success": False
             }
         }, {
             "results": self.example_empty, "expected": {
                 "failed_nocal_endpoints_msg": "", "failed_endpoints_not_using_cal": False,
-                "failed_endpoints_using_cal": False, "message": empty_message, "subject": MESSAGES.get("error_jupiter"),
+                "failed_endpoints_using_cal": False, "short_message": empty_message,
+                "subject": MESSAGES.get("error_jupiter"),
                 "success": False,
             }
         }]
@@ -406,7 +393,7 @@ class TestJupiter(unittest.TestCase):
         # Results DNE
         results = None
         expected = {
-            "message": MESSAGES.get("results_dne"), "subject": MESSAGES.get("error_jupiter"), "success": False,
+            "short_message": MESSAGES.get("results_dne"), "subject": MESSAGES.get("error_jupiter"), "success": False,
             "failed_nocal_endpoints_msg": "", "failed_endpoints_not_using_cal": False,
             "failed_endpoints_using_cal": False
             }

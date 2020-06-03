@@ -80,11 +80,11 @@ class Jupiter(Watchman):
         result = Result(
             success=parameters.get("success"),
             disable_notifier=parameters.get("disable_notifier"),
-            message=self.result_message,
+            short_message=self.result_message,
             snapshot={},
             state=parameters.get("state"),
             subject=parameters.get("subject"),
-            source=self.source,
+            watchman_name=self.watchman_name,
             target=TARGET,
             details=details
         )
@@ -172,21 +172,21 @@ class Jupiter(Watchman):
         failed_endpoints_not_using_cal = summarized_result.get("failed_endpoints_not_using_cal")
         failed_endpoints_using_cal = summarized_result.get("failed_endpoints_using_cal")
         failed_nocal_endpoints_msg = summarized_result.get("failed_nocal_endpoints_msg")
-        message = summarized_result.get('message')
+        short_message = summarized_result.get('short_message')
         success = summarized_result.get('success')
 
         if success:
-            return True, message
+            return True, short_message
 
         # If there are only failed endpoints that do not use the calendar, a notification is always sent.
         if not failed_endpoints_using_cal:
-            return False, message
+            return False, short_message
 
         is_notification_time = self._check_notification_time()
 
         # If it is notification time, send the notification containing all failed endpoints.
         if is_notification_time:
-            return False, message
+            return False, short_message
 
         # If it is NOT notification time, a notification containing information about the failed endpoints that do NOT
         # use the calendar will be sent.
@@ -204,16 +204,16 @@ class Jupiter(Watchman):
         :return: Result object.
         """
         parameters = self._get_result_parameters(None)
-        message = self.result_message
-        if not message:
-            message = MESSAGES.get("not_enough_eps_message")
+        short_message = self.result_message
+        if not short_message:
+            short_message = MESSAGES.get("not_enough_eps_message")
 
         result = Result(
             details=MESSAGES.get("not_enough_eps_message"),
             disable_notifier=parameters.get("disable_notifier"),
-            message=message,
+            short_message=short_message,
             snapshot={},
-            source=self.source,
+            watchman_name=self.watchman_name,
             state=parameters.get("state"),
             subject=parameters.get("subject"),
             success=parameters.get("success"),
@@ -282,10 +282,10 @@ class Jupiter(Watchman):
                 formatted_data += "\tName: " + endpoint.get('name') + "\n"
                 formatted_data += "\tPath: " + endpoint.get('path') + "\n\n"
 
-            message = MESSAGES.get("s3_fail_load_message").format(bucket, data_file, formatted_data, ex)
-            self._append_to_message(message)
-            self.logger.warning(message)
-            raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=MESSAGES.get("s3_fail_load_subject"), msg=message)
+            short_message = MESSAGES.get("s3_fail_load_message").format(bucket, data_file, formatted_data, ex)
+            self._append_to_message(short_message)
+            self.logger.warning(short_message)
+            raise_alarm(topic_arn=SNS_TOPIC_ARN, subject=MESSAGES.get("s3_fail_load_subject"), msg=short_message)
 
         endpoints = ENDPOINTS_DATA
         return endpoints
@@ -315,7 +315,7 @@ class Jupiter(Watchman):
             failed_endpoints_not_using_cal: Boolean indicating if there were failed endpoints that do NOT use the cal.
             failed_endpoints_using_cal: Boolean indicating if there were failed endpoints that DO use the calendar.
             failed_nocal_endpoints_msg: Message (String) for failed endpoints that do not use the calendar.
-            message: Message (String) describing the result of checking all endpoints.
+            short_message: Message (String) describing the result of checking all endpoints.
             subject: Subject of the SNS notification (String),
             success: Boolean, true if all endpoints are working, false if any endpoints failed or an error occurred.
 
@@ -325,12 +325,12 @@ class Jupiter(Watchman):
         @return: the notification message
         """
         if not results or not isinstance(results, dict):
-            message = MESSAGES.get("results_dne")
+            short_message = MESSAGES.get("results_dne")
             return {
                 "failed_endpoints_not_using_cal": False,
                 "failed_endpoints_using_cal": False,
                 "failed_nocal_endpoints_msg": "",
-                "message": message,
+                "short_message": short_message,
                 "subject": MESSAGES.get("error_jupiter"),
                 "success": False
             }
@@ -340,20 +340,20 @@ class Jupiter(Watchman):
 
         # Checking if results is empty
         if not failure and not success:
-            message = 'Empty result:\n{}\n{}\nEndpoints:\n{}\n{}\n{}'.format(
+            short_message = 'Empty result:\n{}\n{}\nEndpoints:\n{}\n{}\n{}'.format(
                 json.dumps(results, sort_keys=True, indent=2),
                 const.MESSAGE_SEPARATOR,
                 json.dumps(endpoints, indent=2),
                 const.MESSAGE_SEPARATOR,
                 json.dumps(validated_paths, indent=2)
             )
-            self.logger.error(message)
-            message = "{}\n\n\n{}".format(message, MESSAGES.get("no_results"))
+            self.logger.error(short_message)
+            short_message = "{}\n\n\n{}".format(short_message, MESSAGES.get("no_results"))
             return {
                 "failed_endpoints_not_using_cal": False,
                 "failed_endpoints_using_cal": False,
                 "failed_nocal_endpoints_msg": "",
-                "message": message,
+                "short_message": short_message,
                 "subject": MESSAGES.get("error_jupiter"),
                 "success": False
             }
@@ -378,7 +378,7 @@ class Jupiter(Watchman):
 
                 self.logger.error('Notify failure:\n%s', msg)
 
-            message = '{}\n\n\n{}'.format('\n\n'.join(messages), MESSAGES.get("check_logs"))
+            short_message = '{}\n\n\n{}'.format('\n\n'.join(messages), MESSAGES.get("check_logs"))
             failed_nocal_endpoints_msg = '{}\n\n\n{}'.format('\n\n'.join(failed_nocal_endpoints_msgs),
                                                              MESSAGES.get("check_logs"))
 
@@ -388,7 +388,7 @@ class Jupiter(Watchman):
                 "failed_endpoints_not_using_cal": failed_endpoints_not_using_cal,
                 "failed_endpoints_using_cal": failed_endpoints_using_cal,
                 "failed_nocal_endpoints_msg": failed_nocal_endpoints_msg,
-                "message": message,
+                "short_message": short_message,
                 "subject": subject,
                 "success": False
             }
@@ -398,7 +398,7 @@ class Jupiter(Watchman):
             "failed_endpoints_not_using_cal": False,
             "failed_endpoints_using_cal": False,
             "failed_nocal_endpoints_msg": "",
-            "message": MESSAGES.get("success_message"),
+            "short_message": MESSAGES.get("success_message"),
             "subject": MESSAGES.get("success_subject"),
             "success": True
         }
