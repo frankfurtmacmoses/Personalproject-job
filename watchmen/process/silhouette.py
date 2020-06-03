@@ -66,21 +66,21 @@ class Silhouette(Watchman):
         details = self._create_details(self.filename, is_status_valid, tb)
         parameter_chart = {
             None: {
-                "message": EXCEPTION_SHORT_MESSAGE,
+                "short_message": EXCEPTION_SHORT_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
                 "subject": EXCEPTION_SUBJECT,
             },
             True: {
-                "message": SUCCESS_MESSAGE,
+                "short_message": SUCCESS_MESSAGE,
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
                 "subject": SUCCESS_SUBJECT,
             },
             False: {
-                "message": FAILURE_MESSAGE,
+                "short_message": FAILURE_MESSAGE,
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
@@ -89,7 +89,7 @@ class Silhouette(Watchman):
         }
         parameters = parameter_chart.get(is_status_valid)
         result = self._create_result(
-            message=parameters.get("message"),
+            short_message=parameters.get("short_message"),
             success=parameters.get("success"),
             disable_notifier=parameters.get("disable_notifier"),
             state=parameters.get("state"),
@@ -143,7 +143,7 @@ class Silhouette(Watchman):
             self.logger.info(status.get('log_details'))
         return details
 
-    def _create_result(self, message, success, disable_notifier, state, subject, details):
+    def _create_result(self, short_message, success, disable_notifier, state, subject, details):
         """
         Create the result object
         @param success: <bool> whether the file was found, false upon exception, otherwise false
@@ -153,12 +153,12 @@ class Silhouette(Watchman):
         @return: <Result> result based on the parameters
         """
         result = Result(
-            message=message,
+            short_message=short_message,
             success=success,
             disable_notifier=disable_notifier,
             state=state,
             subject=subject,
-            source=self.source,
+            watchman_name=self.watchman_name,
             target=TARGET,
             details=details)
         return result

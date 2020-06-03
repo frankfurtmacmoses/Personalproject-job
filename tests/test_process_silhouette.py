@@ -31,13 +31,10 @@ class TestSilhouette(unittest.TestCase):
                        "simply did not complete!",
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": self.example_failure_message,
+            "short_message": self.example_failure_message,
             "result_id": 0,
             "snapshot": None,
-            "source": "Silhouette",
+            "watchman_name": "Silhouette",
             "state": "FAILURE",
             "subject": "Silhouette watchman detected an issue with lookalike feed!",
             "success": False,
@@ -100,7 +97,6 @@ class TestSilhouette(unittest.TestCase):
             self.example_details_chart.get(False)).to_dict()
         # since silhouette does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"
-        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, result)
 
@@ -129,7 +125,6 @@ class TestSilhouette(unittest.TestCase):
 
         # since silhouette does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"
-        result['dt_updated'] = "2018-12-18T00:00:00+00:00"
         self.maxDiff = None
         self.assertDictEqual(result, expected)
 
