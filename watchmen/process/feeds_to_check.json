@@ -13,7 +13,7 @@
       "metric_name": "IPV4_TIDE_SUCCESS",
       "min": 1,
       "max": 1000000,
-      "needs_metric": true
+      "needs_metric": false
     }, {
       "name": "cybercrime-scraper",
       "source_name": "Xylitol_CyberCrime",
