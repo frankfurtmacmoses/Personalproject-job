@@ -124,7 +124,7 @@ RORSCHACH = {
                                        "CloudFormation file and CloudWatch events to ensure that the correct"
                                        " parameters are being sent. S3 targets can not be checked with an invalid "
                                        "event parameter.",
-    "exception_config_not_load_details": "Cannot load S3 targets from file:\nException: {}",
+    "exception_config_not_load_details": "Cannot load S3 targets from file: {}\nException: {}",
     "exception_message": "Exception occurred when checking s3 targets! Please check email for more details.",
     "exception_details": "The following paths threw exceptions during their checks:\n{}",
     "success_message": "{} in S3 ran with no issues.",
