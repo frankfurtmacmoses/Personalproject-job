@@ -91,11 +91,11 @@ class Rorschach(Watchman):
             state=Watchman.STATE.get("exception"),
             success=False,
             subject=MESSAGES.get("exception_invalid_event_subject"),
-            source=self.source,
+            watchman_name=self.watchman_name,
             target="Generic S3",
             details=MESSAGES.get("exception_invalid_event_details"),
             snapshot={},
-            message=MESSAGES.get("exception_message"),
+            short_message=MESSAGES.get("exception_message"),
         )]
 
     def _load_config(self):
@@ -125,11 +125,11 @@ class Rorschach(Watchman):
             state=Watchman.STATE.get("exception"),
             success=False,
             subject=MESSAGES.get("exception_config_not_load_subject"),
-            source=self.source,
+            watchman_name=self.watchman_name,
             target="Generic S3",
-            details=MESSAGES.get("exception_config_not_load_details").format(tb),
+            details=MESSAGES.get("exception_config_not_load_details").format(CONFIG_NAME, tb),
             snapshot={},
-            message=MESSAGES.get("exception_message"),
+            short_message=MESSAGES.get("exception_message"),
         )]
 
     def _process_checking(self, s3_targets):
@@ -312,7 +312,7 @@ class Rorschach(Watchman):
                     "success": True,
                     "subject": MESSAGES.get("success_subject").format(target_name),
                     "details": MESSAGES.get("success_details").format(target_name),
-                    "message": MESSAGES.get("success_message").format(target_name),
+                    "short_message": MESSAGES.get("success_message").format(target_name),
                     "target": target_name
                 }
                 summary.append(summary_details)
@@ -325,7 +325,7 @@ class Rorschach(Watchman):
                                                           item[0].get('prefix'),
                                                           item[1].get('exception'))
                     summary_details = {
-                        "message": MESSAGES.get("exception_message"),
+                        "short_message": MESSAGES.get("exception_message"),
                         "success": None,
                         "subject": MESSAGES.get("exception_checking_subject").format(target_name),
                         "details": MESSAGES.get('exception_details').format(exception_list),
@@ -382,7 +382,7 @@ class Rorschach(Watchman):
                         msg += MESSAGES.get('exception_details').format(exception_list)
 
                     summary_details = {
-                        "message": MESSAGES.get("failure_message").format(target_name),
+                        "short_message": MESSAGES.get("failure_message").format(target_name),
                         "success": False,
                         "subject": MESSAGES.get("failure_subject").format(target_name),
                         "details": msg,
@@ -430,40 +430,40 @@ class Rorschach(Watchman):
             subject = summary_item.get("subject")
             details = summary_item.get("details")
             target = summary_item.get("target")
-            message = summary_item.get("message")
+            short_message = summary_item.get("short_message")
             parameters = state_chart.get(check_result)
             results.append(Result(
                 **parameters,
                 subject=subject,
-                source=self.source,
+                watchman_name=self.watchman_name,
                 target=target,
                 details=details,
-                message=message))
+                short_message=short_message))
 
         # this is used to create a generic result for email notification
         if failure and exception:
-            message = MESSAGES.get("exception_message") + MESSAGES.get("failure_message")
+            short_message = MESSAGES.get("exception_message") + MESSAGES.get("failure_message")
             subject = MESSAGES.get("generic_fail_exception_subject")
             parameters = state_chart.get(None)
         elif failure:
-            message = MESSAGES.get("failure_message")
+            short_message = MESSAGES.get("failure_message")
             subject = MESSAGES.get("generic_failure_subject")
             parameters = state_chart.get(False)
         elif exception:
-            message = MESSAGES.get("exception_message")
+            short_message = MESSAGES.get("exception_message")
             subject = MESSAGES.get("generic_exception_subject")
             parameters = state_chart.get(None)
         else:
-            message = MESSAGES.get("success_message").format('All targets')
+            short_message = MESSAGES.get("success_message").format('All targets')
             subject = MESSAGES.get("generic_suceess_subject")
             parameters = state_chart.get(True)
         results.append(Result(
             **parameters,
             subject=subject,
-            source=self.source,
+            watchman_name=self.watchman_name,
             target='Generic S3',
             details=msg,
-            message=message))
+            short_message=short_message))
 
         return results
 

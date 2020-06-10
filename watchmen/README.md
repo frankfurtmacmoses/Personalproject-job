@@ -267,27 +267,19 @@ class {WATCHMAN_NAME}(Watchman):
     - This class contains all the properties of a check from a Watchman. A list of Result
       objects must be returned at the end of a check. These objects are used to build notifications, 
       end notifications, display a summary on AWS, and, eventually, persist to the Watchmen database.
-    - A Result object contains 14 attributes:
+    - A Result object contains 11 attributes:
       - **details:** Lengthy details of the notification or alert
         - This attribute is primarily used for SNS email alerts.
       - **disable_notifier:** Whether or not a notification should be disabled
         - Most Watchmen do not send notifications upon success.
       - **dt_created:** The datetime timestamp when the result was created
         - The datetime timestamp when the result was created
-      - **dt_updated:** The datetime timestamp when the result was updated
-        - This attribute is currently not in use. It is intended for recovery notifications
-          when the Watchmen database is set up.
-      - **is_ack:** Whether or not the notification has been acknowledged
-        - This attribute is currently not in use. It is intended for recovery notifications
-          when the Watchmen database is set up.
-      - **is_notified:** Whether or not the notification has been sent
-      - **message:** A simple message for short notifications
-        - This attribute is primarily used for SNS text alerts.
       - **result_id:** The ID of a result
         - This attribute is currently not in use. It is intended for the Watchmen database.
+      - **short_message:** A simple message for short notifications
+        - This attribute is primarily used for SNS text alerts.
       - **snapshot:** The runtime context (JSON object) of the target
         - Configuration details of the check
-      - **source:** The Watchman the result came from
       - **state:** The status of the check. It can only be one of the following:
         - SUCCESS: The check found no outages or issues.
         - EXCEPTION: An exception occurred and prevented the check from continuing.
@@ -297,6 +289,7 @@ class {WATCHMAN_NAME}(Watchman):
       - **success:** Indicates if the check resulted in a SUCCESS state.
       - **target:** The specific target the source is checking
         - Some Watchmen monitor multiple targets.
+      - **watchman_name:** The Watchman the result came from
   - Notifier: *cyberint-watchmen/watchmen/common/sns_notifier.py*
     - This class implements the Notifier interface which requires the send_alert
       method to be implemented. sends the notification.

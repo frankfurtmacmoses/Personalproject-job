@@ -134,11 +134,11 @@ class Crookshanks(Watchman):
             success=result_parameter.get("success"),
             disable_notifier=result_parameter.get("disable_notifier"),
             subject=result_parameter.get("subject"),
-            message=result_parameter.get("message"),
+            short_message=result_parameter.get("short_message"),
             details=result_parameter.get("details"),
             state=result_parameter.get("state"),
             target=result_parameter.get("target"),
-            source=self.source)
+            watchman_name=self.watchman_name)
         return result
 
     def create_result_parameters(self, check_result, file_exists):
@@ -155,7 +155,7 @@ class Crookshanks(Watchman):
                 "success": False,
                 "disable_notifier": False,
                 "subject": check_result.get("subject"),
-                "message": check_result.get("log_messages"),
+                "short_message": check_result.get("log_messages"),
                 "details": check_result.get("details"),
                 "state": Watchman.STATE.get("exception"),
                 "target": TARGET
@@ -164,7 +164,7 @@ class Crookshanks(Watchman):
                 "success": True,
                 "disable_notifier": True,
                 "subject": check_result.get("subject"),
-                "message": check_result.get("log_messages"),
+                "short_message": check_result.get("log_messages"),
                 "details": check_result.get("details"),
                 "state": Watchman.STATE.get("success"),
                 "target": TARGET
@@ -173,7 +173,7 @@ class Crookshanks(Watchman):
                 "success": False,
                 "disable_notifier": False,
                 "subject": check_result.get("subject"),
-                "message": check_result.get("log_messages"),
+                "short_message": check_result.get("log_messages"),
                 "details": check_result.get("details"),
                 "state": Watchman.STATE.get("failure"),
                 "target": TARGET

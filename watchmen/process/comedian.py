@@ -115,9 +115,9 @@ class Comedian(Watchman):
         pager_result = Result(
             details=parameters.get("details"),
             disable_notifier=parameters.get("disable_notifier"),
-            message=parameters.get("message"),
+            short_message=parameters.get("short_message"),
             snapshot=parameters.get("snapshot"),
-            source=self.source,
+            watchman_name=self.watchman_name,
             state=parameters.get("state"),
             subject=parameters.get("subject"),
             success=parameters.get("success"),
@@ -126,9 +126,9 @@ class Comedian(Watchman):
         email_result = Result(
             details=parameters.get("details"),
             disable_notifier=parameters.get("disable_notifier"),
-            message=parameters.get("message"),
+            short_message=parameters.get("short_message"),
             snapshot=parameters.get("snapshot"),
-            source=self.source,
+            watchman_name=self.watchman_name,
             state=parameters.get("state"),
             subject=parameters.get("subject"),
             success=parameters.get("success"),
@@ -143,14 +143,14 @@ class Comedian(Watchman):
         the threshold, False if not, and None if an exception was encountered while attempting to check the quotas.
         :param details: Details about the quota check result.
         :param quotas: Snapshot of the VirusTotal quotas.
-        :return: A dictionary containing "details", "disable_notifier", "message", "snapshot", "state", "subject",
+        :return: A dictionary containing "details", "disable_notifier", "short_message", "snapshot", "state", "subject",
         and "success".
         """
         parameter_chart = {
             None: {
                 "details": details,
                 "disable_notifier": False,
-                "message": MESSAGES.get("exception_short_message"),
+                "short_message": MESSAGES.get("exception_short_message"),
                 "snapshot": quotas,
                 "state": Watchman.STATE.get("exception"),
                 "subject": MESSAGES.get("exception_subject"),
@@ -159,7 +159,7 @@ class Comedian(Watchman):
             True: {
                 "details": MESSAGES.get("success_details"),
                 "disable_notifier": True,
-                "message": MESSAGES.get("success_short_message"),
+                "short_message": MESSAGES.get("success_short_message"),
                 "snapshot": quotas,
                 "state": Watchman.STATE.get("success"),
                 "subject": MESSAGES.get("success_subject"),
@@ -168,7 +168,7 @@ class Comedian(Watchman):
             False: {
                 "details": details,
                 "disable_notifier": False,
-                "message": MESSAGES.get("failure_short_message"),
+                "short_message": MESSAGES.get("failure_short_message"),
                 "snapshot": quotas,
                 "state": Watchman.STATE.get("failure"),
                 "subject": MESSAGES.get("failure_subject"),

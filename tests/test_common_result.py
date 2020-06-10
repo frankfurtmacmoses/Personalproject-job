@@ -24,13 +24,10 @@ class TestResult(unittest.TestCase):
                        "Tech logs!",
             "disable_notifier": False,
             "dt_created": self.static_time,
-            "dt_updated": self.static_time,
-            "is_ack": False,
-            "is_notified": False,
-            "message": "NO MESSAGE",
+            "short_message": "NO MESSAGE",
             "result_id": 0,
             "snapshot": None,
-            "source": "Spectre",
+            "watchman_name": "Spectre",
             "state": "FAILURE",
             "subject": "Spectre Georgia Tech data monitor detected a failure!",
             "success": False,
@@ -51,7 +48,7 @@ class TestResult(unittest.TestCase):
         import copy
         test1 = copy.deepcopy(self.result_args)
         test2 = copy.deepcopy(self.result_args)
-        test2["dt_created"] = test2["dt_updated"] = self.static_time
+        test2["dt_created"] = self.static_time
 
         tests = [{
             "args": test1
@@ -64,8 +61,6 @@ class TestResult(unittest.TestCase):
             expected = copy.deepcopy(self.result_args)
             dt_created = args.get('dt_created')
             expected['dt_created'] = self.result_time if dt_created is None else dt_created.isoformat()
-            dt_updated = args.get('dt_updated')
-            expected['dt_updated'] = self.result_time if dt_updated is None else dt_updated.isoformat()
             LOGGER.info('Test %02d: %s', idx, args)
             result = result_obj.to_dict()
             self.assertDictEqual(result, expected)

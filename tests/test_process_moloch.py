@@ -36,13 +36,10 @@ class TestMoloch(unittest.TestCase):
                        "APCkWk68pcwjE/edit#heading=h.6dcje1sj7gup",
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": "Moloch: A Feed has gone down, please check logs in CloudWatch!",
+            "short_message": "Moloch: A Feed has gone down, please check logs in CloudWatch!",
             "result_id": 0,
             "snapshot": None,
-            "source": "Moloch",
+            "watchman_name": "Moloch",
             "state": "FAILURE",
             "subject": "Moloch watchmen detected an issue with NOH/D feed!",
             "success": False,
@@ -188,7 +185,6 @@ class TestMoloch(unittest.TestCase):
             self.example_details_chart.get("fail_both")).to_dict()
         # since moloch does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, result)
 
@@ -206,7 +202,6 @@ class TestMoloch(unittest.TestCase):
 
         # since moloch does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
-        result["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.maxDiff = None
         self.assertDictEqual(result, expected)

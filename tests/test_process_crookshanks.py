@@ -28,19 +28,16 @@ class TestCrookshanks(unittest.TestCase):
             "details": MESSAGES.get("failure_message").format(self.example_fail_string),
             "target": "Smartlisting",
             "subject": MESSAGES.get("failure_subject"),
-            "message": MESSAGES.get("log_failure_message").format(self.example_fail_string)
+            "short_message": MESSAGES.get("log_failure_message").format(self.example_fail_string)
         }
         self.example_failure_result = {
             "details": MESSAGES.get("failure_message").format(self.example_fail_string),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            'is_notified': False,
-            "message": MESSAGES.get("log_failure_message").format(self.example_fail_string),
+            "short_message": MESSAGES.get("log_failure_message").format(self.example_fail_string),
             "result_id": 0,
             "snapshot": None,
-            "source": "Crookshanks",
+            "watchman_name": "Crookshanks",
             "state": "FAILURE",
             "subject": MESSAGES.get("failure_subject"),
             "success": False,
@@ -168,7 +165,6 @@ class TestCrookshanks(unittest.TestCase):
         expected = self.example_failure_result
         returned = crookshanks_obj.create_result(self.example_failure_parameters).to_dict()
         returned['dt_created'] = "2018-12-18T00:00:00+00:00"
-        returned['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, returned)
 
@@ -188,6 +184,5 @@ class TestCrookshanks(unittest.TestCase):
         returned = crookshanks_obj.monitor()[0].to_dict()
 
         returned['dt_created'] = "2018-12-18T00:00:00+00:00"
-        returned['dt_updated'] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, returned)

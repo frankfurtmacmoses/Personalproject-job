@@ -48,7 +48,7 @@ class TestMothman(unittest.TestCase):
         self.parameters = {
             "details": self.details,
             "disable_notifier": True,
-            "message": MESSAGES.get("success_short_message"),
+            "short_message": MESSAGES.get("success_short_message"),
             "state": "SUCCESS",
             "subject": MESSAGES.get("success_subject"),
             "success": True,
@@ -59,11 +59,8 @@ class TestMothman(unittest.TestCase):
             "details": self.details,
             "disable_notifier": True,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "dt_updated": "2018-12-18T00:00:00+00:00",
-            "is_ack": False,
-            "is_notified": False,
-            "message": MESSAGES.get("success_short_message"),
-            "source": "Mothman",
+            "short_message": MESSAGES.get("success_short_message"),
+            "watchman_name": "Mothman",
             "result_id": 0,
             "snapshot": {},
             "state": "SUCCESS",
@@ -211,7 +208,6 @@ class TestMothman(unittest.TestCase):
         expected = self.result_dict
         returned = mothman_obj._create_result(self.parameters).to_dict()
         returned["dt_created"] = "2018-12-18T00:00:00+00:00"
-        returned["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, returned)
 
@@ -243,6 +239,5 @@ class TestMothman(unittest.TestCase):
         expected = self.result_dict
         returned = mothman_obj.monitor()[0].to_dict()
         returned["dt_created"] = "2018-12-18T00:00:00+00:00"
-        returned["dt_updated"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected, returned)
