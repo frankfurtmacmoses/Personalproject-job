@@ -46,7 +46,7 @@ PATH_PREFIX = settings("silhouette.path_prefix", "analytics/lookalike2/prod/stat
 STATUS_FILE = "status.json"
 
 # Watchman profile
-TARGET = "Lookalike Feed S3"
+TARGET = "Lookalike2 Algorithm S3"
 
 
 class Silhouette(Watchman):

@@ -27,7 +27,7 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
-  "Lookalike Feed S3": {
+  "Lookalike2 Algorithm S3": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
