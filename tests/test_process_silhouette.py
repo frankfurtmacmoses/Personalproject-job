@@ -9,25 +9,25 @@ from watchmen.process.silhouette import Silhouette
 class TestSilhouette(unittest.TestCase):
 
     def setUp(self):
-        self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
-        self.example_filename = "analytics/lookalike/prod/results/2018/12/16/status.json"
+        self.example_today = datetime(year=2020, month=6, day=16, tzinfo=pytz.utc)
+        self.example_filename = "analytics/lookalike2/prod/status/year=2020/month=06/day=15/status.json"
         self.example_exception_details = "Something is not working"
-        self.example_failure_message = "Lookalike feed never added files from 2 days ago! " \
-                                       "The feed may be down or simply did not complete!"
+        self.example_failure_message = "Lookalike2 algorithm never added files yesterday! " \
+                                       "The algorithm may be down or simply did not complete!"
         self.example_details_chart = {
-            None: 'Silhouette for lookalike feeds failed '
-                  'on \n\t"analytics/lookalike/prod/results/2018/12/16/status.json" \ndue to '
+            None: 'Silhouette for lookalike2 algorithm failed '
+                  'on \n\t"analytics/lookalike2/prod/status/year=2020/month=06/day=15/status.json" \ndue to '
                   'the Exception:\n\n{}\n\nPlease check the logs!',
-            False: 'ERROR: analytics/lookalike/prod/results/2018/12/16/status.json\n'
-                   'Lookalike feed never added files from 2 days ago! '
-                   'The feed may be down or simply did not complete!',
-            True: 'Lookalike feed is up and running!',
+            False: 'ERROR: analytics/lookalike2/prod/status/year=2020/month=06/day=15/status.json\n'
+                   'Lookalike2 algorithm never added files yesterday! '
+                   'The algorithm may be down or simply did not complete!',
+            True: 'Lookalike2 algorithm is up and running!',
         }
-        self.example_success_json = {"STATE": "COMPLETED"}
-        self.example_failed_json = {"STATE": "UNCOMPLETED"}
+        self.example_success_json = {"state": "completed"}
+        self.example_failed_json = {"state": "uncompleted"}
         self.example_result_dict = {
-            "details": "ERROR: analytics/lookalike/prod/results/2018/12/16/status.json\n"
-                       "Lookalike feed never added files from 2 days ago! The feed may be down or "
+            "details": "ERROR: analytics/lookalike2/prod/status/year=2020/month=06/day=15/status.json\n"
+                       "Lookalike2 algorithm never added files yesterday! The algorithm may be down or "
                        "simply did not complete!",
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
@@ -36,9 +36,9 @@ class TestSilhouette(unittest.TestCase):
             "snapshot": None,
             "watchman_name": "Silhouette",
             "state": "FAILURE",
-            "subject": "Silhouette watchman detected an issue with lookalike feed!",
+            "subject": "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
             "success": False,
-            "target": "Lookalike Feed S3",
+            "target": "Lookalike2 Algorithm S3",
         }
         pass
 
@@ -93,7 +93,7 @@ class TestSilhouette(unittest.TestCase):
             False,
             False,
             "FAILURE",
-            "Silhouette watchman detected an issue with lookalike feed!",
+            "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
             self.example_details_chart.get(False)).to_dict()
         # since silhouette does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"
