@@ -28,17 +28,17 @@ from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.common.watchman import Watchman
 
-SUCCESS_MESSAGE = "Lookalike feed is up and running!"
-FAILURE_MESSAGE = "Lookalike feed never added files from 2 days ago! " \
-                  "The feed may be down or simply did not complete!"
-SUCCESS_SUBJECT = "Silhouette: Lookalike files have been successfully detected in S3!"
-FAILURE_SUBJECT = "Silhouette watchman detected an issue with lookalike feed!"
+SUCCESS_MESSAGE = "Lookalike2 algorithm is up and running!"
+FAILURE_MESSAGE = "Lookalike2 algorithm never added files yesterday! " \
+                  "The algorithm may be down or simply did not complete!"
+SUCCESS_SUBJECT = "Silhouette: Lookalike2 files have been successfully detected in S3!"
+FAILURE_SUBJECT = "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!"
 SNS_TOPIC_ARN = settings("silhouette.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 
-EXCEPTION_SUBJECT = "Silhouette watchmen for the lookalike feed failed due to an exception!"
-EXCEPTION_MESSAGE = 'Silhouette for lookalike feeds failed on \n\t"{}" \ndue to ' \
+EXCEPTION_SUBJECT = "EXCEPTION: Silhouette failed to check the Lookalike2 algorithm!"
+EXCEPTION_MESSAGE = 'Silhouette for lookalike2 algorithm failed on \n\t"{}" \ndue to ' \
                     'the Exception:\n\n{}\n\nPlease check the logs!'
-EXCEPTION_SHORT_MESSAGE = "Silhouette for lookalike feeds failed due to an exception, please check the logs!"
+EXCEPTION_SHORT_MESSAGE = "Silhouette for lookalike2 algorithm failed due to an exception, please check the logs!"
 COMPLETED_STATUS = "completed"
 
 BUCKET_NAME = settings("silhouette.bucket_name", "cyber-intel")
