@@ -42,7 +42,7 @@ EXCEPTION_SHORT_MESSAGE = "Silhouette for lookalike feeds failed due to an excep
 COMPLETED_STATUS = "COMPLETED"
 
 BUCKET_NAME = settings("silhouette.bucket_name", "cyber-intel")
-PATH_PREFIX = settings("silhouette.path_prefix", "analytics/lookalike/prod/results/")
+PATH_PREFIX = settings("silhouette.path_prefix", "analytics/lookalike2/prod/status/")
 STATUS_FILE = "status.json"
 
 # Watchman profile
@@ -168,8 +168,8 @@ class Silhouette(Watchman):
         Get the name of file being checked.
         @return: <str> file name
         """
-        check_time = (datetime.now(pytz.utc) - timedelta(days=2)).strftime("%Y %m %d").split(' ')
-        filename = PATH_PREFIX + check_time[0] + '/' + check_time[1] + '/' + check_time[2] + '/' + STATUS_FILE
+        check_time = (datetime.now(pytz.utc) - timedelta(days=1)).strftime("year=%Y/month=%m/day=%d/")
+        filename = PATH_PREFIX + check_time + STATUS_FILE
         return filename
 
     def _process_status(self):

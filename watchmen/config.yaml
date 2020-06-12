@@ -65,7 +65,7 @@ rorschach:
 
 silhouette:
   bucket_name: cyber-intel
-  path_prefix: analytics/lookalike/prod/results/
+  path_prefix: analytics/lookalike2/prod/status/
   sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
 
 slater:
