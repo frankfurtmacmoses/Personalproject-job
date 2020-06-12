@@ -39,7 +39,7 @@ EXCEPTION_SUBJECT = "Silhouette watchmen for the lookalike feed failed due to an
 EXCEPTION_MESSAGE = 'Silhouette for lookalike feeds failed on \n\t"{}" \ndue to ' \
                     'the Exception:\n\n{}\n\nPlease check the logs!'
 EXCEPTION_SHORT_MESSAGE = "Silhouette for lookalike feeds failed due to an exception, please check the logs!"
-COMPLETED_STATUS = "COMPLETED"
+COMPLETED_STATUS = "completed"
 
 BUCKET_NAME = settings("silhouette.bucket_name", "cyber-intel")
 PATH_PREFIX = settings("silhouette.path_prefix", "analytics/lookalike2/prod/status/")
@@ -183,6 +183,6 @@ class Silhouette(Watchman):
         file_contents = get_file_contents_s3(BUCKET_NAME, self.filename)
         if file_contents:
             status_json = json.loads(file_contents)
-            if status_json.get('STATE') == COMPLETED_STATUS:
+            if status_json.get('state') == COMPLETED_STATUS:
                 is_completed = True
         return is_completed
