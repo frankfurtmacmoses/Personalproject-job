@@ -43,9 +43,8 @@ def check_arg_bucket(bucket):
     """
     Check if the arg is a valid bucket; otherwise, raise ValueError
     """
-    chk = check_bucket(bucket)
-    if not chk['okay']:
-        LOGGER.error(str(chk['err']))
+    bucket_exists, tb = check_bucket(bucket)
+    if not bucket_exists:
         raise ValueError("param 'bucket' must be a valid existing S3 bucket")
 
 

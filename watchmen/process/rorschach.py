@@ -179,17 +179,14 @@ class Rorschach(Watchman):
                 failed_check_items = {}
                 exception_list = []
 
-                # Validate the s3 bucket for each item
                 bucket_name = item.get('bucket_name')
-                # The check bucket will need refactoring because there's no way to differentiate exception from failure
-                is_valid_bucket = _s3.check_bucket(bucket_name)  # {'okay': True, 'err': None}
-                # An error occurred trying to find the bucket
-                if is_valid_bucket.get('err'):
-                    failed_check_items.update({'exception': is_valid_bucket['err']})
+                bucket_exists, tb = _s3.check_bucket(bucket_name)
+
+                if tb:
+                    failed_check_items.update({'exception': tb})
                     items_failed.append((item, failed_check_items))
                     continue
-                # Bucket was not found
-                if not is_valid_bucket.get('okay'):
+                elif not bucket_exists:
                     failed_check_items.update({'bucket_not_found': 's3://{}'.format(bucket_name)})
                     items_failed.append((item, failed_check_items))
                     all_checks_are_exceptions = False
