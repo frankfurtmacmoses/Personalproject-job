@@ -68,7 +68,7 @@
       "source_name": "torproject",
       "metric_name": "IPV4_TIDE_SUCCESS",
       "min": 500,
-      "max": 1500,
+      "max": 2500,
       "needs_metric": true
     }
   ],
