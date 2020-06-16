@@ -23,30 +23,21 @@ import traceback
 
 # Cyberint imports
 from watchmen import const
+from watchmen import messages
 from watchmen.utils.s3 import get_file_contents_s3
 from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.common.watchman import Watchman
 
-SUCCESS_MESSAGE = "Lookalike feed is up and running!"
-FAILURE_MESSAGE = "Lookalike feed never added files from 2 days ago! " \
-                  "The feed may be down or simply did not complete!"
-SUCCESS_SUBJECT = "Silhouette: Lookalike files have been successfully detected in S3!"
-FAILURE_SUBJECT = "Silhouette watchman detected an issue with lookalike feed!"
 SNS_TOPIC_ARN = settings("silhouette.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 
-EXCEPTION_SUBJECT = "Silhouette watchmen for the lookalike feed failed due to an exception!"
-EXCEPTION_MESSAGE = 'Silhouette for lookalike feeds failed on \n\t"{}" \ndue to ' \
-                    'the Exception:\n\n{}\n\nPlease check the logs!'
-EXCEPTION_SHORT_MESSAGE = "Silhouette for lookalike feeds failed due to an exception, please check the logs!"
-COMPLETED_STATUS = "COMPLETED"
-
 BUCKET_NAME = settings("silhouette.bucket_name", "cyber-intel")
-PATH_PREFIX = settings("silhouette.path_prefix", "analytics/lookalike/prod/results/")
+PATH_PREFIX = settings("silhouette.path_prefix", "analytics/lookalike2/prod/status/")
 STATUS_FILE = "status.json"
+COMPLETED_STATUS = "completed"
 
 # Watchman profile
-TARGET = "Lookalike Feed S3"
+TARGET = "Lookalike2 Algorithm S3"
 
 
 class Silhouette(Watchman):
@@ -66,25 +57,25 @@ class Silhouette(Watchman):
         details = self._create_details(self.filename, is_status_valid, tb)
         parameter_chart = {
             None: {
-                "short_message": EXCEPTION_SHORT_MESSAGE,
+                "short_message": messages.SILHOUETTE['exception_short_message'],
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
-                "subject": EXCEPTION_SUBJECT,
+                "subject": messages.SILHOUETTE['exception_subject'],
             },
             True: {
-                "short_message": SUCCESS_MESSAGE,
+                "short_message": messages.SILHOUETTE['success_message'],
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
-                "subject": SUCCESS_SUBJECT,
+                "subject": messages.SILHOUETTE['success_subject'],
             },
             False: {
-                "short_message": FAILURE_MESSAGE,
+                "short_message": messages.SILHOUETTE['failure_message'],
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
-                "subject": FAILURE_SUBJECT,
+                "subject": messages.SILHOUETTE['failure_subject'],
             },
         }
         parameters = parameter_chart.get(is_status_valid)
@@ -125,16 +116,16 @@ class Silhouette(Watchman):
         """
         FILE_STATUS = {
             None: {
-                'details': EXCEPTION_MESSAGE.format(filename, tb),
-                'log_details': EXCEPTION_MESSAGE.format(filename, tb),
+                'details': messages.SILHOUETTE['exception_message'].format(filename, tb),
+                'log_details': messages.SILHOUETTE['exception_message'].format(filename, tb),
             },
             False: {
-                'details': 'ERROR: {}\n{}'.format(filename, FAILURE_MESSAGE),
-                'log_details': 'File: {}{}'.format(filename, FAILURE_MESSAGE),
+                'details': 'ERROR: {}\n{}'.format(filename, messages.SILHOUETTE['failure_message']),
+                'log_details': 'File: {}{}'.format(filename, messages.SILHOUETTE['failure_message']),
             },
             True: {
-                'details': SUCCESS_MESSAGE,
-                'log_details': SUCCESS_MESSAGE,
+                'details': messages.SILHOUETTE['success_message'],
+                'log_details': messages.SILHOUETTE['success_message'],
             }
         }
         status = FILE_STATUS.get(is_status_valid)
@@ -168,8 +159,8 @@ class Silhouette(Watchman):
         Get the name of file being checked.
         @return: <str> file name
         """
-        check_time = (datetime.now(pytz.utc) - timedelta(days=2)).strftime("%Y %m %d").split(' ')
-        filename = PATH_PREFIX + check_time[0] + '/' + check_time[1] + '/' + check_time[2] + '/' + STATUS_FILE
+        check_time = (datetime.now(pytz.utc) - timedelta(days=1)).strftime("year=%Y/month=%m/day=%d/")
+        filename = PATH_PREFIX + check_time + STATUS_FILE
         return filename
 
     def _process_status(self):
@@ -183,6 +174,6 @@ class Silhouette(Watchman):
         file_contents = get_file_contents_s3(BUCKET_NAME, self.filename)
         if file_contents:
             status_json = json.loads(file_contents)
-            if status_json.get('STATE') == COMPLETED_STATUS:
+            if status_json.get('state') == COMPLETED_STATUS:
                 is_completed = True
         return is_completed

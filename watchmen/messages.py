@@ -150,3 +150,15 @@ RORSCHACH = {
                                       " and Failure!",
     "generic_suceess_subject": "Generic S3 Rorshcach Success: All Targets Pass."
 }
+
+SILHOUETTE = {
+    "success_message": "Lookalike2 algorithm is up and running!",
+    "failure_message": "Lookalike2 algorithm never added files yesterday! "
+                       "The algorithm may be down or simply did not complete!",
+    "success_subject": "Silhouette: Lookalike2 files have been successfully detected in S3!",
+    "failure_subject": "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
+    "exception_subject": "EXCEPTION: Silhouette failed to check the Lookalike2 algorithm!",
+    "exception_message": "Silhouette for lookalike2 algorithm failed on \n\t\"{}\" \ndue to "
+                         "the Exception:\n\n{}\n\nPlease check the logs!",
+    "exception_short_message": "Silhouette for lookalike2 algorithm failed due to an exception, please check the logs!"
+}
