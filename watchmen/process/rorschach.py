@@ -478,8 +478,10 @@ class Rorschach(Watchman):
             prefix = check_time.strftime(prefix_format)
             return prefix, None
         except Exception as ex:
+            self.logger.error("ERROR Generating Key!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, tb
 
     def _generate_contents(self, item):
@@ -500,8 +502,10 @@ class Rorschach(Watchman):
             self.logger.info("Checking {} files.".format(count))
             return contents, count, prefix_generate, full_path, None
         except Exception as ex:
+            self.logger.error("ERROR Generating Contents!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, None, None, tb
 
     def _check_single_file_existence(self, item):
@@ -517,8 +521,10 @@ class Rorschach(Watchman):
             found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=generate_full_path)
             return found_file, generate_full_path, None
         except Exception as ex:
+            self.logger.error("ERROR Checking Single File Existence!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, tb
 
     def _check_most_recent_file(self, contents, check_most_recent_file):
@@ -546,8 +552,10 @@ class Rorschach(Watchman):
                     prefix_suffix_match = False
             return prefix_suffix_match, None
         except Exception as ex:
+            self.logger.error("ERROR Checking File Prefix and Suffix!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, tb
 
     def _check_file_empty(self, contents):
@@ -565,8 +573,10 @@ class Rorschach(Watchman):
                     empty_file_list.append(file['Key'])
             return at_least_one_file_empty, empty_file_list, None
         except Exception as ex:
+            self.logger.error("ERROR Checking For Empty File!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, tb
 
     def _compare_total_file_size_to_threshold(self, contents, size_threshold):
@@ -576,13 +586,14 @@ class Rorschach(Watchman):
         """
         try:
             total_size = 0
-
             for item in contents:
                 total_size += item.get('Size')
             total_size = total_size / 1000  # This is to convert B to KB
             is_size_less_than_threshold = total_size < size_threshold
             return is_size_less_than_threshold, total_size, None
         except Exception as ex:
+            self.logger.error("ERROR Comparing Total File Size To Threshold!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             return None, None, tb
