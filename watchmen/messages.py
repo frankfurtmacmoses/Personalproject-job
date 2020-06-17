@@ -13,7 +13,7 @@ COMEDIAN = {
     "exception_subject": "EXCEPTION: Unable to Check VirusTotal Quotas!",
     "failure_short_message": "FAILURE: A quota was exceeded, please check the logs for more information!",
     "failure_subject": "FAILURE: VirusTotal Quota Exceeded!",
-    "quota_exceeded": "Quota \"{}\" exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
+    "quota_exceeded": "Quota \"{}\" exceeded the {:.2f}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {:.2f}%\n",
     "quota_exception_details": "An expected quota was missing from the VirusTotal API response.\n\n{}",
     "success_details": "All VirusTotal quota checks ran successfully and were within the current threshold.",
     "success_short_message": "SUCCESS: All VirusTotal quota checks were within the threshold for today!",

@@ -86,7 +86,8 @@ class Comedian(Watchman):
                 used = current_quota["used"]
                 allowed = current_quota["allowed"]
 
-                quota_usage = round(used / allowed, 4)
+                # Multiplying `used` by 1.0 to prevent the decimal being truncated by Python.
+                quota_usage = (used * 1.0) / allowed
                 if quota_usage >= threshold:
                     exceeded_details = MESSAGES.get("quota_exceeded")\
                                                .format(quota, threshold * 100, used, allowed, quota_usage * 100)
