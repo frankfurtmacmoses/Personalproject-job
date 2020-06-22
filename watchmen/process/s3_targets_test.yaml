@@ -30,12 +30,6 @@ Daily:
     check_total_object: 100
     check_total_size_kb: 50
 
-- target_name: VirusTotal Pager
-  items:
-  - bucket_name: cyber-intel-test
-    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files_wrong_key/
-    suffix: .json
-
 - target_name: Poseidon Northstar DNS Data
   items:
   - bucket_name: cyber-intel-test
@@ -45,6 +39,9 @@ Daily:
     suffix: .json
     check_total_object: 2
     check_total_size_kb: 1
+  - bucket_name: cyber-intel-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files_wrong_key/
+    suffix: .json
 
 - target_name: Poseidon DNS Data
   items:
