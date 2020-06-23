@@ -124,7 +124,7 @@ class Rorschach(Watchman):
             disable_notifier=False,
             state=Watchman.STATE.get("exception"),
             success=False,
-            subject=MESSAGES.get("exception_config_not_load_subject"),
+            subject=MESSAGES.get("exception_config_load_failure_subject"),
             watchman_name=self.watchman_name,
             target="Generic S3",
             details=MESSAGES.get("exception_config_not_load_details").format(CONFIG_NAME, tb),
@@ -327,7 +327,7 @@ class Rorschach(Watchman):
                     summary_details = {
                         "short_message": MESSAGES.get("exception_message"),
                         "success": None,
-                        "subject": MESSAGES.get("exception_checking_subject").format(target_name),
+                        "subject": MESSAGES.get("exception_subject").format(target_name),
                         "details": MESSAGES.get('exception_details').format(exception_list),
                         "target": target_name
                     }
@@ -362,7 +362,7 @@ class Rorschach(Watchman):
                             check_data.get('total_file_size_below_threshold')[1],
                             check_data.get('total_file_size_below_threshold')[2])
                     if 'count_object_too_less' in check_data:
-                        failure_list += MESSAGES.get('failure_count_too_less').format(
+                        failure_list += MESSAGES.get('failure_total_objects').format(
                             check_data.get('count_object_too_less')[0],
                             check_data.get('count_object_too_less')[1],
                             check_data.get('count_object_too_less')[2])
