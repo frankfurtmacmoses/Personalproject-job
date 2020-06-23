@@ -240,6 +240,37 @@ class Rorschach(Watchman):
             failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_key))
             return exception_strings, failure_strings
 
+        # Checking single file size:
+        if item.get("check_total_size_kb"):
+            valid_file_size, tb = self._check_single_file_size(item, s3_key)
+            if tb:
+                exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            if not valid_file_size:
+                failure_strings.append(MESSAGES.get('failure_single_file_size').format(full_path,
+                                                                                       item.get(
+                                                                                           "check_total_size_kb")))
+        return exception_strings, failure_strings
+
+    def _check_single_file_size(self, item, s3_key):
+        """
+        Method to check that the single file size meets the required size set in the s3_targets config file.
+        :param item: The current item, with one file, that is being checked.
+        :return: boolean: True if the file is a valid size, false if not.
+                 string: Traceback if an exception occurred, None otherwise.
+        """
+        try:
+            kb_threshold = item.get("check_total_size_kb")
+            s3_key_object = _s3.get_key(item.get("bucket_name"), s3_key)
+            # Size from the s3_key_object is in bytes.
+            valid_file_size = (s3_key_object.get("size") / 1000) >= kb_threshold
+            return valid_file_size, None
+        except Exception as ex:
+            self.logger.error("ERROR Checking Single File Size!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
     def _check_multiple_files(self, item):
         """
         Method to perform all of the required checks if an item consists of multiple files.
