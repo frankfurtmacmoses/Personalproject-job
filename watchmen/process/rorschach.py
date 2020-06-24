@@ -63,7 +63,7 @@ class Rorschach(Watchman):
 
         check_results = self._process_checking(s3_targets)
         summary_parameters = self._create_summary_parameters(check_results)
-        results = self._create_result(summary_parameters)
+        results = self._create_results(summary_parameters)
 
         return results
 
@@ -408,78 +408,46 @@ class Rorschach(Watchman):
 
         return summary_parameters
 
-    def _create_result(self, summary):
+    def _create_results(self, summary_parameters):
         """
-        Method to create a full result object based on the summary. This is used for sending email SNS topic when
-        the target's state is "failure" and "exception".
-        @return: One return object of all targets for the email SNS topics.
+        Method to create all of the result objects based on the summary parameters. These result objects are used for
+        sending SNS alerts when the target's state is "failure" or "exception".
+        :param summary_parameters: List of summary_parameter dictionaries. Each dictionary will be used to create
+                                   a Result object.
+        :return: List of Result objects for each target that was checked.
         """
-        state_chart = {
-            True: {
-                "success": True,
-                "disable_notifier": True,
-                "state": Watchman.STATE.get("success"),
-            },
-            False: {
-                "success": False,
-                "disable_notifier": False,
-                "state": Watchman.STATE.get("failure"),
-            },
-            None: {
-                "success": None,
-                "disable_notifier": False,
-                "state": Watchman.STATE.get("exception"),
-            }
-        }
         results = []
-        msg = ''
-        failure = False
-        exception = False
+        generic_result_details = ''
+        failure_in_parameters = False
+        exception_in_parameters = False
 
-        for summary_item in summary:
-            check_result = summary_item.get("success")
+        for summary_parameters_dict in summary_parameters:
+            check_result = summary_parameters_dict.get("success")
+
             if check_result is False:
-                failure = True
+                failure_in_parameters = True
             if check_result is None:
-                exception = True
-            msg += summary_item.get("subject") + "\n" + summary_item.get("details") + "\n\n"
-            subject = summary_item.get("subject")
-            details = summary_item.get("details")
-            target = summary_item.get("target")
-            short_message = summary_item.get("short_message")
-            parameters = state_chart.get(check_result)
-            results.append(Result(
-                **parameters,
-                subject=subject,
-                watchman_name=self.watchman_name,
-                target=target,
-                details=details,
-                short_message=short_message))
+                exception_in_parameters = True
 
-        # this is used to create a generic result for email notification
-        if failure and exception:
-            short_message = MESSAGES.get("exception_message") + MESSAGES.get("failure_message")
-            subject = MESSAGES.get("generic_fail_exception_subject")
-            parameters = state_chart.get(None)
-        elif failure:
-            short_message = MESSAGES.get("failure_message")
-            subject = MESSAGES.get("generic_failure_subject")
-            parameters = state_chart.get(False)
-        elif exception:
-            short_message = MESSAGES.get("exception_message")
-            subject = MESSAGES.get("generic_exception_subject")
-            parameters = state_chart.get(None)
-        else:
-            short_message = MESSAGES.get("success_message").format('All targets')
-            subject = MESSAGES.get("generic_suceess_subject")
-            parameters = state_chart.get(True)
-        results.append(Result(
-            **parameters,
-            subject=subject,
-            watchman_name=self.watchman_name,
-            target='Generic S3',
-            details=msg,
-            short_message=short_message))
+            # Building the generic result's details, only include exceptions and failures:
+            if not check_result:
+                generic_result_details += "{}\n\n{}\n\n{}\n\n".format(summary_parameters_dict.get("subject"),
+                                                                      summary_parameters_dict.get("details"),
+                                                                      const.MESSAGE_SEPARATOR)
+
+            results.append(Result(
+                details=summary_parameters_dict.get("details"),
+                disable_notifier=summary_parameters_dict.get("disable_notifier"),
+                short_message=summary_parameters_dict.get("short_message"),
+                state=summary_parameters_dict.get("state"),
+                subject=summary_parameters_dict.get("subject"),
+                success=check_result,
+                target=summary_parameters_dict.get("target"),
+                watchman_name=self.watchman_name,
+            ))
+
+        results.append(self._create_generic_result(failure_in_parameters, exception_in_parameters,
+                                                   generic_result_details))
 
         return results
 
