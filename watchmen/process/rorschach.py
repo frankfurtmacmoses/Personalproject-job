@@ -609,3 +609,51 @@ class Rorschach(Watchman):
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, None, tb
+
+    def _create_generic_result(self, failure_in_parameters, exception_in_parameters, details):
+        """
+        Method to create the generic result object.
+        :param failure_in_parameters: Bool that indicates whether a failure was encountered in any of the target checks.
+        :param exception_in_parameters: Bool that indicates whether an exception was encountered in any of the target
+               checks.
+        :param details: String containg th details for all of the target checks performed.
+        :return: Generic Result object.
+        """
+        if failure_in_parameters and exception_in_parameters:
+            disable_notifier = False
+            short_message = MESSAGES.get("failure_exception_message")
+            state = Watchman.STATE.get("failure")
+            subject = MESSAGES.get("generic_fail_exception_subject")
+            success = False
+
+        elif failure_in_parameters:
+            disable_notifier = False
+            short_message = MESSAGES.get("failure_message")
+            state = Watchman.STATE.get("failure")
+            subject = MESSAGES.get("generic_failure_subject")
+            success = False
+
+        elif exception_in_parameters:
+            disable_notifier = False
+            short_message = MESSAGES.get("exception_message")
+            state = Watchman.STATE.get("exception")
+            subject = MESSAGES.get("generic_exception_subject")
+            success = False
+
+        else:
+            disable_notifier = True
+            short_message = MESSAGES.get("success_message").format('All targets')
+            state = Watchman.STATE.get("success")
+            subject = MESSAGES.get("generic_success_subject")
+            success = True
+
+        return (Result(
+            details=details,
+            disable_notifier=disable_notifier,
+            short_message=short_message,
+            state=state,
+            subject=subject,
+            success=success,
+            target='Generic S3',
+            watchman_name=self.watchman_name,
+        ))
