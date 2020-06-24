@@ -62,8 +62,8 @@ class Rorschach(Watchman):
             return self._create_config_not_load_results(tb)
 
         check_results = self._process_checking(s3_targets)
-        summary = self._create_summary(check_results)
-        results = self._create_result(summary)
+        summary_parameters = self._create_summary_parameters(check_results)
+        results = self._create_result(summary_parameters)
 
         return results
 
@@ -356,99 +356,57 @@ class Rorschach(Watchman):
             failure_string += MESSAGES.get('exception_details').format(exception_string)
         return failure_string
 
-    def _create_summary(self, processed_targets):
+    def _create_summary_parameters(self, processed_targets):
         """
         Method to create a summary object for all s3 targets with details messages based on the check results summary.
         @return: A list of dictionaries where each dict is a summary of the checking results of each target.
         """
-        summary = []
+        summary_parameters = []
+        parameter_chart = {
+            None: {
+                "disable_notifier": False,
+                "short_message": MESSAGES.get("exception_message"),
+                "state": Watchman.STATE.get("exception"),
+                "success": None
+            },
+            True: {
+                "disable_notifier": True,
+                "state": Watchman.STATE.get("success"),
+                "success": True
+            },
+            False: {
+                "disable_notifier": False,
+                "state": Watchman.STATE.get("failure"),
+                "success": False
+            }
+        }
 
         for target_name in processed_targets:
-            # Create the successful summaries
-            if processed_targets[target_name].get('success'):
-                summary_details = {
-                    "success": True,
-                    "subject": MESSAGES.get("success_subject").format(target_name),
-                    "details": MESSAGES.get("success_details").format(target_name),
-                    "short_message": MESSAGES.get("success_message").format(target_name),
-                    "target": target_name
-                }
-                summary.append(summary_details)
+            success = processed_targets[target_name].get("success")
+            result_parameters = dict(parameter_chart.get(success))
+            result_parameters["details"] = self._create_details(target_name, processed_targets[target_name])
+            result_parameters["target"] = target_name
 
-            # Create the exceptions only summaries
-            if processed_targets[target_name].get('success') is None:
-                exception_list = ""
-                for item in processed_targets[target_name].get('failed_checks'):
-                    exception_list += '{}{}: {}\n'.format(item[0].get('bucket_name'),
-                                                          item[0].get('prefix'),
-                                                          item[1].get('exception'))
-                    summary_details = {
-                        "short_message": MESSAGES.get("exception_message"),
-                        "success": None,
-                        "subject": MESSAGES.get("exception_subject").format(target_name),
-                        "details": MESSAGES.get('exception_details').format(exception_list),
-                        "target": target_name
-                    }
-                    summary.append(summary_details)
+            if success:
+                result_parameters["short_message"] = MESSAGES.get("success_message").format(target_name)
+                result_parameters["subject"] = MESSAGES.get("success_subject").format(target_name)
 
-            # Create failures and exceptions summaries
-            if processed_targets[target_name].get('success') is not None and \
-                    not processed_targets[target_name].get('success'):
-                exception_list = ''
-                failure_list = ''
-                for item in processed_targets[target_name].get('failed_checks'):
-                    item_data = item[0]
-                    check_data = item[1]
+            elif processed_targets[target_name].get('success') is None:
+                result_parameters["short_message"] = MESSAGES.get("exception_message")
+                result_parameters["subject"] = MESSAGES.get("exception_checking_subject").format(target_name)
 
-                    # Check for the failures
-                    if 'bucket_not_found' in check_data:
-                        failure_list += MESSAGES.get('failure_bucket_not_found').format(item_data.get('bucket_name'))
-                    if 'no_file_found_s3' in check_data:
-                        failure_list += MESSAGES.get('failure_no_file_found_s3').format(item_data.get(
-                            'full_path') if item_data.get('full_path') else item_data.get('prefix'))
-                    if 'prefix_suffix_not_match' in check_data:
-                        failure_list += MESSAGES.get('failure_prefix_suffix_not_match').format(item_data.get('prefix'),
-                                                                                               item_data.get('suffix'))
-                    if 'at_least_one_file_empty' in check_data:
-                        empty_file_list = ''
-                        for empty_file in check_data.get('at_least_one_file_empty')[1]:
-                            empty_file_list += MESSAGES.get('failure_file_empty').format(empty_file)
-                        failure_list += empty_file_list
-                    if 'total_file_size_below_threshold' in check_data:
-                        failure_list += MESSAGES.get('failure_total_file_size_below_threshold').format(
-                            check_data.get('total_file_size_below_threshold')[0],
-                            check_data.get('total_file_size_below_threshold')[1],
-                            check_data.get('total_file_size_below_threshold')[2])
-                    if 'count_object_too_less' in check_data:
-                        failure_list += MESSAGES.get('failure_total_objects').format(
-                            check_data.get('count_object_too_less')[0],
-                            check_data.get('count_object_too_less')[1],
-                            check_data.get('count_object_too_less')[2])
+            else:
+                # If there are exceptions and failures:
+                if processed_targets[target_name].get("exception_strings"):
+                    result_parameters["short_message"] = MESSAGES.get("failure_exception_message")
+                    result_parameters["subject"] = MESSAGES.get("failure_exception_subject").format(target_name)
+                else:
+                    result_parameters["short_message"] = MESSAGES.get("failure_message")
+                    result_parameters["subject"] = MESSAGES.get("failure_subject").format(target_name)
 
-                    # Check for exceptions
-                    if 'exception' in check_data:
-                        for ex in check_data.get('exception'):
-                            exception_list += '{}/{}: {}\n'.format(item_data.get('bucket_name'),
-                                                                   item_data.get('prefix'),
-                                                                   ex)
+            summary_parameters.append(result_parameters)
 
-                    # Create details string
-                    msg = ''
-                    if failure_list:
-                        msg += (MESSAGES.get('failure_details').format(failure_list) + '\n\n')
-                    if exception_list:
-                        msg += MESSAGES.get('exception_details').format(exception_list)
-
-                    summary_details = {
-                        "short_message": MESSAGES.get("failure_message").format(target_name),
-                        "success": False,
-                        "subject": MESSAGES.get("failure_subject").format(target_name),
-                        "details": msg,
-                        "target": target_name
-                    }
-                    summary.append(summary_details)
-
-        return summary
+        return summary_parameters
 
     def _create_result(self, summary):
         """
