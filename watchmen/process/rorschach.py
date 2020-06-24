@@ -334,6 +334,28 @@ class Rorschach(Watchman):
 
         return exception_strings, failure_strings
 
+    def _create_details(self, target_name, target_check_results):
+        """
+        Method to create the details for a target.
+        :param target_name: A string for the name of the target that was checked.
+        :param target_check_results: A dictionary containing the results from checking the target and all of its items.
+        :return: A string with properly formatted details for the passed in target.
+        """
+        success = target_check_results.get("success")
+
+        if success:
+            return MESSAGES.get("success_details").format(target_name)
+
+        if success is None:
+            exception_string = "\n\n".join(target_check_results.get("exception_strings"))
+            return MESSAGES.get('exception_details').format(exception_string)
+
+        failure_string = "\n\n".join(target_check_results.get("failure_strings"))
+        if target_check_results.get("exception_strings"):
+            exception_string = "\n\n".join(target_check_results.get("exception_strings"))
+            failure_string += MESSAGES.get('exception_details').format(exception_string)
+        return failure_string
+
     def _create_summary(self, processed_targets):
         """
         Method to create a summary object for all s3 targets with details messages based on the check results summary.
