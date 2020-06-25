@@ -136,162 +136,75 @@ class Rorschach(Watchman):
         """
         Method to conduct various checks for each S3 item under each target. The specific checks for each
         item is determined from the config data. It is possible for there to be many targets and each
-        with multiple S3 items.
-        @return: A dict containing metadata about the failed checks and items for all items and all targets.
-        @example return: example_processed_targets =
-        {
-            'target1': {
-                'success': True,
-                'failed_checks': [],
-            },
-            'target2': {
-                'success': False,
-                'failed_checks': [
-                    (item1 metdata dict, check results for item 1 metadata dict),
-                    (item5 metdata dict, check results for item 5 metadata dict),
-                ],
+        with multiple S3 items. For each item, the appropriate method will be called to handle the amount of files being
+        checked.
+        :param s3_targets: The list of dictionaries loaded from the s3_targets config file. Each dictionary contains
+                           items to be checked.
+        :return: A dictionary containing all of the dictionaries for each target that was checked. For each target,
+                 a dictionary will be creating which contains:
+                    - a boolean "success" indicating if the check was valid (True: success, False: failures (and
+                      exceptions), None: all checks resulted in exceptions.
+                    - a list "exception_strings" which contains strings that detail any exceptions encountered.
+                    - a list "failure_strings" which contains strings that detail any failures encountered.
+
+        Example returned dictionary:
+            processed_targets =
+            {
+                'target1': {
+                    'success': True,
+                    'exception_strings: [],
+                    'failure_strings: []
+                },
+                'target2': {
+                    'success': False,
+                    'exception_strings: ["example exception message", ...],
+                    'failure_strings: ["example failure message", ...]
+                }
+                'target3': {
+                    'success': None,
+                    'exception_strings: ["only exceptions were encountered while performing checks for this target."],
+                    'failure_strings: []
+                ]
             }
-            'target3': {
-                'success': None,
-                'failed_checks': [
-                (item4 metadata dict, check results for item 4 metadata)
-            ]
-        }
-
-        The item metadata dict will be the exact same as the config data for that item.
-        The check result metadata dict can look like the following:
-        {
-            'bucket_not_found': s3/bucket
-            'prefix_suffix_not_match': (prefix, suffix)
-            'exception': traceback
-        }
-
         """
         processed_targets = {}
 
-        # This goes through each target
         for target in s3_targets:
-            items_failed = []
-            all_checks_are_exceptions = True
+            exception_strings = []
+            failure_strings = []
 
-            # This checks each item and the various check attributes it has
             for item in target['items']:
-                failed_check_items = {}
-                exception_list = []
 
                 bucket_name = item.get('bucket_name')
                 bucket_exists, tb = _s3.check_bucket(bucket_name)
 
                 if tb:
-                    failed_check_items.update({'exception': tb})
-                    items_failed.append((item, failed_check_items))
+                    exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
                     continue
                 elif not bucket_exists:
-                    failed_check_items.update({'bucket_not_found': 's3://{}'.format(bucket_name)})
-                    items_failed.append((item, failed_check_items))
-                    all_checks_are_exceptions = False
+                    failure_strings.append(MESSAGES.get('failure_bucket_not_found').format(item.get('bucket_name')))
                     continue
 
-                # Check for file existence
-                # If an item has the attribute 'full_path', this indicates that we are only checking one file,
-                # so we will only need to do an existence check at the moment. Adding file size checks for single
-                # files will be added later.
+                # If an item has the attribute 'full_path', then only one file is being checked.
                 if item.get('full_path'):
-                    found_file, full_path_with_bucket, tb = self._check_single_file_existence(item)
-                    if tb:
-                        failed_check_items.update({'exception': tb})
-                        items_failed.append((item, failed_check_items))
-                        continue
+                    file_check_exceptions, file_check_failures = self._check_single_file(item)
+                else:
+                    file_check_exceptions, file_check_failures = self._check_multiple_files(item)
 
-                    if not found_file:
-                        failed_check_items.update({'no_file_found_s3': full_path_with_bucket})
-                        items_failed.append((item, failed_check_items))
-                        all_checks_are_exceptions = False
-                        continue
+                exception_strings.extend(file_check_exceptions)
+                failure_strings.extend(file_check_failures)
 
-                    continue
-
-                # This is to check multiple files existence since we know it doesn't have a 'full_path' attribute
-                contents, count, prefix_generate, full_path, tb = self._generate_contents(item)
-                if tb:
-                    failed_check_items.update({'exception': tb})
-                    items_failed.append((item, failed_check_items))
-                    continue
-
-                if not count:
-                    failed_check_items.update({'no_file_found_s3': full_path})
-                    items_failed.append((item, failed_check_items))
-                    all_checks_are_exceptions = False
-                    continue
-
-                # At this point, we know that the file exists, so we can do the other checks on it.
-
-                # Check the most recent N files, and, if provided, use a specified value from config file
-                # This will replace our contents to a specified range instead of everything in the path.
-                if item.get('check_most_recent_file'):
-                    contents = self._check_most_recent_file(contents, item.get('check_most_recent_file'))
-
-                # Check every file in contents to ensure the key prefix and suffix match
-                prefix_suffix_match, tb = self._check_file_prefix_suffix(contents, item.get('suffix'), prefix_generate)
-                if tb:
-                    exception_list.append(tb)
-                if prefix_suffix_match is False:
-                    failed_check_items.update({'prefix_suffix_not_match': (item.get('prefix'), item.get('suffix'))})
-                    all_checks_are_exceptions = False
-
-                # Check each individual file in contents to ensure all files have a size greater than 0
-                at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
-                if tb:
-                    exception_list.append(tb)
-                if at_least_one_file_empty:
-                    failed_check_items.update({'at_least_one_file_empty': (at_least_one_file_empty, empty_file_list)})
-                    all_checks_are_exceptions = False
-
-                # Check if aggregate file size is greater than 0 or the minimum size specified in the config file
-                if item.get('check_total_size_kb'):
-                    is_total_size_less_than_threshold, total_size, tb = self._compare_total_file_size_to_threshold(
-                        contents, item.get('check_total_size_kb'))
-                    if tb:
-                        exception_list.append(tb)
-                    if is_total_size_less_than_threshold:
-                        failed_check_items.update(
-                            {'total_file_size_below_threshold': (full_path, total_size, item.get('check_total_size_kb'))
-                             })
-                        all_checks_are_exceptions = False
-
-                # Check if the aggregate file count is greater than 0 or the minimum size specified in the config file
-                if item.get('check_total_object'):
-                    if count < item.get('check_total_object'):
-                        failed_check_items.update(
-                            {'count_object_too_less': (full_path, count, item['check_total_object'])})
-                        all_checks_are_exceptions = False
-
-                # Check for exceptions
-                if exception_list:
-                    failed_check_items.update({'exception': exception_list})
-                # Check for any failures/exceptions
-                if failed_check_items:
-                    items_failed.append((item, failed_check_items))
-
-            # Keep track of which targets passed, failed, and only had exceptions
-            if items_failed:
-                processed_targets.update(
-                    {
-                        target.get('target_name'):
-                            {
-                                'success': None if all_checks_are_exceptions else False,
-                                'failed_checks': items_failed
-                            }
-                    })
-            else:
-                processed_targets.update(
-                    {
-                        target.get('target_name'):
-                            {
-                                'success': True,
-                                'failed_checks': items_failed
-                            }
-                    })
+            processed_targets.update(
+                {
+                    target.get('target_name'):
+                        {
+                            # Success is None if there were only exceptions, False if failures (and exceptions), and
+                            # True if all checks passed.
+                            'success': None if exception_strings and not failure_strings else len(failure_strings) == 0,
+                            'exception_strings': exception_strings,
+                            'failure_strings': failure_strings
+                        }
+                })
 
         return processed_targets
 
