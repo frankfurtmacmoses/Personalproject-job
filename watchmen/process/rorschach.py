@@ -208,6 +208,38 @@ class Rorschach(Watchman):
 
         return processed_targets
 
+    def _check_single_file(self, item):
+        """
+        Method to perform all of the required checks if an item consists of only one file.
+        :param item: The current item that is being checked. This item is a member of a "target" which are all defined
+                     in the s3_targets config file.
+        :return: The exceptions_strings list and the failure_strings list. Each of these lists contains the exceptions
+                 and failures encountered while performing the checks. If all checks are successful, both of these lists
+                 will be empty.
+        """
+        exception_strings = []
+        failure_strings = []
+        full_path = item.get("full_path")
+
+        # Generating properly formatted S3 key:
+        time_offset = item.get("offset", 1)
+        s3_key, tb = self._generate_key(full_path, self.event, time_offset)
+
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            return exception_strings, failure_strings
+
+        # Checking for single file existence:
+        found_file, tb = self._check_single_file_existence(item, s3_key)
+
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            return exception_strings, failure_strings
+
+        if not found_file:
+            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_key))
+            return exception_strings, failure_strings
+
     def _create_summary(self, processed_targets):
         """
         Method to create a summary object for all s3 targets with details messages based on the check results summary.
