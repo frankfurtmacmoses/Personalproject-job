@@ -240,6 +240,69 @@ class Rorschach(Watchman):
             failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_key))
             return exception_strings, failure_strings
 
+    def _check_multiple_files(self, item):
+        """
+        Method to perform all of the required checks if an item consists of multiple files.
+        :param item: The current item that is being checked. This item is a member of a "target" which are all defined
+                     in the s3_targets config file.
+        :return: The exceptions_strings list and the failure_strings list. Each of these lists contains the exceptions
+                 and failures encountered while performing the checks. If all checks are successful, both of these lists
+                 will be empty.
+        """
+        exception_strings = []
+        failure_strings = []
+
+        # Generating contents from all files and returning if a failure or an exception is encountered:
+        contents, count, prefix_generate, full_path, tb = self._generate_contents(item)
+
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            return exception_strings, failure_strings
+
+        if not count:
+            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(prefix_generate))
+            return exception_strings, failure_strings
+
+        # Updating contents if there is a time offset required for the current item:
+        if item.get('check_most_recent_file'):
+            contents = self._check_most_recent_file(contents, item.get('check_most_recent_file'))
+
+        # Check the prefix and suffix of all files:
+        prefix_suffix_match, tb = self._check_file_prefix_suffix(contents, item.get('suffix'), prefix_generate)
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+        if prefix_suffix_match is False:
+            failure_strings.append(MESSAGES.get('failure_prefix_suffix_not_match').format(item.get('prefix'),
+                                                                                          item.get('suffix')))
+
+        # Check for empty files:
+        at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+        if at_least_one_file_empty:
+            empty_file_string = ""
+            for empty_file in empty_file_list:
+                empty_file_string += MESSAGES.get('failure_file_empty').format(empty_file)
+            failure_strings.append(empty_file_string)
+
+        # Check if aggregate file size meets standards:
+        if item.get('check_total_size_kb'):
+            is_total_size_less_than_threshold, total_size, tb = self._compare_total_file_size_to_threshold(
+                contents, item.get('check_total_size_kb'))
+            if tb:
+                exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            if is_total_size_less_than_threshold:
+                failure_strings.append(MESSAGES.get('failure_total_file_size_below_threshold').format(
+                    full_path, total_size, item.get('check_total_size_kb')))
+
+        # Check if the aggregate file count meets standards:
+        if item.get('check_total_object'):
+            if count < item.get('check_total_object'):
+                failure_strings.append(MESSAGES.get('failure_count_too_less').format(full_path, count,
+                                                                                     item['check_total_object']))
+
+        return exception_strings, failure_strings
+
     def _create_summary(self, processed_targets):
         """
         Method to create a summary object for all s3 targets with details messages based on the check results summary.
