@@ -112,6 +112,29 @@ METROPOLIS = {
     "success_subject": "Metropolis: No Outliers! - {}"
 }
 
+MOLOCH = {
+    "exception_message": "The newly observed domain feeds and hostname feeds reached an exception during the file"
+                         " checking process due to the following:\n\n{}\n\nPlease look at the logs for more insight.",
+    "exception_short_message": "Moloch: Feeds failed due to an exception, please look at the logs!",
+    "exception_subject": "Moloch watchmen reached an exception!",
+    "failure_both": "Please check the Response Guide for Moloch in watchmen documents: "
+                    "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
+                    "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
+                    "ERROR: Both hostname and domains feed have gone down!",
+    "failure_domain": "Please check the Response Guide for Moloch in watchmen documents: "
+                      "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
+                      "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
+                      "ERROR: The newly observed domains feed has gone down!",
+    "failure_hostname": "Please check the Response Guide for Moloch in watchmen documents: "
+                        "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
+                        "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
+                        "ERROR: The newly observed hostname feed has gone down!",
+    "failure_subject": "Moloch watchmen detected an issue with NOH/D feed!",
+    "failure_short_message": "Moloch: A Feed has gone down, please check logs in CloudWatch!",
+    "success_message": "NOH/D Feeds are up and running!",
+    "success_subject": "Moloch watchman found Hostnames and Domains feeds works okay!"
+}
+
 MOTHMAN = {
     "exception_details": "There was an exception while trying to check the ForeverMail S3 files.\n\nTraceback of "
                          "exception:\n{}",
@@ -180,13 +203,28 @@ RORSCHACH = {
 }
 
 SILHOUETTE = {
-    "success_message": "Lookalike2 algorithm is up and running!",
-    "failure_message": "Lookalike2 algorithm never added files yesterday! "
-                       "The algorithm may be down or simply did not complete!",
-    "success_subject": "Silhouette: Lookalike2 files have been successfully detected in S3!",
-    "failure_subject": "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
-    "exception_subject": "EXCEPTION: Silhouette failed to check the Lookalike2 algorithm!",
     "exception_message": "Silhouette for lookalike2 algorithm failed on \n\t\"{}\" \ndue to "
                          "the Exception:\n\n{}\n\nPlease check the logs!",
-    "exception_short_message": "Silhouette for lookalike2 algorithm failed due to an exception, please check the logs!"
+    "exception_short_message": "Silhouette for lookalike2 algorithm failed due to an exception, please check the logs!",
+    "exception_subject": "EXCEPTION: Silhouette failed to check the Lookalike2 algorithm!",
+    "failure_message": "Lookalike2 algorithm never added files yesterday! "
+                       "The algorithm may be down or simply did not complete!",
+    "failure_subject": "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
+    "success_message": "Lookalike2 algorithm is up and running!",
+    "success_subject": "Silhouette: Lookalike2 files have been successfully detected in S3!"
+}
+
+SPECTRE = {
+    "exception_message": "Spectre for Georgia Tech failed on \n\t\"{}\" \ndue to "
+                         "the Exception:\n\n{}\n\nPlease check the logs!",
+    "exception_short_message": "Spectre monitor failed due to an exception, check S3 and Georgia Tech logs!",
+    "exception_subject": "Spectre for Georgia Tech had an exception!",
+    "failure_message": "could not be found in {}/{}! "
+                       "Please check S3 and Georgia Tech logs!",
+    "failure_short_message": "Spectre monitor failed, please check S3 and Georgia Tech logs!",
+    "failure_subject_message": "Spectre Georgia Tech data monitor detected a failure!",
+    "file_not_found_error": " not found on S3 in {}/{}! Georgia Tech data is missing, "
+                            "please view the logs!",
+    "success_message": "Georgia Tech Feed data found on S3!",
+    "success_subject": "Spectre Georgia Tech data monitor found everything alright. "
 }
