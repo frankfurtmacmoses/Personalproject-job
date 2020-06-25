@@ -4,6 +4,7 @@ from mock import patch
 import pytz
 
 from watchmen.process.moloch import Moloch
+from watchmen.process.moloch import MESSAGES
 
 
 class TestMoloch(unittest.TestCase):
@@ -13,35 +14,23 @@ class TestMoloch(unittest.TestCase):
         self.example_today = datetime(year=2018, month=12, day=18, tzinfo=pytz.utc)
         self.example_file_path = "somepath/to/a/file"
         self.example_exception_details = "Something is not working"
-        self.error = "ERROR: "
-        self.failure_domain_start = self.error + "The newly observed domains feed has gone down!"
-        self.failure_hostname_start = self.error + "The newly observed hostname feed has gone down!"
-        self.failure_both_start = self.error + "Both hostname and domains feed have gone down!"
-        self.failure_general_details = "{}\nPlease check the Response Guide for Moloch in watchmen documents: " \
-                                       "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4" \
-                                       "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
         self.example_details_chart = {
-            "exception": "The newly observed domain feeds and hostname "
-                         "feeds reached an exception during the file checking "
-                         "process due to the following:\n\n{}\n\nPlease look at the logs for more insight.",
-            "fail_domain": self.failure_general_details.format(self.failure_domain_start),
-            "fail_hostname": self.failure_general_details.format(self.failure_hostname_start),
-            "fail_both": self.failure_general_details.format(self.failure_both_start),
-            "success": "NOH/D Feeds are up and running!",
+            "exception": MESSAGES.get("exception_message"),
+            "failure_domain": MESSAGES.get("failure_domain"),
+            "failure_hostname": MESSAGES.get("failure_hostname"),
+            "failure_both": MESSAGES.get("failure_both"),
+            "success": MESSAGES.get("success_message"),
         }
         self.example_result_dict = {
-            "details": "ERROR: Both hostname and domains feed have gone down!\n"
-                       "Please check the Response Guide for Moloch in watchmen documents: "
-                       "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe430bWWxR"
-                       "APCkWk68pcwjE/edit#heading=h.6dcje1sj7gup",
+            "details": MESSAGES.get("failure_both"),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "short_message": "Moloch: A Feed has gone down, please check logs in CloudWatch!",
+            "short_message": MESSAGES.get("failure_short_message"),
             "result_id": 0,
             "snapshot": None,
             "watchman_name": "Moloch",
             "state": "FAILURE",
-            "subject": "Moloch watchmen detected an issue with NOH/D feed!",
+            "subject": MESSAGES.get("failure_subject"),
             "success": False,
             "target": "Newly Observed Data",
         }
@@ -122,17 +111,17 @@ class TestMoloch(unittest.TestCase):
         }, {
             "hostname_check": False,
             "domain_check": True,
-            "result": self.example_details_chart.get("fail_hostname"),
+            "result": self.example_details_chart.get("failure_hostname"),
             "msg_type": False,
         }, {
             "hostname_check": True,
             "domain_check": False,
-            "result": self.example_details_chart.get("fail_domain"),
+            "result": self.example_details_chart.get("failure_domain"),
             "msg_type": False,
         }, {
             "hostname_check": False,
             "domain_check": False,
-            "result": self.example_details_chart.get("fail_both"),
+            "result": self.example_details_chart.get("failure_both"),
             "msg_type": False,
         }, {
             "hostname_check": None,
@@ -177,12 +166,12 @@ class TestMoloch(unittest.TestCase):
         expected = self.example_result_dict
         moloch_obj = Moloch(event=None, context=None)
         result = moloch_obj._create_result(
-            "Moloch: A Feed has gone down, please check logs in CloudWatch!",
+            MESSAGES.get("failure_short_message"),
             False,
             False,
             "FAILURE",
-            "Moloch watchmen detected an issue with NOH/D feed!",
-            self.example_details_chart.get("fail_both")).to_dict()
+            MESSAGES.get("failure_subject"),
+            self.example_details_chart.get("failure_both")).to_dict()
         # since moloch does not give observed time, we don't test the time here
         result["dt_created"] = "2018-12-18T00:00:00+00:00"
 
@@ -195,7 +184,7 @@ class TestMoloch(unittest.TestCase):
         test watchmen.process.moloch:: Moloch :: monitor
         """
         moloch_obj = Moloch(event=None, context=None)
-        mock_create_details.return_value = self.example_details_chart.get("fail_both"), False
+        mock_create_details.return_value = self.example_details_chart.get("failure_both"), False
         mock_get_check.return_value = False, False, "string"
         expected = self.example_result_dict
         result = moloch_obj.monitor()[0].to_dict()

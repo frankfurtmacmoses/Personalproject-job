@@ -22,31 +22,13 @@ from datetime import datetime, timedelta
 
 # Cyberint imports
 from watchmen import const
+from watchmen import messages
 from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.utils.s3 import validate_file_on_s3
 from watchmen.common.watchman import Watchman
 
-SUCCESS_MESSAGE = "NOH/D Feeds are up and running!"
-ERROR = "ERROR: "
-FAILURE_DOMAIN_START = ERROR + "The newly observed domains feed has gone down!"
-FAILURE_HOSTNAME_START = ERROR + "The newly observed hostname feed has gone down!"
-FAILURE_BOTH_START = ERROR + "Both hostname and domains feed have gone down!"
-FAILURE_GENERAL_MESSAGE = "{}\nPlease check the Response Guide for Moloch in watchmen documents: " \
-                          "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4" \
-                          "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
-FAILURE_DOMAIN = FAILURE_GENERAL_MESSAGE.format(FAILURE_DOMAIN_START)
-FAILURE_HOSTNAME = FAILURE_GENERAL_MESSAGE.format(FAILURE_HOSTNAME_START)
-FAILURE_BOTH = FAILURE_GENERAL_MESSAGE.format(FAILURE_BOTH_START)
-FAILURE_SHORT_MESSAGE = "Moloch: A Feed has gone down, please check logs in CloudWatch!"
-
-SUCCESS_SUBJECT = "Moloch watchman found Hostnames and Domains feeds works okay!"
-FAILURE_SUBJECT = "Moloch watchmen detected an issue with NOH/D feed!"
-
-EXCEPTION_SUBJECT = "Moloch watchmen reached an exception!"
-EXCEPTION_MESSAGE = "The newly observed domain feeds and hostname feeds reached an exception during the file checking" \
-                    " process due to the following:\n\n{}\n\nPlease look at the logs for more insight."
-EXCEPTION_SHORT_MESSAGE = "Moloch: Feeds failed due to an exception, please look at the logs!"
+MESSAGES = messages.MOLOCH
 BUCKET_NAME = settings('moloch.bucket_name', "deteque-new-observable-data")
 DOMAINS_PATH = settings('moloch.domain_name', "NewlyObservedDomains")
 HOSTNAME_PATH = settings('moloch.hostname_path', "NewlyObservedHostname")
@@ -79,25 +61,25 @@ class Moloch(Watchman):
         details, msg_type = self._create_details(host_check, domain_check, tb)
         parameter_chart = {
             None: {
-                "short_message": EXCEPTION_SHORT_MESSAGE,
+                "short_message": MESSAGES.get("exception_short_message"),
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
-                "subject": EXCEPTION_SUBJECT,
+                "subject": MESSAGES.get("exception_subject"),
             },
             True: {
-                "short_message": SUCCESS_MESSAGE,
+                "short_message": MESSAGES.get("success_message"),
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
-                "subject": SUCCESS_SUBJECT,
+                "subject": MESSAGES.get("success_subject"),
             },
             False: {
-                "short_message": FAILURE_SHORT_MESSAGE,
+                "short_message": MESSAGES.get("failure_short_message"),
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
-                "subject": FAILURE_SUBJECT,
+                "subject": MESSAGES.get("failure_subject"),
             },
         }
         parameters = parameter_chart.get(msg_type)
@@ -146,17 +128,17 @@ class Moloch(Watchman):
         <str>: details
         <bool>: type of details, True for success, False for failure, None for exception
         """
-        status, details_type = SUCCESS_MESSAGE, True
+        status, details_type = MESSAGES.get("success_message"), True
         if domain_check is None or hostname_check is None:
-            return EXCEPTION_MESSAGE.format(tb), None
+            return MESSAGES.get("exception_message").format(tb), None
 
         if not domain_check or not hostname_check:
             if not domain_check and not hostname_check:
-                status, details_type = FAILURE_BOTH, False
+                status, details_type = MESSAGES.get("failure_both"), False
             elif not domain_check:
-                status, details_type = FAILURE_DOMAIN, False
+                status, details_type = MESSAGES.get("failure_domain"), False
             elif not hostname_check:
-                status, details_type = FAILURE_HOSTNAME, False
+                status, details_type = MESSAGES.get("failure_hostname"), False
         return status, details_type
 
     def _create_result(self, short_message, success, disable_notifier, state, subject, details):
