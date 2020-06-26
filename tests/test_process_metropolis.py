@@ -6,25 +6,8 @@ from mock import patch
 from watchmen.process.metropolis import Metropolis
 from watchmen.process.metropolis import \
     DATA_FILE, \
-    DETAILS_FORMAT, \
-    EXCEPTION_DETAILS, \
-    EXCEPTION_MESSAGE, \
-    FAILURE_EXCEPTION_MESSAGE, \
-    FAILURE_DETAILS, \
-    FAILURE_MESSAGE, \
-    FAILURE_SUBJECT, \
-    GENERIC, \
-    GENERIC_EXCEPTION_SUBJECT, \
-    GENERIC_FAIL_AND_EXCEPTION_SUBJECT, \
-    GENERIC_FAIL_SUBJECT, \
-    GENERIC_SUCCESS_SUBJECT, \
-    GENERIC_TARGET, \
-    MIN_AND_MAX_ERROR_MESSAGE, \
-    NOT_LOADED_DETAILS, \
-    NOT_LOADED_MESSAGE, \
-    NOT_LOADED_SUBJECT, \
-    SUCCESS_DETAILS, \
-    SUCCESS_MESSAGE
+    MESSAGES, \
+    GENERIC_TARGET
 
 
 class TestMetropolis(unittest.TestCase):
@@ -120,12 +103,34 @@ class TestMetropolis(unittest.TestCase):
         self.example_row_dict_wrong_key = {
             "wrong_key": "35",
         }
+        self.example_row_dict_for_reaper_metrics = {
+            "process": "reaper",
+            "3LCL": "200",
+            "3UCL": "500",
+            "time": "time2",
+            "date": "random date",
+            "source": "second source",
+            "metric_type": "FQDN",
+            "metric_description": "daily",
+            "metric_value": "5"
+        }
+        self.example_row_dict_for_unknown_source = {
+            "process": "reap",
+            "3LCL": "200",
+            "3UCL": "500",
+            "time": "time2",
+            "date": "random date",
+            "source": "second source",
+            "metric_type": "FQDN",
+            "metric_description": "daily",
+            "metric_value": "5"
+        }
         self.example_summary_parameters = {
             "success": False,
             "disable_notifier": False,
             "state": self.example_state,
-            "subject": FAILURE_SUBJECT.format(self.example_process_name),
-            "short_message": FAILURE_MESSAGE,
+            "subject": MESSAGES.get("failure_subject").format(self.example_process_name),
+            "short_message": MESSAGES.get("failure_message"),
             "target": "Domain Counts Metrics"
         }
         self.example_result_dict = {
@@ -155,15 +160,15 @@ class TestMetropolis(unittest.TestCase):
             "target": GENERIC_TARGET,
         }
         self.example_result_dict_not_loaded = {
-            "details": NOT_LOADED_DETAILS.format(self.example_date, DATA_FILE, self.example_traceback),
+            "details": MESSAGES.get("not_loaded_details").format(self.example_date, DATA_FILE, self.example_traceback),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "short_message": NOT_LOADED_MESSAGE,
+            "short_message": MESSAGES.get("not_loaded_message"),
             "result_id": 0,
             "snapshot": {},
             "watchman_name": self.example_watchman_name,
             "state": "EXCEPTION",
-            "subject": NOT_LOADED_SUBJECT,
+            "subject": MESSAGES.get("not_loaded_subject"),
             "success": False,
             "target": GENERIC_TARGET,
         }
@@ -176,6 +181,13 @@ class TestMetropolis(unittest.TestCase):
             self.example_row_dict_in_range_2,
             self.example_row_dict_out_range
         ]
+        self.example_metric_data = [
+            {"source": "AIS", "metric": {"IPV4_TIDE_SUCCESS": 312, "IPV4": 156}},
+            {"source": "BLOX_cyberint", "metric": {"FQDN_TIDE_SUCCESS": 783, "FQDN": 261}},
+            {"source": "AIS", "metric": {"FQDN_TIDE_SUCCESS": 312, "FQDN": 20}}
+        ]
+        self.example_updated_indicator = {"IPV4": 156, "FQDN": 281}
+        self.traceback = "Traceback created during exception catch."
 
     @staticmethod
     def _create_metropolis():
@@ -184,6 +196,19 @@ class TestMetropolis(unittest.TestCase):
         @return: <Metropolis> metropolis object
         """
         return Metropolis(context=None, event=None)
+
+    def test_calculate_reaper_indicator_metrics(self):
+        """
+        watchmen.process.metropolis :: Metropolis :: _calculate_reaper_indicator_metrics
+        """
+        tests = [{
+            "metric_data": self.example_metric_data,
+            "expected": {"FQDN": 281, "IPV4": 156},
+        }]
+        for test in tests:
+            metropolis = self._create_metropolis()
+            metropolis._calculate_reaper_indicator_metrics(test.get("metric_data"))
+            self.assertEqual(test.get("expected"), metropolis.reaper_metrics)
 
     def test_check_against_threshold(self):
         """
@@ -207,7 +232,7 @@ class TestMetropolis(unittest.TestCase):
             self.assertEqual((expected, None), returned)
 
         # wrong range
-        expected = None, MIN_AND_MAX_ERROR_MESSAGE
+        expected = None, MESSAGES.get("min_and_max_error_message")
         returned = self._create_metropolis()._check_against_threshold(self.example_row_dict_wrong_range)
         self.assertEqual(expected, returned)
 
@@ -234,17 +259,17 @@ class TestMetropolis(unittest.TestCase):
             "row": self.example_row_dict_in_range_1,
             "threshold_check": True,
             "tb": None,
-            "message_type": SUCCESS_DETAILS
+            "message_type": MESSAGES.get("success_details")
         }, {
             "row": self.example_row_dict_out_range,
             "threshold_check": False,
             "tb": None,
-            "message_type": FAILURE_DETAILS
+            "message_type": MESSAGES.get("failure_details")
         }, {
             "row": self.example_row_dict_wrong_range,
             "threshold_check": None,
             "tb": self.example_traceback,
-            "message_type": EXCEPTION_DETAILS
+            "message_type": MESSAGES.get("exception_details")
         }]
         for test in tests:
             row = test.get("row")
@@ -255,12 +280,14 @@ class TestMetropolis(unittest.TestCase):
                 row.get("date"), row.get("source"), row.get("metric_type"), \
                 row.get("metric_description"), row.get("metric_value"), row.get("process")
 
-            if message_type == EXCEPTION_DETAILS:
-                expected = DETAILS_FORMAT.format(message_type.format(process_name, source_name, date, tb), met_type,
-                                                 met_desc, met_val, self.example_threshold_msg)
+            if message_type == MESSAGES.get("exception_details"):
+                expected = MESSAGES.get("details_format").format(message_type.format(process_name,
+                                                                 source_name, date, tb), met_type, met_desc,
+                                                                 met_val, self.example_threshold_msg)
             else:
-                expected = DETAILS_FORMAT.format(message_type.format(process_name, source_name, date), met_type,
-                                                 met_desc, met_val, self.example_threshold_msg)
+                expected = MESSAGES.get("details_format").format(message_type.format(process_name,
+                                                                 source_name, date, tb), met_type, met_desc,
+                                                                 met_val, self.example_threshold_msg)
 
             returned = self._create_metropolis()._create_details(
                 row=row,
@@ -276,28 +303,28 @@ class TestMetropolis(unittest.TestCase):
         """
         tests = [{
             "checks": [True, True, True],
-            "subject": GENERIC_SUCCESS_SUBJECT,
+            "subject": MESSAGES.get("generic_success_subject"),
             "state": "SUCCESS",
             "success": True,
-            "short_message": GENERIC + SUCCESS_MESSAGE
+            "short_message": MESSAGES.get("generic") + MESSAGES.get("success_message")
         }, {
             "checks": [True, False, True],
-            "subject": GENERIC_FAIL_SUBJECT,
+            "subject": MESSAGES.get("generic_fail_subject"),
             "state": "FAILURE",
             "success": False,
-            "short_message": GENERIC + FAILURE_MESSAGE
+            "short_message": MESSAGES.get("generic") + MESSAGES.get("failure_message")
         }, {
             "checks": [None, True, True],
-            "subject": GENERIC_EXCEPTION_SUBJECT,
+            "subject": MESSAGES.get("generic_exception_subject"),
             "state": "EXCEPTION",
             "success": False,
-            "short_message": GENERIC + EXCEPTION_MESSAGE
+            "short_message": MESSAGES.get("generic") + MESSAGES.get("exception_message")
         }, {
             "checks": [True, False, None],
-            "subject": GENERIC_FAIL_AND_EXCEPTION_SUBJECT,
+            "subject": MESSAGES.get("generic_fail_and_exception_subject"),
             "state": "EXCEPTION",
             "success": False,
-            "short_message": GENERIC + FAILURE_EXCEPTION_MESSAGE
+            "short_message": MESSAGES.get("generic") + MESSAGES.get("failure_exception_message")
         }]
 
         for test in tests:
@@ -426,6 +453,40 @@ class TestMetropolis(unittest.TestCase):
         returned = self._create_metropolis()._get_date_today()
         self.assertEqual(expected, returned)
 
+    @patch('watchmen.process.metropolis.requests.get')
+    @patch('watchmen.process.metropolis.traceback.format_exc')
+    @patch('watchmen.process.metropolis.requests.getattr')
+    def test_get_live_target_data(self, mock_request, mock_traceback, mock_getattr):
+        expected = (False, MESSAGES.get('no_indicator_message').format('FQDN', 'reaper'))
+        returned = self._create_metropolis()._get_live_target_data(self.example_row_dict_for_reaper_metrics)
+        self.assertEqual(expected, returned)
+
+        # test exception
+        traceback = self.traceback
+        mock_getattr.side_effect = Exception()
+        mock_traceback.return_value = traceback
+
+        expected = None, traceback
+        returned = self._create_metropolis()._get_live_target_data(self.example_row_dict_for_unknown_source)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.metropolis.requests.get')
+    @patch('watchmen.process.metropolis.traceback.format_exc')
+    def test_get_reaper_data_exception(self, mock_traceback, mock_request):
+        metropolis = self._create_metropolis()
+        traceback = self.traceback
+        mock_request.side_effect = Exception()
+        mock_traceback.return_value = traceback
+
+        expected = None, traceback
+        returned = metropolis._get_reaper_data(self.example_row_dict_for_reaper_metrics)
+        self.assertEqual(expected, returned)
+
+        # Test get reaper request not getting called twice.
+        metropolis.reaper_metrics = {"FQDN": 281, "IPV4": 1000}
+        returned = metropolis._get_reaper_data(self.example_row_dict_for_reaper_metrics)
+        self.assertEqual(self.example_row_dict_for_reaper_metrics['moving_mean'], metropolis.reaper_metrics['FQDN'])
+
     @patch('watchmen.process.metropolis.Metropolis._read_csv')
     @patch('watchmen.process.metropolis.Metropolis._get_data_by_date')
     @patch('watchmen.process.metropolis.Metropolis._fill_sources_per_process')
@@ -457,8 +518,8 @@ class TestMetropolis(unittest.TestCase):
             mock_get_csv_data.side_effect = test
             expected_dict = self.example_result_dict_not_loaded
             returned_dict = self._create_metropolis().monitor()[0].to_dict()
-            returned_dict["details"] = NOT_LOADED_DETAILS.format(self.example_date, DATA_FILE,
-                                                                 self.example_exception_msg)
+            returned_dict["details"] = MESSAGES.get("not_loaded_details").format(
+                                        self.example_date, DATA_FILE, self.example_exception_msg)
             # since metropolis does not give observed time, we don't test the time here
             returned_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
             self.assertEqual(expected_dict, returned_dict)

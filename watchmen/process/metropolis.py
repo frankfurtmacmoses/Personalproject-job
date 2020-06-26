@@ -8,11 +8,14 @@ Refactored on 10.17.2019
 @author: Michael Garcia
 @email: garciam@infoblox.com
 """
+from collections import Counter
 from datetime import datetime
 import pytz
+import requests
 import traceback
 
 from watchmen import const
+from watchmen import messages
 from watchmen.common.watchman import Result
 from watchmen.common.watchman import Watchman
 from watchmen.config import settings
@@ -21,33 +24,11 @@ from watchmen.utils.s3 import get_csv_data
 
 BUCKET_NAME = settings("metropolis.bucket_name", "cyber-intel")
 DATA_FILE = settings("metropolis.data_file", "watchmenResults.csv")
+MESSAGES = messages.METROPOLIS
 PATH_PREFIX = settings("metropolis.path_prefix", "analytics/change_detection/prod/")
-
-# MESSAGES
-DETAILS_FORMAT = "{}\n\nMetric_type: {}\nMetric_description: {}\nMetric_value: {}\n{}\n"
-EXCEPTION_DETAILS = "Process: {}, Source: {} reached an exception on {} trying to get " + DATA_FILE + " from s3" \
-                    " due to the following:\n\n{}\n\nPlease look at the logs for more insight."
-EXCEPTION_MESSAGE = "Metropolis failed due to an exception!"
-EXCEPTION_SUBJECT = "Metropolis: EXCEPTION Checking Process: {}"
-FAILURE_DETAILS = "Process: {}, Source: {} is down for {}!"
-FAILURE_EXCEPTION_MESSAGE = "Failure and exception checking process metrics."
-FAILURE_MESSAGE = "There were moving_mean values outside of the threshold!"
-FAILURE_SUBJECT = "Metropolis: OUTLIER DETECTED! - Process: {}"
-GENERIC = "Generic: "
-GENERIC_EXCEPTION_SUBJECT = "Metropolis: EXCEPTION Checking Process Metrics"
-GENERIC_FAIL_SUBJECT = "Metropolis: FAILURE Checking Process Metrics"
-GENERIC_FAIL_AND_EXCEPTION_SUBJECT = "Metropolis: FAILURE AND EXCEPTION Checking Process Metrics"
-GENERIC_SUCCESS_SUBJECT = "Metropolis: No Outliers!"
-MIN_AND_MAX_MESSAGE = "Moving Mean: {} || Minimum: {} || Maximum: {}"
-MIN_AND_MAX_ERROR_MESSAGE = "Error: Minimum is larger than maximum."
-NOT_LOADED_DETAILS = "Failed to find rows with date of {} in {} due to the following:\n{}\n\nPlease look at the " \
-                     "logs or check the CSV file for more insight."
-NOT_LOADED_MESSAGE = "Failed to load data from the CSV file, please check logs."
-NOT_LOADED_SUBJECT = "Metropolis: ERROR Loading Data File!"
-PROCESS_NOT_IN_FILE = "{} process is missing from the CSV file."
-SUCCESS_DETAILS = "Process: {}, Source: {} is up and running for {}!"
-SUCCESS_MESSAGE = "All moving_mean values were inside the threshold!"
-SUCCESS_SUBJECT = "Metropolis: No Outliers! - {}"
+REAPER_HEADERS = {"x-api-key": settings("metropolis.reaper.metrics_api_key")}
+REAPER_INDICATOR_TYPES = {'IPV4', 'IPV6', 'FQDN', 'URI'}
+REAPER_METRICS_URL = settings("metropolis.reaper.metrics_url")
 
 # TARGETS:
 TARGETS = {
@@ -66,6 +47,7 @@ class Metropolis(Watchman):
     # pylint: disable=unused-argument
     def __init__(self, event, context):
         super().__init__()
+        self.reaper_metrics = {}
 
     def monitor(self) -> [Result]:
         """
@@ -93,13 +75,33 @@ class Metropolis(Watchman):
         for process, sources in sources_per_process.items():
             # If there are no sources to check, continue to check next process.
             if not sources:
-                self.logger.info(PROCESS_NOT_IN_FILE.format(process))
+                self.logger.info(MESSAGES.get("process_not_in_file").format(process))
                 continue
             result, generic_checks, generic_details = self._check_all_sources(sources, generic_checks, generic_details)
             results.append(result)
 
         results.append(self._create_generic_result(generic_checks, generic_details, row_dicts_today))
         return results
+
+    def _calculate_reaper_indicator_metrics(self, metrics_data):
+        """
+        Calculate the total number of indicators received for past 24 hrs
+        :param metrics_data: <dict>
+        Updates reaper_metrics: <list> list of dictionaries of reaper metrics. Looks like below format:
+               [
+                 {"source": "AIS", "metric": {"IPV4_TIDE_SUCCESS": 312, "IPV4": 156}},
+                 {"source": "BLOX_cyberint", "metric": {"FQDN_TIDE_SUCCESS": 783, "FQDN": 261}},
+                 {"source": "AIS", "metric": {"FQDN_TIDE_SUCCESS": 312, "FQDN": 20}}
+               ]
+        <dict> dictionary of reaper metrics in the format below:
+               {'FQDN': 100, 'IPV4': 500, 'URI': 50}
+        """
+        counter = Counter()
+        for item in metrics_data:
+            for key in item['metric'].keys():
+                if key in REAPER_INDICATOR_TYPES:
+                    counter.update({key: int(item['metric'][key])})
+        self.reaper_metrics = dict(counter)
 
     def _check_against_threshold(self, row):
         """
@@ -117,7 +119,7 @@ class Metropolis(Watchman):
                 float(row.get("3LCL")), \
                 float(row.get("moving_mean"))
             if maximum < minimum:
-                return None, MIN_AND_MAX_ERROR_MESSAGE
+                return None, MESSAGES.get("min_and_max_error_message")
             if minimum <= moving_mean <= maximum:
                 return True, None
             return False, None
@@ -130,8 +132,9 @@ class Metropolis(Watchman):
 
     def _check_all_sources(self, sources, generic_checks, generic_details):
         """
-        Method that checks if all rows within the given list (which belong to one process) are within
-        the threshold.
+        Method that checks if all rows with moving_mean within the given list (which belong to one process) are within
+        the threshold. The rows without moving_mean, triggers to get live data from targets and update the moving_mean
+        accordingly and check against the threshold.
         :param sources: The list of rows belonging that have the same process name.
         :param generic_checks: The list of booleans indicating the success of each row. This will be filled in
                                after each row is checked, and used to make the generic email in create_generic_result().
@@ -147,18 +150,25 @@ class Metropolis(Watchman):
 
         for row in sources:
             process_name = row.get("process")
-            threshold_check, check_tb = self._check_against_threshold(row)
-            generic_checks.append(threshold_check)
-            process_checks.append(threshold_check)
+            should_check_against_threshold = True
+            if row.get('moving_mean') is None:
+                # get the live data for the process incase 'moving mean' is not present.
+                should_check_against_threshold, tb = self._get_live_target_data(row)
+            if should_check_against_threshold:
+                threshold_check_result, check_tb = self._check_against_threshold(row)
+            else:
+                threshold_check_result, check_tb = should_check_against_threshold, tb
+            generic_checks.append(threshold_check_result)
+            process_checks.append(threshold_check_result)
             threshold_msg = self._create_threshold_message(row)
             details = self._create_details(
                 row=row,
-                threshold_check=threshold_check,
+                threshold_check=threshold_check_result,
                 threshold_message=threshold_msg,
                 tb=check_tb
             )
             # append to process_details if a failure or exception occurred.
-            if not threshold_check:
+            if not threshold_check_result:
                 process_details = details + "\n" + const.MESSAGE_SEPARATOR + "\n" + process_details
                 generic_details = details + "\n" + const.MESSAGE_SEPARATOR + "\n" + generic_details
 
@@ -178,15 +188,19 @@ class Metropolis(Watchman):
             row.get("date"), row.get("metric_description"), row.get("metric_type"), \
             row.get("metric_value"), row.get("process"), row.get("source")
 
+        if threshold_check:
+            return MESSAGES.get("details_format").format(MESSAGES.get("success_details").format(process_name,
+                                                         source_name, date), met_type, met_desc, met_val,
+                                                         threshold_message)
+
         if threshold_check is None:
-            return DETAILS_FORMAT.format(EXCEPTION_DETAILS.format(process_name, source_name, date, tb),
-                                         met_type, met_desc, met_val, threshold_message)
-        if threshold_check is True:
-            return DETAILS_FORMAT.format(SUCCESS_DETAILS.format(process_name, source_name, date),
-                                         met_type, met_desc, met_val, threshold_message)
-        else:
-            return DETAILS_FORMAT.format(FAILURE_DETAILS.format(process_name, source_name, date),
-                                         met_type, met_desc, met_val, threshold_message)
+            return MESSAGES.get("details_format").format(MESSAGES.get("exception_details").format(process_name,
+                                                         source_name, date, tb), met_type, met_desc, met_val,
+                                                         threshold_message)
+
+        return MESSAGES.get("details_format").format(MESSAGES.get("failure_details").format(process_name,
+                                                     source_name, date), met_type, met_desc, met_val,
+                                                     threshold_message)
 
     def _create_generic_result(self, generic_checks, generic_details, generic_snapshot):
         """
@@ -202,20 +216,20 @@ class Metropolis(Watchman):
         disable_notifier = success
 
         if has_outlier and has_exception:
-            short_message = GENERIC + FAILURE_EXCEPTION_MESSAGE
-            subject = GENERIC_FAIL_AND_EXCEPTION_SUBJECT
+            short_message = MESSAGES.get("generic") + MESSAGES.get("failure_exception_message")
+            subject = MESSAGES.get("generic_fail_and_exception_subject")
             state = Watchman.STATE.get("exception")
         elif has_outlier and not has_exception:
-            short_message = GENERIC + FAILURE_MESSAGE
-            subject = GENERIC_FAIL_SUBJECT
+            short_message = MESSAGES.get("generic") + MESSAGES.get("failure_message")
+            subject = MESSAGES.get("generic_fail_subject")
             state = Watchman.STATE.get("failure")
         elif not has_outlier and has_exception:
-            short_message = GENERIC + EXCEPTION_MESSAGE
-            subject = GENERIC_EXCEPTION_SUBJECT
+            short_message = MESSAGES.get("generic") + MESSAGES.get("exception_message")
+            subject = MESSAGES.get("generic_exception_subject")
             state = Watchman.STATE.get("exception")
         else:
-            short_message = GENERIC + SUCCESS_MESSAGE
-            subject = GENERIC_SUCCESS_SUBJECT
+            short_message = MESSAGES.get("generic") + MESSAGES.get("success_message")
+            subject = MESSAGES.get("generic_success_subject")
             state = Watchman.STATE.get("success")
         result = self._create_result(
             short_message=short_message,
@@ -239,13 +253,13 @@ class Metropolis(Watchman):
         # If the traceback is empty, then the file loaded correctly but there are no rows with today's date.
         if not tb:
             tb = "No rows with today's date exist."
-        details = NOT_LOADED_DETAILS.format(date, DATA_FILE, tb)
+        details = MESSAGES.get("not_loaded_details").format(date, DATA_FILE, tb)
         result = self._create_result(
-            short_message=NOT_LOADED_MESSAGE,
+            short_message=MESSAGES.get("not_loaded_message"),
             success=False,
             disable_notifier=False,
             state=Watchman.STATE.get("exception"),
-            subject=NOT_LOADED_SUBJECT,
+            subject=MESSAGES.get("not_loaded_subject"),
             details=details,
             snapshot={},
             target=GENERIC_TARGET,
@@ -334,24 +348,24 @@ class Metropolis(Watchman):
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
-                "subject": EXCEPTION_SUBJECT.format(process_name),
-                "short_message": EXCEPTION_MESSAGE,
+                "subject": MESSAGES.get("exception_subject").format(process_name),
+                "short_message": MESSAGES.get("exception_message"),
                 "target": TARGETS.get(process_name)
             },
             True: {
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
-                "subject": SUCCESS_SUBJECT.format(process_name),
-                "short_message": SUCCESS_MESSAGE,
+                "subject": MESSAGES.get("success_subject").format(process_name),
+                "short_message": MESSAGES.get("success_message"),
                 "target": TARGETS.get(process_name)
             },
             False: {
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
-                "subject": FAILURE_SUBJECT.format(process_name),
-                "short_message": FAILURE_MESSAGE,
+                "subject": MESSAGES.get("failure_subject").format(process_name),
+                "short_message": MESSAGES.get("failure_message"),
                 "target": TARGETS.get(process_name)
             },
         }
@@ -367,7 +381,7 @@ class Metropolis(Watchman):
         :return: <str> constructed message
         """
         maximum, minimum, moving_mean = row.get("3UCL"), row.get("3LCL"), row.get("moving_mean")
-        return MIN_AND_MAX_MESSAGE.format(moving_mean, minimum, maximum)
+        return MESSAGES.get("min_and_max_message").format(moving_mean, minimum, maximum)
 
     def _fill_sources_per_process(self, sources_per_process, row_dicts_today):
         """
@@ -416,6 +430,79 @@ class Metropolis(Watchman):
         :return: <str> today's date, eg. 2019-03-27
         """
         return datetime.now(pytz.timezone("US/Pacific")).strftime("%Y-%m-%d")
+
+    def _get_live_target_data(self, row):
+        """
+        Get the live target data from all the sources.
+        Note: New target name to be updated under "live_target" when added
+        :param row: Dictionary containing information from row in watchmenResults.csv
+        :return: <bool> <str>
+        <bool> return value from target function
+        <str> traceback
+        """
+        source = row.get("process")
+        try:
+            source_function = getattr(self, '_get_{}_data'.format(source))
+            return source_function(row)
+        except Exception as ex:
+            self.logger.error("ERROR retrieving source {} function!".format(source))
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
+    def _get_reaper_data(self, row):
+        """
+        Performs a GET request to the Metrics API to get the indicator volume for last 24 hours.
+        :param row: Dictionary containing information from row in watchmenResults.csv
+        :return: <bool> <str>
+        <bool> whether moving_mean is updated
+        <str> traceback
+
+        Reaper metrics data will be in following format:
+        {
+            "total_tide_submissions": 699220,
+            "details": [
+            {
+                "source": "AIS",
+                "metric": {
+                    "IPV4_TIDE_SUCCESS": 312,
+                    "IPV4": 156,
+                    "Policy_NCCICwatchlist": 156
+                },
+                "timestamp": "2020-06-05T11"
+            },
+            {
+                "source": "BLOX_cyberint",
+                "metric": {
+                    "IPV4_TIDE_SUCCESS": 783,
+                    "Scanner_Generic": 259,
+                    "Bot_Mirai": 2,
+                    "IPV4": 261
+            },
+            "timestamp": "2020-06-05T11"
+            ]
+        }
+
+        The part we are interested in is the "details" dictionary, so we grab that and return it as the
+        "metrics_data".
+        """
+        try:
+            if not self.reaper_metrics:
+                metrics_api_response = requests.get(url=REAPER_METRICS_URL, headers=REAPER_HEADERS).json()
+                metrics_data = metrics_api_response["details"]
+                self._calculate_reaper_indicator_metrics(metrics_data)
+
+            if row['metric_type'] in self.reaper_metrics:
+                row['moving_mean'] = self.reaper_metrics[row['metric_type']]
+                return True, None
+            return False, MESSAGES.get('no_indicator_message').format(row.get('metric_type'), row.get('process'))
+        except Exception as ex:
+            self.logger.error("ERROR retrieving Reaper Data!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
 
     def _read_csv(self):
         """

@@ -83,6 +83,35 @@ MANHATTAN = {
     "success_event_check": "The event parameter passed from Lambda is valid."
 }
 
+METROPOLIS = {
+    "details_format": "{}\n\nMetric_type: {}\nMetric_description: {}\nMetric_value: {}\n{}\n",
+    "exception_details": "Process: {}, Source: {} reached an exception on {} trying to get "
+                         "watchmenResults.csv" + " from s3 due to the following:\n\n{}\n\nPlease look "
+                         "at the logs for more insight.",
+    "exception_message": "Metropolis failed due to an exception!",
+    "exception_subject": "Metropolis: EXCEPTION Checking Process: {}",
+    "failure_details": "Process: {}, Source: {} is down for {}!",
+    "failure_exception_message": "Failure and exception checking process metrics.",
+    "failure_message": "There were moving_mean values outside of the threshold!",
+    "failure_subject": "Metropolis: OUTLIER DETECTED! - Process: {}",
+    "generic": "Generic: ",
+    "generic_exception_subject": "Metropolis: EXCEPTION Checking Process Metrics",
+    "generic_fail_subject": "Metropolis: FAILURE Checking Process Metrics",
+    "generic_fail_and_exception_subject": "Metropolis: FAILURE AND EXCEPTION Checking Process Metrics",
+    "generic_success_subject": "Metropolis: No Outliers!",
+    "min_and_max_message": "Moving Mean: {} || Minimum: {} || Maximum: {}",
+    "min_and_max_error_message": "Error: Minimum is larger than maximum.",
+    "no_indicator_message": "Indicator {} not present in the {} metrics",
+    "not_loaded_details": "Failed to find rows with date of {} in {} due to the following:\n{}\n\nPlease look at the "
+                          "logs or check the CSV file for more insight.",
+    "not_loaded_message": "Failed to load data from the CSV file, please check logs.",
+    "not_loaded_subject": "Metropolis: ERROR Loading Data File!",
+    "process_not_in_file": "{} process is missing from the CSV file.",
+    "success_details": "Process: {}, Source: {} is up and running for {}!",
+    "success_message": "All moving_mean values were inside the threshold!",
+    "success_subject": "Metropolis: No Outliers! - {}"
+}
+
 MOTHMAN = {
     "exception_details": "There was an exception while trying to check the ForeverMail S3 files.\n\nTraceback of "
                          "exception:\n{}",
