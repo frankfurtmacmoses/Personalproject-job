@@ -298,13 +298,14 @@ class Rorschach(Watchman):
         if item.get('check_most_recent_file'):
             contents = self._check_most_recent_file(contents, item.get('check_most_recent_file'))
 
-        # Check the prefix and suffix of all files:
-        prefix_suffix_match, tb = self._check_file_prefix_suffix(contents, item.get('suffix'), prefix_generate)
-        if tb:
-            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
-        if prefix_suffix_match is False:
-            failure_strings.append(MESSAGES.get('failure_prefix_suffix_not_match').format(item.get('prefix'),
-                                                                                          item.get('suffix')))
+        # Check the suffix of all files:
+        if item.get("suffix"):
+            incorrect_suffix_files, tb = self._check_file_suffix(contents, item.get("suffix"))
+            if tb:
+                exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            if incorrect_suffix_files:
+                failure_strings.append(MESSAGES.get('failure_suffix_not_match').format(item.get('suffix'),
+                                                                                       incorrect_suffix_files))
 
         # Check for empty files:
         at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
@@ -519,20 +520,27 @@ class Rorschach(Watchman):
         contents = most_recent_contents[0:check_most_recent_file]
         return contents
 
-    def _check_file_prefix_suffix(self, contents, suffix, prefix):
+    def _check_file_suffix(self, contents, suffix):
         """
-        Method to check each files in the paginator for their prefix and suffix.
-        @return: True if at least one file key is matches and a possible traceback.
+        This method verifies that each file in the contents has the expected suffix, such as ".parquet".
+        :param contents: A list of the generated contents for the item currently being checked.
+        :param suffix: A string containing the suffix to check for in all files.
+        :return: <String>, <String>
+                 <String>: String containing all of the file(s) that did not have the correct suffix.
+                 <String>: Traceback if an exception occurred.
         """
         try:
-            prefix_suffix_match = True
+            incorrect_suffix_files = ""
 
             for file in contents:
-                if not file or prefix not in file['Key'] or not file.get('Key').endswith(suffix):
-                    prefix_suffix_match = False
-            return prefix_suffix_match, None
+                s3_key = file.get("Key")
+
+                if not s3_key or not s3_key.endswith(suffix):
+                    incorrect_suffix_files += s3_key
+
+            return incorrect_suffix_files, None
         except Exception as ex:
-            self.logger.error("ERROR Checking File Prefix and Suffix!")
+            self.logger.error("ERROR Checking File Suffix!")
             self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()

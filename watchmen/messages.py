@@ -183,8 +183,7 @@ RORSCHACH = {
     "success_subject": "SUCCESS: All S3 File Checks for {} Passed!",
     "success_event_check": "The event parameter passed from Lambda is valid.",
     "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
-    "failure_prefix_suffix_not_match": "There is at least one S3 that key did not match the expected "
-                                       "prefix: {} and suffix: {}.\n",
+    "failure_suffix_not_match": "The following file(s) did not have the required suffix \"{}\":\n{}\n",
     "failure_file_empty": "The following S3 file is empty: {}",
     "failure_total_file_size_below_threshold": "The size of all files found in {} is {} KB, which is less than "
                                                "expected total file size {} KB.\n",
