@@ -450,24 +450,20 @@ class Rorschach(Watchman):
             tb = traceback.format_exc()
             return None, None, None, None, tb
 
-    def _check_single_file_existence(self, item):
+    def _check_single_file_existence(self, item, s3_key):
         """
         Method to check if a single file exists.
         @return: True if the file exists and False otherwise with a file path.
         """
         try:
-            if item.get('offset'):
-                generate_full_path, tb = self._generate_key(item['full_path'], self.event, item['offset'])
-            else:
-                generate_full_path, tb = self._generate_key(item['full_path'], self.event)
-            found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=generate_full_path)
-            return found_file, generate_full_path, None
+            found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=s3_key)
+            return found_file, None
         except Exception as ex:
             self.logger.error("ERROR Checking Single File Existence!")
             self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            return None, None, tb
+            return None, tb
 
     def _check_most_recent_file(self, contents, check_most_recent_file):
         """
