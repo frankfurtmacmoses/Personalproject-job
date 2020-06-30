@@ -284,14 +284,19 @@ class Rorschach(Watchman):
         failure_strings = []
 
         # Generating contents from all files and returning if a failure or an exception is encountered:
-        contents, count, prefix_generate, full_path, tb = self._generate_contents(item)
+        contents_dict, tb = self._generate_contents(item)
 
         if tb:
             exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
             return exception_strings, failure_strings
 
+        contents = contents_dict.get("contents")
+        count = contents_dict.get("count")
+        s3_prefix = contents_dict.get("s3_prefix")
+
+        # If there are no files (count == 0), then the rest of the checks cannot be performed
         if not count:
-            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(prefix_generate))
+            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_prefix))
             return exception_strings, failure_strings
 
         # Updating contents if there is a time offset required for the current item:
@@ -325,12 +330,12 @@ class Rorschach(Watchman):
                 exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
             if is_total_size_less_than_threshold:
                 failure_strings.append(MESSAGES.get('failure_total_file_size_below_threshold').format(
-                    full_path, total_size, item.get('check_total_size_kb')))
+                    s3_prefix, total_size, item.get('check_total_size_kb')))
 
         # Check if the aggregate file count meets standards:
         if item.get('check_total_object'):
             if count < item.get('check_total_object'):
-                failure_strings.append(MESSAGES.get('failure_count_too_less').format(full_path, count,
+                failure_strings.append(MESSAGES.get('failure_count_too_less').format(s3_prefix, count,
                                                                                      item['check_total_object']))
 
         return exception_strings, failure_strings
@@ -472,26 +477,36 @@ class Rorschach(Watchman):
     def _generate_contents(self, item):
         """
         Method to generate contents for the given s3 path configuration.
-        @return: The files contents, files count, generated file prefix, file path and possible traceback.
+        @return: The files contents, files count, s3 prefix, and possible traceback.
         """
+        contents_dict = {
+            "contents": None,
+            "count": None,
+            "s3_prefix": None
+        }
+
         try:
-            if item.get('offset'):
-                prefix_generate, tb = self._generate_key(item['prefix'], self.event, item['offset'])
-            else:
-                prefix_generate, tb = self._generate_key(item['prefix'], self.event)
-            full_path = 's3://' + item['bucket_name'] + '/' + prefix_generate
-            self.logger.info("Checking s3 path: {}".format(full_path))
-            contents = _s3.generate_pages(prefix_generate, **{'bucket': item['bucket_name']})
-            contents = list(contents)
+            time_offset = item.get("offset", 1)
+            generated_prefix, tb = self._generate_key(item['prefix'], self.event, time_offset)
+
+            if tb:
+                return contents_dict, tb
+
+            s3_prefix = 's3://' + item['bucket_name'] + '/' + generated_prefix
+            contents = list(_s3.generate_pages(generated_prefix, **{'bucket': item['bucket_name']}))
             count = len(contents)
+
+            self.logger.info("Checking s3 path: {}".format(s3_prefix))
             self.logger.info("Checking {} files.".format(count))
-            return contents, count, prefix_generate, full_path, None
+
+            contents_dict.update({"contents": contents, "count": count, "s3_prefix": s3_prefix})
+            return contents_dict, None
         except Exception as ex:
             self.logger.error("ERROR Generating Contents!")
             self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            return None, None, None, None, tb
+            return contents_dict, tb
 
     def _check_single_file_existence(self, item, s3_key):
         """
