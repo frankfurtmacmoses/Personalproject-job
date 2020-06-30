@@ -20,29 +20,17 @@ import traceback
 from typing import Tuple
 
 from watchmen import const
+from watchmen import messages
 from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.utils.s3 import validate_file_on_s3
 from watchmen.common.watchman import Watchman
 
+MESSAGES = messages.SPECTRE
 # Filepath Strings
 BUCKET_NAME = settings("spectre.bucket_name", "cyber-intel")
 PATH_PREFIX = settings("spectre.path_prefix", "hancock/georgia_tech/")
 SNS_TOPIC_ARN = settings('spectre.sns_topic', "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
-
-# Message Strings
-SUCCESS_MESSAGE = "Georgia Tech Feed data found on S3!"
-FAILURE_MESSAGE = "could not be found in {}/{}! " \
-                  "Please check S3 and Georgia Tech logs!".format(BUCKET_NAME, PATH_PREFIX)
-FAILURE_SHORT_MESSAGE = "Spectre monitor failed, please check S3 and Georgia Tech logs!"
-SUCCESS_SUBJECT = "Spectre Georgia Tech data monitor found everything alright. "
-FAIL_SUBJECT_MESSAGE = "Spectre Georgia Tech data monitor detected a failure!"
-FILE_NOT_FOUND_ERROR = " not found on S3 in {}/{}! Georgia Tech data is missing, " \
-                       "please view the logs!".format(BUCKET_NAME, PATH_PREFIX)
-EXCEPTION_SUBJECT = "Spectre for Georgia Tech had an exception!"
-EXCEPTION_MESSAGE = 'Spectre for Georgia Tech failed on \n\t"{}" \ndue to ' \
-                    'the Exception:\n\n{}\n\nPlease check the logs!'
-EXCEPTION_SHORT_MESSAGE = "Spectre monitor failed due to an exception, check S3 and Georgia Tech logs!"
 
 # Watchman profile
 TARGET = "Georgia Tech S3"
@@ -65,25 +53,25 @@ class Spectre(Watchman):
         details = self._create_details(filename, file_found, tb)
         parameter_chart = {
             None: {
-                "short_message": EXCEPTION_SHORT_MESSAGE,
+                "short_message": MESSAGES.get("exception_short_message"),
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
-                "subject": EXCEPTION_SUBJECT,
+                "subject": MESSAGES.get("exception_subject"),
             },
             True: {
-                "short_message": SUCCESS_MESSAGE,
+                "short_message": MESSAGES.get("success_message"),
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
-                "subject": SUCCESS_SUBJECT,
+                "subject": MESSAGES.get("success_subject"),
             },
             False: {
-                "short_message": FAILURE_SHORT_MESSAGE,
+                "short_message": MESSAGES.get("failure_short_message"),
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
-                "subject": FAIL_SUBJECT_MESSAGE,
+                "subject": MESSAGES.get("failure_subject_message"),
             },
         }
         parameters = parameter_chart.get(file_found)
@@ -124,16 +112,18 @@ class Spectre(Watchman):
         """
         FILE_STATUS = {
             None: {
-                'details': EXCEPTION_MESSAGE.format(filename, tb),
-                'log_details': EXCEPTION_MESSAGE.format(filename, tb),
+                'details': MESSAGES.get("exception_message").format(filename, tb),
+                'log_details': MESSAGES.get("exception_message").format(filename, tb),
             },
             False: {
-                'details': 'ERROR: {} {}'.format(filename, FAILURE_MESSAGE),
-                'log_details': 'File: {} {}'.format(filename, FILE_NOT_FOUND_ERROR),
+                'details': 'ERROR: {} {}'.format(filename, MESSAGES.get("failure_message")
+                                                                   .format(BUCKET_NAME, PATH_PREFIX)),
+                'log_details': 'File: {} {}'.format(filename, MESSAGES.get("file_not_found_error")
+                                                                      .format(BUCKET_NAME, PATH_PREFIX)),
             },
             True: {
-                'details': SUCCESS_MESSAGE,
-                'log_details': SUCCESS_MESSAGE,
+                'details': MESSAGES.get("success_message"),
+                'log_details': MESSAGES.get("success_message"),
             }
         }
         status = FILE_STATUS.get(found_file)

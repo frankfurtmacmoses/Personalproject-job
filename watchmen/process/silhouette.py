@@ -29,6 +29,7 @@ from watchmen.common.result import Result
 from watchmen.config import settings
 from watchmen.common.watchman import Watchman
 
+MESSAGES = messages.SILHOUETTE
 SNS_TOPIC_ARN = settings("silhouette.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 
 BUCKET_NAME = settings("silhouette.bucket_name", "cyber-intel")
@@ -57,25 +58,25 @@ class Silhouette(Watchman):
         details = self._create_details(self.filename, is_status_valid, tb)
         parameter_chart = {
             None: {
-                "short_message": messages.SILHOUETTE['exception_short_message'],
+                "short_message": MESSAGES.get("exception_short_message"),
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("exception"),
-                "subject": messages.SILHOUETTE['exception_subject'],
+                "subject": MESSAGES.get("exception_subject"),
             },
             True: {
-                "short_message": messages.SILHOUETTE['success_message'],
+                "short_message": MESSAGES.get("success_message"),
                 "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
-                "subject": messages.SILHOUETTE['success_subject'],
+                "subject": MESSAGES.get("success_subject"),
             },
             False: {
-                "short_message": messages.SILHOUETTE['failure_message'],
+                "short_message": MESSAGES.get("failure_message"),
                 "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
-                "subject": messages.SILHOUETTE['failure_subject'],
+                "subject": MESSAGES.get("failure_subject"),
             },
         }
         parameters = parameter_chart.get(is_status_valid)
@@ -116,16 +117,16 @@ class Silhouette(Watchman):
         """
         FILE_STATUS = {
             None: {
-                'details': messages.SILHOUETTE['exception_message'].format(filename, tb),
-                'log_details': messages.SILHOUETTE['exception_message'].format(filename, tb),
+                'details': MESSAGES.get("exception_message").format(filename, tb),
+                'log_details': MESSAGES.get("exception_message").format(filename, tb),
             },
             False: {
-                'details': 'ERROR: {}\n{}'.format(filename, messages.SILHOUETTE['failure_message']),
-                'log_details': 'File: {}{}'.format(filename, messages.SILHOUETTE['failure_message']),
+                'details': 'ERROR: {}\n{}'.format(filename, MESSAGES.get("failure_message")),
+                'log_details': 'File: {}{}'.format(filename, MESSAGES.get("failure_message")),
             },
             True: {
-                'details': messages.SILHOUETTE['success_message'],
-                'log_details': messages.SILHOUETTE['success_message'],
+                'details': MESSAGES.get("success_message"),
+                'log_details': MESSAGES.get("success_message"),
             }
         }
         status = FILE_STATUS.get(is_status_valid)

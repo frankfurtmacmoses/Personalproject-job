@@ -4,6 +4,7 @@ import pytz
 
 from mock import patch
 from watchmen.process.spectre import Spectre
+from watchmen.process.spectre import MESSAGES
 
 
 class TestSpectre(unittest.TestCase):
@@ -20,7 +21,7 @@ class TestSpectre(unittest.TestCase):
             False: "ERROR: 2018/12/gt_mpdns_20181217.zip "
                    "could not be found in cyber-intel/hancock/georgia_tech/! "
                    "Please check S3 and Georgia Tech logs!",
-            True: "Georgia Tech Feed data found on S3!",
+            True: MESSAGES.get("success_message"),
         }
         self.example_result_dict = {
             "details": "ERROR: 2018/12/gt_mpdns_20181217.zip could not be found in "
@@ -28,12 +29,12 @@ class TestSpectre(unittest.TestCase):
                        "Tech logs!",
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
-            "short_message": "Spectre monitor failed, please check S3 and Georgia Tech logs!",
+            "short_message": MESSAGES.get("failure_short_message"),
             "result_id": 0,
             "snapshot": None,
             "watchman_name": "Spectre",
             "state": "FAILURE",
-            "subject": "Spectre Georgia Tech data monitor detected a failure!",
+            "subject": MESSAGES.get("failure_subject_message"),
             "success": False,
             "target": "Georgia Tech S3",
         }
@@ -83,11 +84,11 @@ class TestSpectre(unittest.TestCase):
         expected = self.example_result_dict
         spectre_obj = Spectre(event=None, context=None)
         result = spectre_obj._create_result(
-            "Spectre monitor failed, please check S3 and Georgia Tech logs!",
+            MESSAGES.get("failure_short_message"),
             False,
             False,
             "FAILURE",
-            "Spectre Georgia Tech data monitor detected a failure!",
+            MESSAGES.get("failure_subject_message"),
             self.example_details_chart.get(False)).to_dict()
         # since spectre does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"

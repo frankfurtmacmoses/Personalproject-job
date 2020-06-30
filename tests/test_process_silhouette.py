@@ -4,6 +4,7 @@ import pytz
 
 from mock import patch
 from watchmen.process.silhouette import Silhouette
+from watchmen.process.silhouette import MESSAGES
 
 
 class TestSilhouette(unittest.TestCase):
@@ -12,8 +13,7 @@ class TestSilhouette(unittest.TestCase):
         self.example_today = datetime(year=2020, month=6, day=16, tzinfo=pytz.utc)
         self.example_filename = "analytics/lookalike2/prod/status/year=2020/month=06/day=15/status.json"
         self.example_exception_details = "Something is not working"
-        self.example_failure_message = "Lookalike2 algorithm never added files yesterday! " \
-                                       "The algorithm may be down or simply did not complete!"
+        self.example_failure_message = MESSAGES.get("failure_message")
         self.example_details_chart = {
             None: 'Silhouette for lookalike2 algorithm failed '
                   'on \n\t"analytics/lookalike2/prod/status/year=2020/month=06/day=15/status.json" \ndue to '
@@ -21,7 +21,7 @@ class TestSilhouette(unittest.TestCase):
             False: 'ERROR: analytics/lookalike2/prod/status/year=2020/month=06/day=15/status.json\n'
                    'Lookalike2 algorithm never added files yesterday! '
                    'The algorithm may be down or simply did not complete!',
-            True: 'Lookalike2 algorithm is up and running!',
+            True: MESSAGES.get("success_message"),
         }
         self.example_success_json = {"state": "completed"}
         self.example_failed_json = {"state": "uncompleted"}
@@ -36,7 +36,7 @@ class TestSilhouette(unittest.TestCase):
             "snapshot": None,
             "watchman_name": "Silhouette",
             "state": "FAILURE",
-            "subject": "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
+            "subject": MESSAGES.get("failure_subject"),
             "success": False,
             "target": "Lookalike2 Algorithm S3",
         }
@@ -93,7 +93,7 @@ class TestSilhouette(unittest.TestCase):
             False,
             False,
             "FAILURE",
-            "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
+            MESSAGES.get("failure_subject"),
             self.example_details_chart.get(False)).to_dict()
         # since silhouette does not give observed time, we don't test the time here
         result['dt_created'] = "2018-12-18T00:00:00+00:00"
