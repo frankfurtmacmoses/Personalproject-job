@@ -299,10 +299,6 @@ class Rorschach(Watchman):
             failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_prefix))
             return exception_strings, failure_strings
 
-        # Updating contents if there is a time offset required for the current item:
-        if item.get('check_most_recent_file'):
-            contents = self._check_most_recent_file(contents, item.get('check_most_recent_file'))
-
         # Check the suffix of all files:
         if item.get("suffix"):
             incorrect_suffix_files, tb = self._check_file_suffix(contents, item.get("suffix"))
@@ -540,18 +536,6 @@ class Rorschach(Watchman):
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
-
-    def _check_most_recent_file(self, contents, check_most_recent_file):
-        """
-        Method to subset the contents to the most recent N files that need to be checked.
-        @return: The most recent contents.
-        """
-
-        def get_last_modified(key): return int(key['LastModified'].strftime('%s'))
-
-        most_recent_contents = [obj for obj in sorted(contents, key=get_last_modified, reverse=True)]
-        contents = most_recent_contents[0:check_most_recent_file]
-        return contents
 
     def _check_file_suffix(self, contents, suffix):
         """

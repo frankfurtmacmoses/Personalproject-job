@@ -4,7 +4,7 @@ Hourly:
   - bucket_name: bitaa
     prefix: parquet/com.farsightsecurity.300021/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
-    check_most_recent_file: 1
+    offset: 1
 
 Daily:
 - target_name: Poseidon DNS Data
