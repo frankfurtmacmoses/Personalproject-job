@@ -1,4 +1,11 @@
 Daily:
+- target_name: DS Summaries
+  items:
+  - bucket_name: cyber-intel
+    prefix: summaries/ns_summaries/src=farsight/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+
 - target_name: Poseidon DNS Data
   items:
   - bucket_name: ib-customer-data-usa-va
