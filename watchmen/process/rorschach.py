@@ -308,25 +308,13 @@ class Rorschach(Watchman):
                 failure_strings.append(MESSAGES.get('failure_suffix_not_match').format(item.get('suffix'),
                                                                                        incorrect_suffix_files))
 
-        # Check for empty files:
-        at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
+        # Check for empty files and total file size:
+        file_size_failure_strings, tb = self._check_multiple_files_size(contents, item, s3_prefix)
         if tb:
             exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
-        if at_least_one_file_empty:
-            empty_file_string = ""
-            for empty_file in empty_file_list:
-                empty_file_string += MESSAGES.get('failure_file_empty').format(empty_file)
-            failure_strings.append(empty_file_string)
-
-        # Check if aggregate file size meets standards:
-        if item.get('check_total_size_kb'):
-            is_total_size_less_than_threshold, total_size, tb = self._compare_total_file_size_to_threshold(
-                contents, item.get('check_total_size_kb'))
-            if tb:
-                exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
-            if is_total_size_less_than_threshold:
-                failure_strings.append(MESSAGES.get('failure_total_file_size_below_threshold').format(
-                    s3_prefix, total_size, item.get('check_total_size_kb')))
+        
+        if file_size_failure_strings:
+            failure_strings.append(file_size_failure_strings)
 
         # Check if the aggregate file count meets standards:
         if item.get('check_total_object'):
@@ -563,46 +551,6 @@ class Rorschach(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
-    def _check_file_empty(self, contents):
-        """
-        Method to check each file for size larger than 0/emptiness.
-        @return: True if one file is empty and a list of empty files' keys and False otherwise.
-        """
-        try:
-            empty_file_list = []
-            at_least_one_file_empty = False
-
-            for file in contents:
-                if not (file.get('Size') > 0):
-                    at_least_one_file_empty = True
-                    empty_file_list.append(file['Key'])
-            return at_least_one_file_empty, empty_file_list, None
-        except Exception as ex:
-            self.logger.error("ERROR Checking For Empty File!")
-            self.logger.info(const.MESSAGE_SEPARATOR)
-            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
-            tb = traceback.format_exc()
-            return None, None, tb
-
-    def _compare_total_file_size_to_threshold(self, contents, size_threshold):
-        """
-        Method to check the total size of all files.
-        @return: True if the total size is less than the expected size and False otherwise along with the total_size
-        """
-        try:
-            total_size = 0
-            for item in contents:
-                total_size += item.get('Size')
-            total_size = total_size / 1000  # This is to convert B to KB
-            is_size_less_than_threshold = total_size < size_threshold
-            return is_size_less_than_threshold, total_size, None
-        except Exception as ex:
-            self.logger.error("ERROR Comparing Total File Size To Threshold!")
-            self.logger.info(const.MESSAGE_SEPARATOR)
-            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
-            tb = traceback.format_exc()
-            return None, None, tb
-
     def _create_generic_result(self, failure_in_parameters, exception_in_parameters, details):
         """
         Method to create the generic result object.
@@ -650,3 +598,49 @@ class Rorschach(Watchman):
             target='Generic S3',
             watchman_name=self.watchman_name,
         ))
+
+    def _check_multiple_files_size(self, contents, item, s3_prefix):
+        """
+        Method to perform the empty file check and/or the total file size check for multiple files.
+        :param contents: The contents containing all of the files for the current item being checked.
+        :param item: The current item being checked.
+        :param s3_prefix: The formatted S3 prefix of the current item being checked. This is required to make the
+                          message if the total file size requirement is not met.
+        :return: <list> <string>
+                 <list>: List of all strings for all of the possible failures encountered during the checks.
+                 <string>: Traceback if an exception was encountered, else None.
+        """
+        empty_file_list = []
+        failure_strings = []
+        total_size = 0
+
+        try:
+            for file in contents:
+                file_size = file.get('Size')
+                total_size += file_size
+
+                if file_size == 0:
+                    empty_file_list.append(file['Key'])
+
+            if empty_file_list:
+                empty_file_string = ""
+                for empty_file in empty_file_list:
+                    empty_file_string += MESSAGES.get('failure_file_empty').format(empty_file)
+
+                failure_strings.append(empty_file_string)
+
+            if item.get('check_total_size_kb'):
+                kb_size_threshold = item.get('check_total_size_kb')
+                kb_total_size = total_size / 1000
+
+                if kb_total_size < kb_size_threshold:
+                    failure_strings.append(MESSAGES.get('failure_total_file_size_below_threshold').format(
+                                    s3_prefix, total_size, kb_size_threshold))
+
+            return failure_strings, None
+        except Exception as ex:
+            self.logger.error("ERROR Checking Multiple Files Size!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
