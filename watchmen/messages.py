@@ -199,7 +199,11 @@ RORSCHACH = {
     "generic_exception_subject": "Exception: At Least One S3 Target Has An Exception!",
     "generic_fail_exception_subject": "EXCEPTION and FAILURE: At Least One S3 Target Has An Exception"
                                       " and Failure!",
-    "generic_success_subject": "SUCCESS: All S3 Targets Passed!."
+    "generic_success_subject": "SUCCESS: All S3 Targets Passed!",
+    "failure_exception_subject": "FAILURE AND EXCEPTION: {} S3 File Checks Encountered Failures and Exceptions!",
+    "failure_exception_message": "FAILURE AND EXCEPTION: S3 file checks could not be performed, please look at the logs"
+                                 " for more details!",
+    "exception_string_format": "Item: {}\nException: {}",
 }
 
 SILHOUETTE = {

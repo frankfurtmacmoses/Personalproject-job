@@ -62,8 +62,8 @@ class Rorschach(Watchman):
             return self._create_config_not_load_results(tb)
 
         check_results = self._process_checking(s3_targets)
-        summary = self._create_summary(check_results)
-        results = self._create_result(summary)
+        summary_parameters = self._create_summary_parameters(check_results)
+        results = self._create_results(summary_parameters)
 
         return results
 
@@ -136,334 +136,318 @@ class Rorschach(Watchman):
         """
         Method to conduct various checks for each S3 item under each target. The specific checks for each
         item is determined from the config data. It is possible for there to be many targets and each
-        with multiple S3 items.
-        @return: A dict containing metadata about the failed checks and items for all items and all targets.
-        @example return: example_processed_targets =
-        {
-            'target1': {
-                'success': True,
-                'failed_checks': [],
-            },
-            'target2': {
-                'success': False,
-                'failed_checks': [
-                    (item1 metdata dict, check results for item 1 metadata dict),
-                    (item5 metdata dict, check results for item 5 metadata dict),
-                ],
+        with multiple S3 items. For each item, the appropriate method will be called to handle the amount of files being
+        checked.
+        :param s3_targets: The list of dictionaries loaded from the s3_targets config file. Each dictionary contains
+                           items to be checked.
+        :return: A dictionary containing all of the dictionaries for each target that was checked. For each target,
+                 a dictionary will be creating which contains:
+                    - a boolean "success" indicating if the check was valid (True: success, False: failures (and
+                      exceptions), None: all checks resulted in exceptions.
+                    - a list "exception_strings" which contains strings that detail any exceptions encountered.
+                    - a list "failure_strings" which contains strings that detail any failures encountered.
+
+        Example returned dictionary:
+            processed_targets =
+            {
+                'target1': {
+                    'success': True,
+                    'exception_strings: [],
+                    'failure_strings: []
+                },
+                'target2': {
+                    'success': False,
+                    'exception_strings: ["example exception message", ...],
+                    'failure_strings: ["example failure message", ...]
+                }
+                'target3': {
+                    'success': None,
+                    'exception_strings: ["only exceptions were encountered while performing checks for this target."],
+                    'failure_strings: []
+                ]
             }
-            'target3': {
-                'success': None,
-                'failed_checks': [
-                (item4 metadata dict, check results for item 4 metadata)
-            ]
-        }
-
-        The item metadata dict will be the exact same as the config data for that item.
-        The check result metadata dict can look like the following:
-        {
-            'bucket_not_found': s3/bucket
-            'prefix_suffix_not_match': (prefix, suffix)
-            'exception': traceback
-        }
-
         """
         processed_targets = {}
 
-        # This goes through each target
         for target in s3_targets:
-            items_failed = []
-            all_checks_are_exceptions = True
+            exception_strings = []
+            failure_strings = []
 
-            # This checks each item and the various check attributes it has
             for item in target['items']:
-                failed_check_items = {}
-                exception_list = []
 
-                # Validate the s3 bucket for each item
                 bucket_name = item.get('bucket_name')
-                # The check bucket will need refactoring because there's no way to differentiate exception from failure
-                is_valid_bucket = _s3.check_bucket(bucket_name)  # {'okay': True, 'err': None}
-                # An error occurred trying to find the bucket
-                if is_valid_bucket.get('err'):
-                    failed_check_items.update({'exception': is_valid_bucket['err']})
-                    items_failed.append((item, failed_check_items))
+                bucket_exists, tb = _s3.check_bucket(bucket_name)
+
+                if tb:
+                    exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
                     continue
-                # Bucket was not found
-                if not is_valid_bucket.get('okay'):
-                    failed_check_items.update({'bucket_not_found': 's3://{}'.format(bucket_name)})
-                    items_failed.append((item, failed_check_items))
-                    all_checks_are_exceptions = False
+                elif not bucket_exists:
+                    failure_strings.append(MESSAGES.get('failure_bucket_not_found').format(item.get('bucket_name')))
                     continue
 
-                # Check for file existence
-                # If an item has the attribute 'full_path', this indicates that we are only checking one file,
-                # so we will only need to do an existence check at the moment. Adding file size checks for single
-                # files will be added later.
+                # If an item has the attribute 'full_path', then only one file is being checked.
                 if item.get('full_path'):
-                    found_file, full_path_with_bucket, tb = self._check_single_file_existence(item)
-                    if tb:
-                        failed_check_items.update({'exception': tb})
-                        items_failed.append((item, failed_check_items))
-                        continue
+                    file_check_exceptions, file_check_failures = self._check_single_file(item)
+                else:
+                    file_check_exceptions, file_check_failures = self._check_multiple_files(item)
 
-                    if not found_file:
-                        failed_check_items.update({'no_file_found_s3': full_path_with_bucket})
-                        items_failed.append((item, failed_check_items))
-                        all_checks_are_exceptions = False
-                        continue
+                exception_strings.extend(file_check_exceptions)
+                failure_strings.extend(file_check_failures)
 
-                    continue
-
-                # This is to check multiple files existence since we know it doesn't have a 'full_path' attribute
-                contents, count, prefix_generate, full_path, tb = self._generate_contents(item)
-                if tb:
-                    failed_check_items.update({'exception': tb})
-                    items_failed.append((item, failed_check_items))
-                    continue
-
-                if not count:
-                    failed_check_items.update({'no_file_found_s3': full_path})
-                    items_failed.append((item, failed_check_items))
-                    all_checks_are_exceptions = False
-                    continue
-
-                # At this point, we know that the file exists, so we can do the other checks on it.
-
-                # Check the most recent N files, and, if provided, use a specified value from config file
-                # This will replace our contents to a specified range instead of everything in the path.
-                if item.get('check_most_recent_file'):
-                    contents = self._check_most_recent_file(contents, item.get('check_most_recent_file'))
-
-                # Check every file in contents to ensure the key prefix and suffix match
-                prefix_suffix_match, tb = self._check_file_prefix_suffix(contents, item.get('suffix'), prefix_generate)
-                if tb:
-                    exception_list.append(tb)
-                if prefix_suffix_match is False:
-                    failed_check_items.update({'prefix_suffix_not_match': (item.get('prefix'), item.get('suffix'))})
-                    all_checks_are_exceptions = False
-
-                # Check each individual file in contents to ensure all files have a size greater than 0
-                at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
-                if tb:
-                    exception_list.append(tb)
-                if at_least_one_file_empty:
-                    failed_check_items.update({'at_least_one_file_empty': (at_least_one_file_empty, empty_file_list)})
-                    all_checks_are_exceptions = False
-
-                # Check if aggregate file size is greater than 0 or the minimum size specified in the config file
-                if item.get('check_total_size_kb'):
-                    is_total_size_less_than_threshold, total_size, tb = self._compare_total_file_size_to_threshold(
-                        contents, item.get('check_total_size_kb'))
-                    if tb:
-                        exception_list.append(tb)
-                    if is_total_size_less_than_threshold:
-                        failed_check_items.update(
-                            {'total_file_size_below_threshold': (full_path, total_size, item.get('check_total_size_kb'))
-                             })
-                        all_checks_are_exceptions = False
-
-                # Check if the aggregate file count is greater than 0 or the minimum size specified in the config file
-                if item.get('check_total_object'):
-                    if count < item.get('check_total_object'):
-                        failed_check_items.update(
-                            {'count_object_too_less': (full_path, count, item['check_total_object'])})
-                        all_checks_are_exceptions = False
-
-                # Check for exceptions
-                if exception_list:
-                    failed_check_items.update({'exception': exception_list})
-                # Check for any failures/exceptions
-                if failed_check_items:
-                    items_failed.append((item, failed_check_items))
-
-            # Keep track of which targets passed, failed, and only had exceptions
-            if items_failed:
-                processed_targets.update(
-                    {
-                        target.get('target_name'):
-                            {
-                                'success': None if all_checks_are_exceptions else False,
-                                'failed_checks': items_failed
-                            }
-                    })
-            else:
-                processed_targets.update(
-                    {
-                        target.get('target_name'):
-                            {
-                                'success': True,
-                                'failed_checks': items_failed
-                            }
-                    })
+            processed_targets.update(
+                {
+                    target.get('target_name'):
+                        {
+                            # Success is None if there were only exceptions, False if failures (and exceptions), and
+                            # True if all checks passed.
+                            'success': None if exception_strings and not failure_strings else len(failure_strings) == 0,
+                            'exception_strings': exception_strings,
+                            'failure_strings': failure_strings
+                        }
+                })
 
         return processed_targets
 
-    def _create_summary(self, processed_targets):
+    def _check_single_file(self, item):
+        """
+        Method to perform all of the required checks if an item consists of only one file.
+        :param item: The current item that is being checked. This item is a member of a "target" which are all defined
+                     in the s3_targets config file.
+        :return: The exceptions_strings list and the failure_strings list. Each of these lists contains the exceptions
+                 and failures encountered while performing the checks. If all checks are successful, both of these lists
+                 will be empty.
+        """
+        exception_strings = []
+        failure_strings = []
+        full_path = item.get("full_path")
+
+        # Generating properly formatted S3 key:
+        time_offset = item.get("offset", 1)
+        s3_key, tb = self._generate_key(full_path, self.event, time_offset)
+
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            return exception_strings, failure_strings
+
+        # Checking for single file existence:
+        found_file, tb = self._check_single_file_existence(item, s3_key)
+
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            return exception_strings, failure_strings
+
+        if not found_file:
+            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_key))
+            return exception_strings, failure_strings
+
+        # Checking single file size:
+        if item.get("check_total_size_kb"):
+            valid_file_size, tb = self._check_single_file_size(item, s3_key)
+            if tb:
+                exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            if not valid_file_size:
+                failure_strings.append(MESSAGES.get('failure_single_file_size').format(full_path,
+                                                                                       item.get(
+                                                                                           "check_total_size_kb")))
+        return exception_strings, failure_strings
+
+    def _check_single_file_size(self, item, s3_key):
+        """
+        Method to check that the single file size meets the required size set in the s3_targets config file.
+        :param item: The current item, with one file, that is being checked.
+        :return: boolean: True if the file is a valid size, false if not.
+                 string: Traceback if an exception occurred, None otherwise.
+        """
+        try:
+            kb_threshold = item.get("check_total_size_kb")
+            s3_key_object = _s3.get_key(item.get("bucket_name"), s3_key)
+            # Size from the s3_key_object is in bytes.
+            valid_file_size = (s3_key_object.get("size") / 1000) >= kb_threshold
+            return valid_file_size, None
+        except Exception as ex:
+            self.logger.error("ERROR Checking Single File Size!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
+    def _check_multiple_files(self, item):
+        """
+        Method to perform all of the required checks if an item consists of multiple files.
+        :param item: The current item that is being checked. This item is a member of a "target" which are all defined
+                     in the s3_targets config file.
+        :return: The exceptions_strings list and the failure_strings list. Each of these lists contains the exceptions
+                 and failures encountered while performing the checks. If all checks are successful, both of these lists
+                 will be empty.
+        """
+        exception_strings = []
+        failure_strings = []
+
+        # Generating contents from all files and returning if a failure or an exception is encountered:
+        contents, count, prefix_generate, full_path, tb = self._generate_contents(item)
+
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            return exception_strings, failure_strings
+
+        if not count:
+            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(prefix_generate))
+            return exception_strings, failure_strings
+
+        # Updating contents if there is a time offset required for the current item:
+        if item.get('check_most_recent_file'):
+            contents = self._check_most_recent_file(contents, item.get('check_most_recent_file'))
+
+        # Check the prefix and suffix of all files:
+        prefix_suffix_match, tb = self._check_file_prefix_suffix(contents, item.get('suffix'), prefix_generate)
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+        if prefix_suffix_match is False:
+            failure_strings.append(MESSAGES.get('failure_prefix_suffix_not_match').format(item.get('prefix'),
+                                                                                          item.get('suffix')))
+
+        # Check for empty files:
+        at_least_one_file_empty, empty_file_list, tb = self._check_file_empty(contents)
+        if tb:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+        if at_least_one_file_empty:
+            empty_file_string = ""
+            for empty_file in empty_file_list:
+                empty_file_string += MESSAGES.get('failure_file_empty').format(empty_file)
+            failure_strings.append(empty_file_string)
+
+        # Check if aggregate file size meets standards:
+        if item.get('check_total_size_kb'):
+            is_total_size_less_than_threshold, total_size, tb = self._compare_total_file_size_to_threshold(
+                contents, item.get('check_total_size_kb'))
+            if tb:
+                exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
+            if is_total_size_less_than_threshold:
+                failure_strings.append(MESSAGES.get('failure_total_file_size_below_threshold').format(
+                    full_path, total_size, item.get('check_total_size_kb')))
+
+        # Check if the aggregate file count meets standards:
+        if item.get('check_total_object'):
+            if count < item.get('check_total_object'):
+                failure_strings.append(MESSAGES.get('failure_count_too_less').format(full_path, count,
+                                                                                     item['check_total_object']))
+
+        return exception_strings, failure_strings
+
+    def _create_details(self, target_name, target_check_results):
+        """
+        Method to create the details for a target.
+        :param target_name: A string for the name of the target that was checked.
+        :param target_check_results: A dictionary containing the results from checking the target and all of its items.
+        :return: A string with properly formatted details for the passed in target.
+        """
+        success = target_check_results.get("success")
+
+        if success:
+            return MESSAGES.get("success_details").format(target_name)
+
+        if success is None:
+            exception_string = "\n\n".join(target_check_results.get("exception_strings"))
+            return MESSAGES.get('exception_details').format(exception_string)
+
+        failure_string = "\n\n".join(target_check_results.get("failure_strings"))
+        if target_check_results.get("exception_strings"):
+            exception_string = "\n\n".join(target_check_results.get("exception_strings"))
+            failure_string += MESSAGES.get('exception_details').format(exception_string)
+        return failure_string
+
+    def _create_summary_parameters(self, processed_targets):
         """
         Method to create a summary object for all s3 targets with details messages based on the check results summary.
         @return: A list of dictionaries where each dict is a summary of the checking results of each target.
         """
-        summary = []
-
-        for target_name in processed_targets:
-            # Create the successful summaries
-            if processed_targets[target_name].get('success'):
-                summary_details = {
-                    "success": True,
-                    "subject": MESSAGES.get("success_subject").format(target_name),
-                    "details": MESSAGES.get("success_details").format(target_name),
-                    "short_message": MESSAGES.get("success_message").format(target_name),
-                    "target": target_name
-                }
-                summary.append(summary_details)
-
-            # Create the exceptions only summaries
-            if processed_targets[target_name].get('success') is None:
-                exception_list = ""
-                for item in processed_targets[target_name].get('failed_checks'):
-                    exception_list += '{}{}: {}\n'.format(item[0].get('bucket_name'),
-                                                          item[0].get('prefix'),
-                                                          item[1].get('exception'))
-                    summary_details = {
-                        "short_message": MESSAGES.get("exception_message"),
-                        "success": None,
-                        "subject": MESSAGES.get("exception_subject").format(target_name),
-                        "details": MESSAGES.get('exception_details').format(exception_list),
-                        "target": target_name
-                    }
-                    summary.append(summary_details)
-
-            # Create failures and exceptions summaries
-            if processed_targets[target_name].get('success') is not None and \
-                    not processed_targets[target_name].get('success'):
-                exception_list = ''
-                failure_list = ''
-                for item in processed_targets[target_name].get('failed_checks'):
-                    item_data = item[0]
-                    check_data = item[1]
-
-                    # Check for the failures
-                    if 'bucket_not_found' in check_data:
-                        failure_list += MESSAGES.get('failure_bucket_not_found').format(item_data.get('bucket_name'))
-                    if 'no_file_found_s3' in check_data:
-                        failure_list += MESSAGES.get('failure_no_file_found_s3').format(item_data.get(
-                            'full_path') if item_data.get('full_path') else item_data.get('prefix'))
-                    if 'prefix_suffix_not_match' in check_data:
-                        failure_list += MESSAGES.get('failure_prefix_suffix_not_match').format(item_data.get('prefix'),
-                                                                                               item_data.get('suffix'))
-                    if 'at_least_one_file_empty' in check_data:
-                        empty_file_list = ''
-                        for empty_file in check_data.get('at_least_one_file_empty')[1]:
-                            empty_file_list += MESSAGES.get('failure_file_empty').format(empty_file)
-                        failure_list += empty_file_list
-                    if 'total_file_size_below_threshold' in check_data:
-                        failure_list += MESSAGES.get('failure_total_file_size_below_threshold').format(
-                            check_data.get('total_file_size_below_threshold')[0],
-                            check_data.get('total_file_size_below_threshold')[1],
-                            check_data.get('total_file_size_below_threshold')[2])
-                    if 'count_object_too_less' in check_data:
-                        failure_list += MESSAGES.get('failure_total_objects').format(
-                            check_data.get('count_object_too_less')[0],
-                            check_data.get('count_object_too_less')[1],
-                            check_data.get('count_object_too_less')[2])
-
-                    # Check for exceptions
-                    if 'exception' in check_data:
-                        for ex in check_data.get('exception'):
-                            exception_list += '{}/{}: {}\n'.format(item_data.get('bucket_name'),
-                                                                   item_data.get('prefix'),
-                                                                   ex)
-
-                    # Create details string
-                    msg = ''
-                    if failure_list:
-                        msg += (MESSAGES.get('failure_details').format(failure_list) + '\n\n')
-                    if exception_list:
-                        msg += MESSAGES.get('exception_details').format(exception_list)
-
-                    summary_details = {
-                        "short_message": MESSAGES.get("failure_message").format(target_name),
-                        "success": False,
-                        "subject": MESSAGES.get("failure_subject").format(target_name),
-                        "details": msg,
-                        "target": target_name
-                    }
-                    summary.append(summary_details)
-
-        return summary
-
-    def _create_result(self, summary):
-        """
-        Method to create a full result object based on the summary. This is used for sending email SNS topic when
-        the target's state is "failure" and "exception".
-        @return: One return object of all targets for the email SNS topics.
-        """
-        state_chart = {
+        summary_parameters = []
+        parameter_chart = {
+            None: {
+                "disable_notifier": False,
+                "short_message": MESSAGES.get("exception_message"),
+                "state": Watchman.STATE.get("exception"),
+                "success": None
+            },
             True: {
-                "success": True,
                 "disable_notifier": True,
                 "state": Watchman.STATE.get("success"),
+                "success": True
             },
             False: {
-                "success": False,
                 "disable_notifier": False,
                 "state": Watchman.STATE.get("failure"),
-            },
-            None: {
-                "success": None,
-                "disable_notifier": False,
-                "state": Watchman.STATE.get("exception"),
+                "success": False
             }
         }
+
+        for target_name in processed_targets:
+            success = processed_targets[target_name].get("success")
+            result_parameters = dict(parameter_chart.get(success))
+            result_parameters["details"] = self._create_details(target_name, processed_targets[target_name])
+            result_parameters["target"] = target_name
+
+            if success:
+                result_parameters["short_message"] = MESSAGES.get("success_message").format(target_name)
+                result_parameters["subject"] = MESSAGES.get("success_subject").format(target_name)
+
+            elif processed_targets[target_name].get('success') is None:
+                result_parameters["short_message"] = MESSAGES.get("exception_message")
+                result_parameters["subject"] = MESSAGES.get("exception_checking_subject").format(target_name)
+
+            else:
+                # If there are exceptions and failures:
+                if processed_targets[target_name].get("exception_strings"):
+                    result_parameters["short_message"] = MESSAGES.get("failure_exception_message")
+                    result_parameters["subject"] = MESSAGES.get("failure_exception_subject").format(target_name)
+                else:
+                    result_parameters["short_message"] = MESSAGES.get("failure_message")
+                    result_parameters["subject"] = MESSAGES.get("failure_subject").format(target_name)
+
+            summary_parameters.append(result_parameters)
+
+        return summary_parameters
+
+    def _create_results(self, summary_parameters):
+        """
+        Method to create all of the result objects based on the summary parameters. These result objects are used for
+        sending SNS alerts when the target's state is "failure" or "exception".
+        :param summary_parameters: List of summary_parameter dictionaries. Each dictionary will be used to create
+                                   a Result object.
+        :return: List of Result objects for each target that was checked.
+        """
         results = []
-        msg = ''
-        failure = False
-        exception = False
+        generic_result_details = ''
+        failure_in_parameters = False
+        exception_in_parameters = False
 
-        for summary_item in summary:
-            check_result = summary_item.get("success")
+        for summary_parameters_dict in summary_parameters:
+            check_result = summary_parameters_dict.get("success")
+
             if check_result is False:
-                failure = True
+                failure_in_parameters = True
             if check_result is None:
-                exception = True
-            msg += summary_item.get("subject") + "\n" + summary_item.get("details") + "\n\n"
-            subject = summary_item.get("subject")
-            details = summary_item.get("details")
-            target = summary_item.get("target")
-            short_message = summary_item.get("short_message")
-            parameters = state_chart.get(check_result)
-            results.append(Result(
-                **parameters,
-                subject=subject,
-                watchman_name=self.watchman_name,
-                target=target,
-                details=details,
-                short_message=short_message))
+                exception_in_parameters = True
 
-        # this is used to create a generic result for email notification
-        if failure and exception:
-            short_message = MESSAGES.get("exception_message") + MESSAGES.get("failure_message")
-            subject = MESSAGES.get("generic_fail_exception_subject")
-            parameters = state_chart.get(None)
-        elif failure:
-            short_message = MESSAGES.get("failure_message")
-            subject = MESSAGES.get("generic_failure_subject")
-            parameters = state_chart.get(False)
-        elif exception:
-            short_message = MESSAGES.get("exception_message")
-            subject = MESSAGES.get("generic_exception_subject")
-            parameters = state_chart.get(None)
-        else:
-            short_message = MESSAGES.get("success_message").format('All targets')
-            subject = MESSAGES.get("generic_suceess_subject")
-            parameters = state_chart.get(True)
-        results.append(Result(
-            **parameters,
-            subject=subject,
-            watchman_name=self.watchman_name,
-            target='Generic S3',
-            details=msg,
-            short_message=short_message))
+            # Building the generic result's details, only include exceptions and failures:
+            if not check_result:
+                generic_result_details += "{}\n\n{}\n\n{}\n\n".format(summary_parameters_dict.get("subject"),
+                                                                      summary_parameters_dict.get("details"),
+                                                                      const.MESSAGE_SEPARATOR)
+
+            results.append(Result(
+                details=summary_parameters_dict.get("details"),
+                disable_notifier=summary_parameters_dict.get("disable_notifier"),
+                short_message=summary_parameters_dict.get("short_message"),
+                state=summary_parameters_dict.get("state"),
+                subject=summary_parameters_dict.get("subject"),
+                success=check_result,
+                target=summary_parameters_dict.get("target"),
+                watchman_name=self.watchman_name,
+            ))
+
+        results.append(self._create_generic_result(failure_in_parameters, exception_in_parameters,
+                                                   generic_result_details))
 
         return results
 
@@ -508,24 +492,20 @@ class Rorschach(Watchman):
             tb = traceback.format_exc()
             return None, None, None, None, tb
 
-    def _check_single_file_existence(self, item):
+    def _check_single_file_existence(self, item, s3_key):
         """
         Method to check if a single file exists.
         @return: True if the file exists and False otherwise with a file path.
         """
         try:
-            if item.get('offset'):
-                generate_full_path, tb = self._generate_key(item['full_path'], self.event, item['offset'])
-            else:
-                generate_full_path, tb = self._generate_key(item['full_path'], self.event)
-            found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=generate_full_path)
-            return found_file, generate_full_path, None
+            found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=s3_key)
+            return found_file, None
         except Exception as ex:
             self.logger.error("ERROR Checking Single File Existence!")
             self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
-            return None, None, tb
+            return None, tb
 
     def _check_most_recent_file(self, contents, check_most_recent_file):
         """
@@ -597,3 +577,51 @@ class Rorschach(Watchman):
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, None, tb
+
+    def _create_generic_result(self, failure_in_parameters, exception_in_parameters, details):
+        """
+        Method to create the generic result object.
+        :param failure_in_parameters: Bool that indicates whether a failure was encountered in any of the target checks.
+        :param exception_in_parameters: Bool that indicates whether an exception was encountered in any of the target
+               checks.
+        :param details: String containg th details for all of the target checks performed.
+        :return: Generic Result object.
+        """
+        if failure_in_parameters and exception_in_parameters:
+            disable_notifier = False
+            short_message = MESSAGES.get("failure_exception_message")
+            state = Watchman.STATE.get("failure")
+            subject = MESSAGES.get("generic_fail_exception_subject")
+            success = False
+
+        elif failure_in_parameters:
+            disable_notifier = False
+            short_message = MESSAGES.get("failure_message")
+            state = Watchman.STATE.get("failure")
+            subject = MESSAGES.get("generic_failure_subject")
+            success = False
+
+        elif exception_in_parameters:
+            disable_notifier = False
+            short_message = MESSAGES.get("exception_message")
+            state = Watchman.STATE.get("exception")
+            subject = MESSAGES.get("generic_exception_subject")
+            success = False
+
+        else:
+            disable_notifier = True
+            short_message = MESSAGES.get("success_message").format('All targets')
+            state = Watchman.STATE.get("success")
+            subject = MESSAGES.get("generic_success_subject")
+            success = True
+
+        return (Result(
+            details=details,
+            disable_notifier=disable_notifier,
+            short_message=short_message,
+            state=state,
+            subject=subject,
+            success=success,
+            target='Generic S3',
+            watchman_name=self.watchman_name,
+        ))

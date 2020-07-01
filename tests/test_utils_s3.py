@@ -50,8 +50,8 @@ class TestS3(unittest.TestCase):
 
         self.mock_client_err = ClientError(self.err_boto3_res, self.err_boto3)
         self.mock_exception = Exception('err', 'msg')
-        self.mock_check_false = dict(okay=False, err=self.mock_client_err)
-        self.mock_check_true = dict(okay=True, err=None)
+        self.mock_check_false = False, None
+        self.mock_check_true = True, None
 
         self.mock_s3 = MagicMock()
         self.mock_s3_bucket = MagicMock()
@@ -188,11 +188,11 @@ class TestS3(unittest.TestCase):
         mock_boto3.Session.return_value = self.mock_session
 
         mock_s3.meta.client.head_bucket.side_effect = self.mock_client_err
-        result = s3.check_bucket("any")['okay']
+        result, tb = s3.check_bucket("any")
         self.assertFalse(result, "should return False on ClientError")
 
         mock_s3.meta.client.head_bucket.side_effect = self.mock_exception
-        result = s3.check_bucket("any")['okay']
+        result, tb = s3.check_bucket("any")
         self.assertFalse(result, "should return False on Exception")
 
     @patch('watchmen.utils.s3.boto3_session')
@@ -201,7 +201,7 @@ class TestS3(unittest.TestCase):
         check_bucket should return True on no error
         """
         mock_boto3.Session.return_value = self.mock_session
-        result = s3.check_bucket("any")['okay']
+        result, tb = s3.check_bucket("any")
         self.assertTrue(result, "should return True on no error")
 
     @patch('watchmen.utils.s3.boto3_session')
