@@ -89,7 +89,7 @@ Resources:
                 Action:
                   - 'SNS:Publish'
                 Resource:
-                  - "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+                  - !If [ IsProd, "arn:aws:sns:us-east-1:405093580753:Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test" ]
               - Effect: Allow
                 Action:
                   - 's3:GetObject'
