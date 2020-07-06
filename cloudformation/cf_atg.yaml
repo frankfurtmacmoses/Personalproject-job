@@ -3,13 +3,14 @@ Description: "Rorschach Watchmen monitors several data sources in the atg accoun
 Mappings:
   EnvMap:
     test:
+      # This environment is in atg-infoblox for testing purposes.
       Description: This environment is in atg-infoblox for testing purposes.
       Bucket: cyber-intel-test
-      BuildFile: rorschach-lambdas-test.zip
+      BuildFile: watchmen-lambdas-test.zip
     prod:
       Description: This environment is in atg-infoblox for monitoring s3 buckets.
-      Bucket: ib-cyberint-prod-deploys
-      BuildFile: rorschach-lambdas-prod.zip
+      Bucket: cyber-intel
+      BuildFile: watchmen-lambdas-prod.zip
 Parameters:
   Env:
     Description: Environment to be deployed.
