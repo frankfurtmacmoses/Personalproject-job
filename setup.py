@@ -12,7 +12,7 @@ NAME = 'watchmen'
 
 AUTHOR = 'Jinchi Zhang'
 AUTHOR_EMAIL = 'jzhang@infoblox.com'
-BULD_VERSION = '1.0.0'  # in format of `<major>.<minor>.<release>`
+BUILD_VERSION = '1.0.0'  # in format of `<major>.<minor>.<release>`
 PROJECT_CODE_NAME = 'Watchmen'
 PROJECT_DESCRIPTION = ''
 PROJECT_URL = 'https://github.com/Infoblox-CTO/cyberint-watchmen'
@@ -41,7 +41,7 @@ ENTRY_POINTS = {
 
 setup(
     name=NAME,
-    version=BULD_VERSION,
+    version=BUILD_VERSION,
     description=PROJECT_DESCRIPTION,
     long_description=README,
     classifiers=[
