@@ -1,15 +1,19 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Rorschach Watchmen monitors several data sources in Poseidon data lake for issues and outages."
+Description: "Rorschach Watchmen monitors the saas account for issues and outages."
 Mappings:
   EnvMap:
     test:
-      Description: This environment is in atg-infoblox for testing purpose.
       Bucket: cyber-intel-test
-      BuildFile: rorschach-lambdas-test.zip
+      BuildFile: watchmen-lambdas-test.zip
+      VPC: vpc-28ee704e
+      SubnetC: subnet-9c16fbb0
+      SubnetD: subnet-870dd2cf
     prod:
-      Description: This environment is in saas-infoblox for only monitoring the s3 buckets in saas-infoblox. This will need to access atg-infoblox for future deployment.
-      Bucket: ib-cyberint-prod-deploys
-      BuildFile: rorschach-lambdas-prod.zip
+      Bucket: cyber-intel
+      BuildFile: watchmen-lambdas-prod.zip
+      VPC: vpc-28ee704e
+      SubnetC: subnet-9c16fbb0
+      SubnetD: subnet-870dd2cf
 Parameters:
   Env:
     Description: Environment to be deployed.
@@ -17,8 +21,9 @@ Parameters:
   BuildsPrefix:
     Description: The S3 prefix that contains the Watchmen builds.
     Type: String
-Conditions:
-  IsProd: !Equals [ !Ref Env, prod ]
+  Account:
+    Description: AWS account alias to be used (eg. atg)
+    Type: String
 Resources:
   WatchmenRorschachLambda:
     Type: 'AWS::Lambda::Function'
@@ -32,7 +37,7 @@ Resources:
       Environment:
         Variables:
           ENVIRONMENT: !Ref Env
-      Handler: watchmen.main_rorschach.start_rorschach_watcher
+      Handler: watchmen.main_${Account}.start_rorschach_watcher
       MemorySize: 256
       Role: !GetAtt RorschachExecutionRole.Arn
       Timeout: 60
@@ -54,7 +59,6 @@ Resources:
     Properties:
       Description: A hourly event that kicks off hourly Rorschach Watchman
       ScheduleExpression: cron(0 * * * ? *)
-      State: !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: RorschachHourlyScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
@@ -64,7 +68,6 @@ Resources:
     Properties:
       Description: A daily event that kicks off daily Rorschach Watchman
       ScheduleExpression: cron(0 15 * * ? *)
-      State: !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: RorschachDailyScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
@@ -105,10 +108,10 @@ Resources:
                 Action:
                   - 'SNS:Publish'
                 Resource:
-                  - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Poseidon_DNS_Data", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
-                  - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Poseidon_Northstar_DNS_Data", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
-                  - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Farsight_Data", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
-                  - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Generic_S3_Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
+                  - "arn:aws:sns:us-east-1:902917483333:Poseidon_DNS_Data"
+                  - "arn:aws:sns:us-east-1:902917483333:Poseidon_Northstar_DNS_Data"
+                  - "arn:aws:sns:us-east-1:902917483333:Farsight_Data"
+                  - "arn:aws:sns:us-east-1:902917483333:Generic_S3_Rorschach"
               - Effect: Allow
                 Action:
                   - 's3:GetObject'
@@ -117,5 +120,5 @@ Resources:
                 Resource:
                   - "arn:aws:s3:::bitaa"
                   - "arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*"
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va", "arn:aws:s3:::cyber-intel-test"]
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va/*", "arn:aws:s3:::cyber-intel-test/*"]
+                  - "arn:aws:s3:::ib-customer-data-usa-va"
+                  - "arn:aws:s3:::ib-customer-data-usa-va/*"
