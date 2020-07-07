@@ -1,17 +1,18 @@
 """
-# test_main
+# test_main atg-infoblox
 """
 from mock import patch
-from watchmen import main
 from watchmen import const
 from watchmen.common.result import Result
+from watchmen import main_atg as main
 import logging
 import unittest
 
 
-class MainTester(unittest.TestCase):
+
+class MainAtgTester(unittest.TestCase):
     """
-    MainTester includes all unit tests for main module
+    MainAtgTester includes all unit tests for main module
     """
 
     @classmethod
