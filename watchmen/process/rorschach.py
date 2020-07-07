@@ -494,6 +494,11 @@ class Rorschach(Watchman):
 
             s3_prefix = 's3://' + item['bucket_name'] + '/' + generated_prefix
             contents = list(_s3.generate_pages(generated_prefix, **{'bucket': item['bucket_name']}))
+
+            # Removing whitelisted files from contents:
+            if item.get("whitelist"):
+                self._remove_whitelisted_files_from_contents(item.get("whitelist"), contents)
+
             count = len(contents)
 
             self.logger.info("Checking s3 path: {}".format(s3_prefix))
@@ -507,6 +512,19 @@ class Rorschach(Watchman):
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return contents_dict, tb
+
+    def _remove_whitelisted_files_from_contents(self, whitelist, contents):
+        """
+        Method to remove the whitelisted files from the contents.
+        :param whitelist: A list of file names that should be removed from the contents.
+        :param contents: List of all the files to be checked.
+        :return: Updated list of contents with whitelisted files removed.
+        """
+        for file in list(contents):
+            if file.get("Key").split('/')[-1] in whitelist:
+                contents.remove(file)
+
+        return contents
 
     def _check_single_file_existence(self, item, s3_key):
         """
