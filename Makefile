@@ -374,27 +374,21 @@ build-test-only:
 	@echo
 	@echo "- DONE: $@"
 
-deploy-test: clean
+deploy-atg-test: clean
 	@echo
-	BUILD_ENV=test BUCKET=cyber-intel-test DEPLOY_FILE=cloudformation.yaml FEATURE=watchmen $(MAKE_DEPLOY)
-	@echo
-	@echo "- DONE :$@"
-
-deploy-prod: clean
-	@echo
-	BUILD_ENV=prod BUCKET=cyber-intel DEPLOY_FILE=cloudformation.yaml FEATURE=watchmen $(MAKE_DEPLOY)
+	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-test DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
-deploy-rorschach-test: clean
+deploy-atg-prod: clean
 	@echo
-	BUILD_ENV=test BUCKET=cyber-intel-test DEPLOY_FILE=cf_rorschach.yaml FEATURE=rorschach $(MAKE_DEPLOY)
+	BUILD_ENV=prod ACCOUNT=atg BUCKET=cyber-intel DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
 	@echo
-	@echo "- DONE: $@"
+	@echo "- DONE :$@"
 
-deploy-rorschach-prod: clean
+deploy-saas-prod: clean
 	@echo
-	BUILD_ENV=prod BUCKET=ib-cyberint-prod-deploys DEPLOY_FILE=cf_rorschach.yaml FEATURE=rorschach $(MAKE_DEPLOY)
+	BUILD_ENV=prod ACCOUNT=saas BUCKET=ib-cyberint-prod-deploys DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE: $@"
 
