@@ -2,18 +2,10 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: "Rorschach Watchmen monitors the saas account for issues and outages."
 Mappings:
   EnvMap:
-    test:
-      Bucket: cyber-intel-test
-      BuildFile: watchmen-lambdas-test.zip
-      VPC: vpc-28ee704e
-      SubnetC: subnet-9c16fbb0
-      SubnetD: subnet-870dd2cf
     prod:
-      Bucket: cyber-intel
+      Description: This environment is in sass-infoblox for production purposes.
+      Bucket: ib-cyberint-prod-deploys
       BuildFile: watchmen-lambdas-prod.zip
-      VPC: vpc-28ee704e
-      SubnetC: subnet-9c16fbb0
-      SubnetD: subnet-870dd2cf
 Parameters:
   Env:
     Description: Environment to be deployed.
