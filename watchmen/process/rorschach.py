@@ -75,7 +75,7 @@ class Rorschach(Watchman):
         @return: True if the event parameter passed from the Lambda is invalid, false if the event parameter is valid.
         """
         if not self.event or self.event not in ALL_EVENT_TYPES:
-            self.logger.info(MESSAGES.get("failed_event_check").format(self.event))
+            self.logger.info(MESSAGES.get("failure_event_check").format(self.event))
             return True
         self.logger.info(MESSAGES.get("success_event_check"))
 
@@ -127,7 +127,7 @@ class Rorschach(Watchman):
             subject=MESSAGES.get("exception_config_load_failure_subject"),
             watchman_name=self.watchman_name,
             target="Generic S3",
-            details=MESSAGES.get("exception_config_not_load_details").format(CONFIG_NAME, tb),
+            details=MESSAGES.get("exception_config_load_failure_details").format(CONFIG_NAME, tb),
             snapshot={},
             short_message=MESSAGES.get("exception_message"),
         )]
@@ -237,7 +237,7 @@ class Rorschach(Watchman):
             return exception_strings, failure_strings
 
         if not found_file:
-            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_key))
+            failure_strings.append(MESSAGES.get('failure_invalid_s3_key').format(s3_key))
             return exception_strings, failure_strings
 
         # Checking single file size:
@@ -246,9 +246,8 @@ class Rorschach(Watchman):
             if tb:
                 exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
             if not valid_file_size:
-                failure_strings.append(MESSAGES.get('failure_single_file_size').format(full_path,
-                                                                                       item.get(
-                                                                                           "check_total_size_kb")))
+                failure_strings.append(MESSAGES.get('failure_single_file_size').format(item.get("check_total_size_kb"),
+                                                                                       full_path))
         return exception_strings, failure_strings
 
     def _check_single_file_size(self, item, s3_key):
@@ -296,7 +295,7 @@ class Rorschach(Watchman):
 
         # If there are no files (count == 0), then the rest of the checks cannot be performed
         if not count:
-            failure_strings.append(MESSAGES.get('failure_no_file_found_s3').format(s3_prefix))
+            failure_strings.append(MESSAGES.get('failure_invalid_s3_key').format(s3_prefix))
             return exception_strings, failure_strings
 
         # Check the suffix of all files:
@@ -305,8 +304,8 @@ class Rorschach(Watchman):
             if tb:
                 exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
             if incorrect_suffix_files:
-                failure_strings.append(MESSAGES.get('failure_suffix_not_match').format(item.get('suffix'),
-                                                                                       incorrect_suffix_files))
+                failure_strings.append(MESSAGES.get('failure_invalid_suffix').format(item.get('suffix'),
+                                                                                     incorrect_suffix_files))
 
         # Check for empty files and total file size:
         file_size_failure_strings, tb = self._check_multiple_files_size(contents, item, s3_prefix)
@@ -319,8 +318,8 @@ class Rorschach(Watchman):
         # Check if the aggregate file count meets standards:
         if item.get('check_total_object'):
             if count < item.get('check_total_object'):
-                failure_strings.append(MESSAGES.get('failure_count_too_less').format(s3_prefix, count,
-                                                                                     item['check_total_object']))
+                failure_strings.append(MESSAGES.get('failure_total_objects').format(s3_prefix, count,
+                                                                                    item['check_total_object']))
 
         return exception_strings, failure_strings
 
@@ -340,10 +339,12 @@ class Rorschach(Watchman):
             exception_string = "\n\n".join(target_check_results.get("exception_strings"))
             return MESSAGES.get('exception_details').format(exception_string)
 
-        failure_string = "\n\n".join(target_check_results.get("failure_strings"))
+        failure_string = MESSAGES.get("failure_details").format("\n\n".join(target_check_results.
+                                                                            get("failure_strings")))
         if target_check_results.get("exception_strings"):
             exception_string = "\n\n".join(target_check_results.get("exception_strings"))
-            failure_string += MESSAGES.get('exception_details').format(exception_string)
+            failure_string += "\n\n{}\n\n{}".format(const.MESSAGE_SEPARATOR,
+                                                    MESSAGES.get('exception_details').format(exception_string))
         return failure_string
 
     def _create_summary_parameters(self, processed_targets):
@@ -378,12 +379,12 @@ class Rorschach(Watchman):
             result_parameters["target"] = target_name
 
             if success:
-                result_parameters["short_message"] = MESSAGES.get("success_message").format(target_name)
+                result_parameters["short_message"] = MESSAGES.get("success_message")
                 result_parameters["subject"] = MESSAGES.get("success_subject").format(target_name)
 
             elif processed_targets[target_name].get('success') is None:
                 result_parameters["short_message"] = MESSAGES.get("exception_message")
-                result_parameters["subject"] = MESSAGES.get("exception_checking_subject").format(target_name)
+                result_parameters["subject"] = MESSAGES.get("exception_subject").format(target_name)
 
             else:
                 # If there are exceptions and failures:
@@ -564,7 +565,7 @@ class Rorschach(Watchman):
             disable_notifier = False
             short_message = MESSAGES.get("failure_exception_message")
             state = Watchman.STATE.get("failure")
-            subject = MESSAGES.get("generic_fail_exception_subject")
+            subject = MESSAGES.get("generic_failure_exception_subject")
             success = False
 
         elif failure_in_parameters:
@@ -583,7 +584,7 @@ class Rorschach(Watchman):
 
         else:
             disable_notifier = True
-            short_message = MESSAGES.get("success_message").format('All targets')
+            short_message = MESSAGES.get("success_message")
             state = Watchman.STATE.get("success")
             subject = MESSAGES.get("generic_success_subject")
             success = True
@@ -611,7 +612,7 @@ class Rorschach(Watchman):
                  <string>: Traceback if an exception was encountered, else None.
         """
         empty_file_list = []
-        failure_strings = []
+        failure_string = ""
         total_size = 0
 
         try:
@@ -625,19 +626,19 @@ class Rorschach(Watchman):
             if empty_file_list:
                 empty_file_string = ""
                 for empty_file in empty_file_list:
-                    empty_file_string += MESSAGES.get('failure_file_empty').format(empty_file)
+                    empty_file_string += "{}\n\n".format(MESSAGES.get('failure_file_empty').format(empty_file))
 
-                failure_strings.append(empty_file_string)
+                failure_string += empty_file_string
 
             if item.get('check_total_size_kb'):
                 kb_size_threshold = item.get('check_total_size_kb')
                 kb_total_size = total_size / 1000
 
                 if kb_total_size < kb_size_threshold:
-                    failure_strings.append(MESSAGES.get('failure_total_file_size_below_threshold').format(
-                                    s3_prefix, total_size, kb_size_threshold))
+                    failure_string += (MESSAGES.get('failure_multiple_file_size').format(
+                        s3_prefix, total_size, kb_size_threshold))
 
-            return failure_strings, None
+            return failure_string, None
         except Exception as ex:
             self.logger.error("ERROR Checking Multiple Files Size!")
             self.logger.info(const.MESSAGE_SEPARATOR)
