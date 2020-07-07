@@ -16,6 +16,8 @@ Parameters:
   Account:
     Description: AWS account alias to be used (eg. atg)
     Type: String
+Conditions:
+  IsProd: !Equals [ !Ref Env, prod ]
 Resources:
   WatchmenRorschachLambda:
     Type: 'AWS::Lambda::Function'
@@ -51,6 +53,7 @@ Resources:
     Properties:
       Description: A hourly event that kicks off hourly Rorschach Watchman
       ScheduleExpression: cron(0 * * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: RorschachHourlyScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
@@ -60,6 +63,7 @@ Resources:
     Properties:
       Description: A daily event that kicks off daily Rorschach Watchman
       ScheduleExpression: cron(0 15 * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
       Targets:
         - Id: RorschachDailyScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
