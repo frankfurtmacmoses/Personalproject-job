@@ -34,7 +34,7 @@ Resources:
       Handler: watchmen.main_${Account}.start_rorschach_watcher
       MemorySize: 256
       Role: !GetAtt RorschachExecutionRole.Arn
-      Timeout: 60
+      Timeout: 300
       Tags:
         - Key: Owner
           Value: CyberIntel
