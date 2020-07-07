@@ -9,6 +9,10 @@ Refactored on 2019-11-07:
 @author: Michael Garcia
 @email: garciam@infoblox.com
 
+Refactored on 2020-06-29:
+@author: Laura Peaslee
+@email: lpeaslee@infoblox.com
+
 
 @note: this module includes entry points for AWS lambda functions.
        the Lambda functions are configured by cron schedules; however
@@ -56,6 +60,20 @@ from watchmen.process.mothman import Mothman
 from watchmen.process.silhouette import Silhouette
 from watchmen.process.slater import Slater
 from watchmen.process.spectre import Spectre
+from watchmen.common.result_svc import ResultSvc
+from watchmen.process.rorschach import Rorschach
+
+
+def start_rorschach_watcher(event, context):
+    """
+    Start the rorschach watcher for parquet data in S3.
+    :return: The context that the code is being run in.
+    """
+    rorschach = Rorschach(event, context)
+    results = rorschach.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_comedian_watcher(event, context):
