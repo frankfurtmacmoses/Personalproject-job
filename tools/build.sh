@@ -14,9 +14,8 @@ script_path="$( cd "$( echo "${script_file%/*}" )" && pwd )"
 builds_path="${script_base}/builds"
 
 PROJECT="watchmen"
-FEATURE="${FEATURE:-${PROJECT}}"
 BUILD_ENV="${1:-${BUILD_ENV:-test}}"
-BUILD_PACKAGE="${FEATURE}-lambdas-${BUILD_ENV}.zip"
+BUILD_PACKAGE="${PROJECT}-lambdas-${BUILD_ENV}.zip"
 DEFAULT_BUILD="${PROJECT}-lambdas"
 DEFAULT_ARTIFACT="${DEFAULT_BUILD}.zip"
 SOURCE_DIR="${script_base}/${PROJECT}"
@@ -51,7 +50,7 @@ function main() {
   check_deploy_args
 
   echo ""
-  echo "--- Building ${FEATURE} ---"
+  echo "--- Building watchmen ---"
   echo ""
   build
 
@@ -68,7 +67,7 @@ function build() {
   local conf_yml='<default config.yaml>'
 
   cd -P "${script_base}" && pwd
-  rm -rf ${builds_path}/${FEATURE}
+  rm -rf ${builds_path}/watchmen
   rm -rf ${builds_path}/${BUILD_PACKAGE}
   mkdir -p ${builds_path}
   # cp -f "${script_base}/setup.cfg" "${script_base}/${PROJECT}/setup.cfg"
@@ -76,27 +75,27 @@ function build() {
   cat "${REQUIREMENTS}"
   echo "......................................................................."
   ${PIP_COMMAND} install --upgrade -r "${REQUIREMENTS}" \
-    -t ${builds_path}/${FEATURE}
+    -t ${builds_path}/watchmen
   echo "......................................................................."
-  cp -rf ${SOURCE_DIR} ${builds_path}/${FEATURE}
-  cp -rf ${SOURCE_DIR}/main.py ${builds_path}/${FEATURE}/handler.py
-  rm -rf ${builds_path}/${FEATURE}/${PROJECT}/logging.yaml
+  cp -rf ${SOURCE_DIR} ${builds_path}/watchmen
+  cp -rf ${SOURCE_DIR}/main.py ${builds_path}/watchmen/handler.py
+  rm -rf ${builds_path}/watchmen/${PROJECT}/logging.yaml
 
   if [[ -e ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ]]; then
     log_trace "- copying config-${BUILD_ENV}.yaml to build ..."
-    cp -rf ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ${builds_path}/${FEATURE}/${PROJECT}/config.yaml
+    cp -rf ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ${builds_path}/watchmen/${PROJECT}/config.yaml
     conf_yml=${SOURCE_DIR}/config-${BUILD_ENV}.yaml
     echo ""
   fi
-  cd ${builds_path}/${FEATURE} && zip -r ../${BUILD_PACKAGE} .
+  cd ${builds_path}/watchmen && zip -r ../${BUILD_PACKAGE} .
   cd -P "${script_base}" && pwd
 
   echo ""
   echo "======================================================================="
   echo "NOTE: This build is using: ${conf_yml}"
   echo "======================================================================="
-  log_trace "- removing ${builds_path}/${FEATURE} ..."
-  rm -rf ${builds_path}/${FEATURE}
+  log_trace "- removing ${builds_path}/watchmen ..."
+  rm -rf ${builds_path}/watchmen
 }
 
 # check_depends(): verifies preset environment variables exist
