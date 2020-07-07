@@ -222,7 +222,7 @@ class Rorschach(Watchman):
         full_path = item.get("full_path")
 
         # Generating properly formatted S3 key:
-        time_offset = item.get("offset", 1)
+        time_offset = item.get("time_offset", 1)
         s3_key, tb = self._generate_key(full_path, self.event, time_offset)
 
         if tb:
@@ -241,12 +241,12 @@ class Rorschach(Watchman):
             return exception_strings, failure_strings
 
         # Checking single file size:
-        if item.get("check_total_size_kb"):
+        if item.get("min_total_size_kb"):
             valid_file_size, tb = self._check_single_file_size(item, s3_key)
             if tb:
                 exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
             if not valid_file_size:
-                failure_strings.append(MESSAGES.get('failure_single_file_size').format(item.get("check_total_size_kb"),
+                failure_strings.append(MESSAGES.get('failure_single_file_size').format(item.get("min_total_size_kb"),
                                                                                        full_path))
         return exception_strings, failure_strings
 
@@ -258,7 +258,7 @@ class Rorschach(Watchman):
                  string: Traceback if an exception occurred, None otherwise.
         """
         try:
-            kb_threshold = item.get("check_total_size_kb")
+            kb_threshold = item.get("min_total_size_kb")
             s3_key_object = _s3.get_key(item.get("bucket_name"), s3_key)
             # Size from the s3_key_object is in bytes.
             valid_file_size = (s3_key_object.get("size") / 1000) >= kb_threshold
@@ -316,10 +316,10 @@ class Rorschach(Watchman):
             failure_strings.append(file_size_failure_strings)
 
         # Check if the aggregate file count meets standards:
-        if item.get('check_total_object'):
-            if count < item.get('check_total_object'):
+        if item.get('min_total_files'):
+            if count < item.get('min_total_files'):
                 failure_strings.append(MESSAGES.get('failure_total_objects').format(s3_prefix, count,
-                                                                                    item['check_total_object']))
+                                                                                    item['min_total_files']))
 
         return exception_strings, failure_strings
 
@@ -442,14 +442,14 @@ class Rorschach(Watchman):
 
         return results
 
-    def _generate_key(self, prefix_format, event, offset=1):
+    def _generate_key(self, prefix_format, event, time_offset=1):
         """
         Method to generate prefix key for each target based on the event type.
         @return: Prefix
         """
         try:
             arg_dict = {'Hourly': 'hours', 'Daily': 'days'}
-            check_time = _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{arg_dict[event]: offset})
+            check_time = _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{arg_dict[event]: time_offset})
             prefix = check_time.strftime(prefix_format)
             return prefix, None
         except Exception as ex:
@@ -471,7 +471,7 @@ class Rorschach(Watchman):
         }
 
         try:
-            time_offset = item.get("offset", 1)
+            time_offset = item.get("time_offset", 1)
             generated_prefix, tb = self._generate_key(item['prefix'], self.event, time_offset)
 
             if tb:
@@ -630,8 +630,8 @@ class Rorschach(Watchman):
 
                 failure_string += empty_file_string
 
-            if item.get('check_total_size_kb'):
-                kb_size_threshold = item.get('check_total_size_kb')
+            if item.get('min_total_size_kb'):
+                kb_size_threshold = item.get('min_total_size_kb')
                 kb_total_size = total_size / 1000
 
                 if kb_total_size < kb_size_threshold:
