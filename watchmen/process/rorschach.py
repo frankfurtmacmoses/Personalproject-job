@@ -87,15 +87,15 @@ class Rorschach(Watchman):
         @return: List of a single Result object to be sent to the Generic S3 target
         """
         return [Result(
-            disable_notifier=False,
-            state=Watchman.STATE.get("exception"),
-            success=False,
-            subject=MESSAGES.get("exception_invalid_event_subject"),
-            watchman_name=self.watchman_name,
-            target="Generic S3",
             details=MESSAGES.get("exception_invalid_event_details"),
-            snapshot={},
+            disable_notifier=False,
             short_message=MESSAGES.get("exception_message"),
+            snapshot={},
+            state=Watchman.STATE.get("exception"),
+            subject=MESSAGES.get("exception_invalid_event_subject"),
+            success=False,
+            target="Generic S3",
+            watchman_name=self.watchman_name,
         )]
 
     def _load_config(self):
@@ -121,15 +121,15 @@ class Rorschach(Watchman):
         @return: One result object for the email SNS topic.
         """
         return [Result(
-            disable_notifier=False,
-            state=Watchman.STATE.get("exception"),
-            success=False,
-            subject=MESSAGES.get("exception_config_load_failure_subject"),
-            watchman_name=self.watchman_name,
-            target="Generic S3",
             details=MESSAGES.get("exception_config_load_failure_details").format(CONFIG_NAME, tb),
-            snapshot={},
+            disable_notifier=False,
             short_message=MESSAGES.get("exception_message"),
+            snapshot={},
+            state=Watchman.STATE.get("exception"),
+            subject=MESSAGES.get("exception_config_load_failure_subject"),
+            success=False,
+            target="Generic S3",
+            watchman_name=self.watchman_name,
         )]
 
     def _process_checking(self, s3_targets):
@@ -430,6 +430,7 @@ class Rorschach(Watchman):
                 details=summary_parameters_dict.get("details"),
                 disable_notifier=summary_parameters_dict.get("disable_notifier"),
                 short_message=summary_parameters_dict.get("short_message"),
+                snapshot={},
                 state=summary_parameters_dict.get("state"),
                 subject=summary_parameters_dict.get("subject"),
                 success=check_result,
@@ -593,6 +594,7 @@ class Rorschach(Watchman):
             details=details,
             disable_notifier=disable_notifier,
             short_message=short_message,
+            snapshot={},
             state=state,
             subject=subject,
             success=success,
