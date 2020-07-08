@@ -1,16 +1,19 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Rorschach Watchmen monitors several data sources in the atg account for issues and outages."
+Description: "Watchmen monitors several data sources in the atg account for issues and outages."
 Mappings:
   EnvMap:
     test:
-      # This environment is in atg-infoblox for testing purposes.
-      Description: This environment is in atg-infoblox for testing purposes.
       Bucket: cyber-intel-test
       BuildFile: watchmen-lambdas-test.zip
+      VPC: vpc-28ee704e
+      SubnetC: subnet-9c16fbb0
+      SubnetD: subnet-870dd2cf
     prod:
-      Description: This environment is in atg-infoblox for monitoring s3 buckets.
       Bucket: cyber-intel
       BuildFile: watchmen-lambdas-prod.zip
+      VPC: vpc-28ee704e
+      SubnetC: subnet-9c16fbb0
+      SubnetD: subnet-870dd2cf
 Parameters:
   Env:
     Description: Environment to be deployed.
