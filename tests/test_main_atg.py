@@ -1,5 +1,5 @@
 """
-# test_main atg-infoblox
+# test_main
 """
 from mock import patch
 from watchmen import const
