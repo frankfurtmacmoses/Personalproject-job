@@ -62,10 +62,6 @@ mothman:
   bucket_name: cyber-intel
   path_prefix: malspam/forevermail
 
-rorschach:
-  yaml_file: s3_config.yaml
-  sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
-
 silhouette:
   bucket_name: cyber-intel
   path_prefix: analytics/lookalike2/prod/status/
