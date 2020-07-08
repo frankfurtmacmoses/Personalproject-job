@@ -44,7 +44,7 @@ class TestRorschach(unittest.TestCase):
             'snapshot': {},
             'watchman_name': 'Rorschach',
             'state': 'EXCEPTION',
-            'subject': MESSAGES.get("exception_config_not_load_subject"),
+            'subject': MESSAGES.get("exception_config_load_failure_subject"),
             'success': False,
             'target': 'Generic S3'
         }
@@ -444,7 +444,7 @@ class TestRorschach(unittest.TestCase):
                     MESSAGES.get('failure_prefix_suffix_not_match').format('some/path/to/', '.parquet') +
                     MESSAGES.get('failure_file_empty').format('some/path/to/something.parquet') +
                     MESSAGES.get('failure_total_file_size_below_threshold').format('s3://some/path/to/', 0.2, 0.5) +
-                    MESSAGES.get('failure_count_too_less').format('s3://some/path/to/', 3, 5)) + '\n\n'),
+                    MESSAGES.get('failure_total_objects').format('s3://some/path/to/', 3, 5)) + '\n\n'),
                 "target": 'target2'
             }],
             'fail_found_bucket': [{
@@ -458,7 +458,7 @@ class TestRorschach(unittest.TestCase):
             'ex_found_bucket': [{
                 "short_message": MESSAGES.get("exception_message"),
                 "success": None,
-                "subject": MESSAGES.get("exception_checking_subject").format('target4'),
+                "subject": MESSAGES.get("exception_subject").format('target4'),
                 "details": MESSAGES.get('exception_details').format(
                     '{}{}: {}\n'.format('bucket', 'some/path/to', Exception)),
                 "target": 'target4'

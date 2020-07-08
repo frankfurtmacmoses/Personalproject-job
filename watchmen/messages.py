@@ -13,7 +13,7 @@ COMEDIAN = {
     "exception_subject": "EXCEPTION: Unable to Check VirusTotal Quotas!",
     "failure_short_message": "FAILURE: A quota was exceeded, please check the logs for more information!",
     "failure_subject": "FAILURE: VirusTotal Quota Exceeded!",
-    "quota_exceeded": "Quota \"{}\" exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
+    "quota_exceeded": "Quota \"{}\" exceeded the {:.2f}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {:.2f}%\n",
     "quota_exception_details": "An expected quota was missing from the VirusTotal API response.\n\n{}",
     "success_details": "All VirusTotal quota checks ran successfully and were within the current threshold.",
     "success_short_message": "SUCCESS: All VirusTotal quota checks were within the threshold for today!",
@@ -83,6 +83,58 @@ MANHATTAN = {
     "success_event_check": "The event parameter passed from Lambda is valid."
 }
 
+METROPOLIS = {
+    "details_format": "{}\n\nMetric_type: {}\nMetric_description: {}\nMetric_value: {}\n{}\n",
+    "exception_details": "Process: {}, Source: {} reached an exception on {} trying to get "
+                         "watchmenResults.csv" + " from s3 due to the following:\n\n{}\n\nPlease look "
+                         "at the logs for more insight.",
+    "exception_message": "Metropolis failed due to an exception!",
+    "exception_subject": "Metropolis: EXCEPTION Checking Process: {}",
+    "failure_details": "Process: {}, Source: {} is down for {}!",
+    "failure_exception_message": "Failure and exception checking process metrics.",
+    "failure_message": "There were moving_mean values outside of the threshold!",
+    "failure_subject": "Metropolis: OUTLIER DETECTED! - Process: {}",
+    "generic": "Generic: ",
+    "generic_exception_subject": "Metropolis: EXCEPTION Checking Process Metrics",
+    "generic_fail_subject": "Metropolis: FAILURE Checking Process Metrics",
+    "generic_fail_and_exception_subject": "Metropolis: FAILURE AND EXCEPTION Checking Process Metrics",
+    "generic_success_subject": "Metropolis: No Outliers!",
+    "min_and_max_message": "Moving Mean: {} || Minimum: {} || Maximum: {}",
+    "min_and_max_error_message": "Error: Minimum is larger than maximum.",
+    "no_indicator_message": "Indicator {} not present in the {} metrics",
+    "not_loaded_details": "Failed to find rows with date of {} in {} due to the following:\n{}\n\nPlease look at the "
+                          "logs or check the CSV file for more insight.",
+    "not_loaded_message": "Failed to load data from the CSV file, please check logs.",
+    "not_loaded_subject": "Metropolis: ERROR Loading Data File!",
+    "process_not_in_file": "{} process is missing from the CSV file.",
+    "success_details": "Process: {}, Source: {} is up and running for {}!",
+    "success_message": "All moving_mean values were inside the threshold!",
+    "success_subject": "Metropolis: No Outliers! - {}"
+}
+
+MOLOCH = {
+    "exception_message": "The newly observed domain feeds and hostname feeds reached an exception during the file"
+                         " checking process due to the following:\n\n{}\n\nPlease look at the logs for more insight.",
+    "exception_short_message": "Moloch: Feeds failed due to an exception, please look at the logs!",
+    "exception_subject": "Moloch watchmen reached an exception!",
+    "failure_both": "Please check the Response Guide for Moloch in watchmen documents: "
+                    "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
+                    "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
+                    "ERROR: Both hostname and domains feed have gone down!",
+    "failure_domain": "Please check the Response Guide for Moloch in watchmen documents: "
+                      "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
+                      "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
+                      "ERROR: The newly observed domains feed has gone down!",
+    "failure_hostname": "Please check the Response Guide for Moloch in watchmen documents: "
+                        "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
+                        "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
+                        "ERROR: The newly observed hostname feed has gone down!",
+    "failure_subject": "Moloch watchmen detected an issue with NOH/D feed!",
+    "failure_short_message": "Moloch: A Feed has gone down, please check logs in CloudWatch!",
+    "success_message": "NOH/D Feeds are up and running!",
+    "success_subject": "Moloch watchman found Hostnames and Domains feeds works okay!"
+}
+
 MOTHMAN = {
     "exception_details": "There was an exception while trying to check the ForeverMail S3 files.\n\nTraceback of "
                          "exception:\n{}",
@@ -116,49 +168,67 @@ SLATER = {
 }
 
 RORSCHACH = {
-    "exception_subject": "Rorschach Exception: The Checking is Not Processed.",
-    "exception_checking_subject": "Rorschach Exception: The Checking for {} is Not Processed.",
-    "exception_invalid_event_subject": "Rorschach Exception: Invalid CloudWatch Event",
-    "exception_config_not_load_subject": "Rorschach Exception: Unable to Load S3 Targets File",
+    "exception_subject": "EXCEPTION: Unable to Check S3 files for {}!",
+    "exception_invalid_event_subject": "EXCEPTION: Rorschach Received An Invalid CloudWatch Event!",
+    "exception_config_load_failure_subject": "EXCEPTION: Unable to Load S3 Targets Config File!",
     "exception_invalid_event_details": "An invalid event was passed from the CloudWatch event, please check the "
                                        "CloudFormation file and CloudWatch events to ensure that the correct"
                                        " parameters are being sent. S3 targets can not be checked with an invalid "
                                        "event parameter.",
     "exception_config_not_load_details": "Cannot load S3 targets from file: {}\nException: {}",
-    "exception_message": "Exception occurred when checking s3 targets! Please check email for more details.",
-    "exception_details": "The following paths threw exceptions during their checks:\n{}",
-    "success_message": "{} in S3 ran with no issues.",
-    "success_details": "All checking for {} pass. The data pipeline runs fine!",
-    "success_subject": "Rorschach Success: {} runs with no issue.",
+    "exception_message": "Exception occurred when checking S3 targets! Please check the logs for more details.",
+    "exception_details": "The following S3 paths threw exceptions during their file checks:\n\n{}",
+    "success_message": "SUCCESS: All S3 File Checks for {} passed!",
+    "success_details": "All of the S3 file checks for the {} target passed successfully!",
+    "success_subject": "SUCCESS: All S3 File Checks for {} Passed!",
     "success_event_check": "The event parameter passed from Lambda is valid.",
     "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
-    "failure_prefix_suffix_not_match": "There is at least one key did not match the expected "
+    "failure_prefix_suffix_not_match": "There is at least one S3 that key did not match the expected "
                                        "prefix: {} and suffix: {}.\n",
-    "failure_file_empty": "This file: {} is empty for target data in S3.\n",
-    "failure_total_file_size_below_threshold": "The size of all files founded in {} is {} KB, which is less than "
+    "failure_file_empty": "The following S3 file is empty: {}",
+    "failure_total_file_size_below_threshold": "The size of all files found in {} is {} KB, which is less than "
                                                "expected total file size {} KB.\n",
-    "failure_count_too_less": "The number of objects founded in {} is {}, which is less than expected total objects "
-                              "count {}.\n",
-    "failure_bucket_not_found": "The bucket is not found here: {}.\n",
-    "failure_no_file_found_s3": "No file found here: {}.\n",
-    "failure_subject": "Rorschach Failure: {} Checking Not Passed",
+    "failure_total_objects": "The number of objects found in {} is {}, which is less than expected total objects "
+                             "count {}.\n",
+    "failure_bucket_not_found": "FAILURE: The following bucket was not found: {}.\n",
+    "failure_no_file_found_s3": "The following file was not found in S3: {}",
+    "failure_subject": "FAILURE: {} S3 File Checks Failed!",
     "failure_details": "The following S3 paths failed their checks:\n{}",
-    "failure_message": "At least one checking is not passed. Please check details.",
-    "generic_failure_subject": "Generic S3 Rorshcach Failure: At Least One Target Has Failure!",
-    "generic_exception_subject": "Generic S3 Rorshcach Exception: At Least One Target Has Exception!",
-    "generic_fail_exception_subject": "Generic S3 Rorshcach Exception and Failure: At Least One Target Has Exception"
+    "failure_message": "FAILURE: At least one S3 file check did not pass, please check the logs for more details!",
+    "generic_failure_subject": "FAILURE: At Least One S3 Target Has Failed!",
+    "generic_exception_subject": "Exception: At Least One S3 Target Has An Exception!",
+    "generic_fail_exception_subject": "EXCEPTION and FAILURE: At Least One S3 Target Has An Exception"
                                       " and Failure!",
-    "generic_suceess_subject": "Generic S3 Rorshcach Success: All Targets Pass."
+    "generic_success_subject": "SUCCESS: All S3 Targets Passed!",
+    "failure_exception_subject": "FAILURE AND EXCEPTION: {} S3 File Checks Encountered Failures and Exceptions!",
+    "failure_exception_message": "FAILURE AND EXCEPTION: S3 file checks could not be performed, please look at the logs"
+                                 " for more details!",
+    "exception_string_format": "Item: {}\nException: {}",
 }
 
 SILHOUETTE = {
-    "success_message": "Lookalike2 algorithm is up and running!",
-    "failure_message": "Lookalike2 algorithm never added files yesterday! "
-                       "The algorithm may be down or simply did not complete!",
-    "success_subject": "Silhouette: Lookalike2 files have been successfully detected in S3!",
-    "failure_subject": "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
-    "exception_subject": "EXCEPTION: Silhouette failed to check the Lookalike2 algorithm!",
     "exception_message": "Silhouette for lookalike2 algorithm failed on \n\t\"{}\" \ndue to "
                          "the Exception:\n\n{}\n\nPlease check the logs!",
-    "exception_short_message": "Silhouette for lookalike2 algorithm failed due to an exception, please check the logs!"
+    "exception_short_message": "Silhouette for lookalike2 algorithm failed due to an exception, please check the logs!",
+    "exception_subject": "EXCEPTION: Silhouette failed to check the Lookalike2 algorithm!",
+    "failure_message": "Lookalike2 algorithm never added files yesterday! "
+                       "The algorithm may be down or simply did not complete!",
+    "failure_subject": "FAILURE: Silhouette detected an issue with the Lookalike2 algorithm!",
+    "success_message": "Lookalike2 algorithm is up and running!",
+    "success_subject": "Silhouette: Lookalike2 files have been successfully detected in S3!"
+}
+
+SPECTRE = {
+    "exception_message": "Spectre for Georgia Tech failed on \n\t\"{}\" \ndue to "
+                         "the Exception:\n\n{}\n\nPlease check the logs!",
+    "exception_short_message": "Spectre monitor failed due to an exception, check S3 and Georgia Tech logs!",
+    "exception_subject": "Spectre for Georgia Tech had an exception!",
+    "failure_message": "could not be found in {}/{}! "
+                       "Please check S3 and Georgia Tech logs!",
+    "failure_short_message": "Spectre monitor failed, please check S3 and Georgia Tech logs!",
+    "failure_subject_message": "Spectre Georgia Tech data monitor detected a failure!",
+    "file_not_found_error": " not found on S3 in {}/{}! Georgia Tech data is missing, "
+                            "please view the logs!",
+    "success_message": "Georgia Tech Feed data found on S3!",
+    "success_subject": "Spectre Georgia Tech data monitor found everything alright. "
 }

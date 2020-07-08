@@ -13,6 +13,7 @@ AWS_ACCESS_KEY_ID=
 
 """
 import json
+import traceback
 import types
 from logging import getLogger
 
@@ -21,6 +22,7 @@ import boto3.session as boto3_session
 import botocore
 from botocore.client import Config
 from botocore.exceptions import ClientError
+from watchmen import const
 
 LOGGER = getLogger(__name__)
 
@@ -41,9 +43,8 @@ def check_arg_bucket(bucket):
     """
     Check if the arg is a valid bucket; otherwise, raise ValueError
     """
-    chk = check_bucket(bucket)
-    if not chk['okay']:
-        LOGGER.error(str(chk['err']))
+    bucket_exists, tb = check_bucket(bucket)
+    if not bucket_exists:
         raise ValueError("param 'bucket' must be a valid existing S3 bucket")
 
 
@@ -62,23 +63,32 @@ def check_bucket(bucket_name):
     """
     Checks if a S3 bucket exists
     @param bucket_name: the bucket name (top-level directory in S3)
-    @return: True if bucket exists; otherwise False
+    @return: A boolean: True if bucket exists, False if bucket doesn't exist, None if an exception occurred.
+             A traceback message: Traceback message if an exception is encountered, or None.
     """
     s3_resource = get_resource()
-    result = dict(okay=False, err=None)
 
     try:
         s3_resource.meta.client.head_bucket(Bucket=bucket_name)
-    except (botocore.exceptions.ClientError, botocore.exceptions.ParamValidationError) as ex_error:
-        # If a client error is thrown, then check that it was a 404 error.
-        # If it was a 404 error, then the bucket does not exist.
-        # error_code = int(e.response['Error']['Code'])
-        result['err'] = ex_error
+    except (botocore.exceptions.ClientError, botocore.exceptions.ParamValidationError) as botocore_exception:
+        # If a client error is thrown and it is a 404 error, the bucket just doesn't exist.
+        error_code = int(botocore_exception.response['Error']['Code'])
+        if error_code == 404:
+            return False, None
+        else:
+            LOGGER.error("ERROR Checking S3 bucket!")
+            LOGGER.info(const.MESSAGE_SEPARATOR)
+            LOGGER.exception('{}: {}'.format(type(botocore_exception).__name__, botocore_exception))
+            tb = traceback.format_exc()
+            return None, tb
     except Exception as ex:
-        result['err'] = ex
-    else:
-        result['okay'] = True
-    return result
+        LOGGER.error("ERROR Checking S3 bucket!")
+        LOGGER.info(const.MESSAGE_SEPARATOR)
+        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
+        tb = traceback.format_exc()
+        return None, tb
+
+    return True, None
 
 
 def check_empty_folder(key_name, bucket=BUCKET_DEFAULT):

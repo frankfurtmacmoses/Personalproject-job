@@ -1,14 +1,16 @@
 """
 # main
 
-@author: Daryan Hanshew
-@email: dhanshew@infoblox.com
-@created: 2018-07-23
+@author: Bonnie Zhang
+@email: zzhang@infoblox.com
+@created: 2020-05-26
 
-Refactored on 2019-11-07:
-@author: Michael Garcia
-@email: garciam@infoblox.com
-
+A separate main method for the Rorschach Watchman was created because when the Watchmen code is ran, Python tries to
+speed everything up by caching a compiled version of each imported module starting from where the code is ran. This
+caused compiled versions of the other Watchmen to be made, which led to errors because Rorschach is in SAAS and the
+other Watchmen are in ATG. For example, a KMS decryption permission error was encountered because the script was trying
+to decrypt the API key for the Comedian. Rorschach doesn't need KMS decryption permissions, and the API key for the
+Comedian wouldn’t work anyways because it only works in the ATG environment while prod Rorschach is in SAAS.
 
 @note: this module includes the entry points for the Rorschach AWS lambda function.
        The Lambda function is configured by cron schedules; however
