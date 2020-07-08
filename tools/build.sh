@@ -50,7 +50,7 @@ function main() {
   check_deploy_args
 
   echo ""
-  echo "--- Building watchmen ---"
+  echo "--- Building ${PROJECT} ---"
   echo ""
   build
 
@@ -67,7 +67,7 @@ function build() {
   local conf_yml='<default config.yaml>'
 
   cd -P "${script_base}" && pwd
-  rm -rf ${builds_path}/watchmen
+  rm -rf ${builds_path}/${PROJECT}
   rm -rf ${builds_path}/${BUILD_PACKAGE}
   mkdir -p ${builds_path}
   # cp -f "${script_base}/setup.cfg" "${script_base}/${PROJECT}/setup.cfg"
@@ -77,25 +77,25 @@ function build() {
   ${PIP_COMMAND} install --upgrade -r "${REQUIREMENTS}" \
     -t ${builds_path}/watchmen
   echo "......................................................................."
-  cp -rf ${SOURCE_DIR} ${builds_path}/watchmen
-  cp -rf ${SOURCE_DIR}/main.py ${builds_path}/watchmen/handler.py
-  rm -rf ${builds_path}/watchmen/${PROJECT}/logging.yaml
+  cp -rf ${SOURCE_DIR} ${builds_path}/${PROJECT}
+  cp -rf ${SOURCE_DIR}/main.py ${builds_path}/${PROJECT}/handler.py
+  rm -rf ${builds_path}/${PROJECT}/${PROJECT}/logging.yaml
 
   if [[ -e ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ]]; then
     log_trace "- copying config-${BUILD_ENV}.yaml to build ..."
-    cp -rf ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ${builds_path}/watchmen/${PROJECT}/config.yaml
+    cp -rf ${SOURCE_DIR}/config-${BUILD_ENV}.yaml ${builds_path}/${PROJECT}/${PROJECT}/config.yaml
     conf_yml=${SOURCE_DIR}/config-${BUILD_ENV}.yaml
     echo ""
   fi
-  cd ${builds_path}/watchmen && zip -r ../${BUILD_PACKAGE} .
+  cd ${builds_path}/${PROJECT} && zip -r ../${BUILD_PACKAGE} .
   cd -P "${script_base}" && pwd
 
   echo ""
   echo "======================================================================="
   echo "NOTE: This build is using: ${conf_yml}"
   echo "======================================================================="
-  log_trace "- removing ${builds_path}/watchmen ..."
-  rm -rf ${builds_path}/watchmen
+  log_trace "- removing ${builds_path}/${PROJECT} ..."
+  rm -rf ${builds_path}/${PROJECT}
 }
 
 # check_depends(): verifies preset environment variables exist
