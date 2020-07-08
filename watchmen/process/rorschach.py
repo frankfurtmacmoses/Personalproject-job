@@ -4,16 +4,19 @@ Created on May 22, 2017
 #   You're locked in here with ME!'
 #  -Rorschach, The Watchmen 2009
 This Watchman is designed to generically monitor S3 targets across multiple schedules.
-This Watchman can a monitor a target for single or multiple file existence, single file
-size greater than zero, aggregate file size greater than a predefined value, and file count
-greater than a predefined value. The required checks for a target are determined in the config file 's3_targets.py.'
+This Watchman can a monitor a target for single or multiple files existence, single file size and multiple files size
+greater than or equal to a predefined size in KB, and valid suffixes for multiple files. File checks can be customized
+to check a certain amount of time frames ago with `time_offset`. For example if a Daily target has a `time_offset` of
+3, then files from 3 days ago will be checked. The default for `time_offset` is 1. A `whitelist` may also be included
+for multiple file checks to ignore specific files when performing the checks. The required checks for a target are
+determined in the config file 's3_targets_{ENV}.yaml.'
 
 @author: Dan Dalton
 @email: ddalton@infoblox.com
 
-Refactored on April, 2020
-@author: Bonnie Zhang
-@email: zzhang@infoblox.com
+Refactored July 2020
+@author: Michael Garcia
+@email: garciam@infoblox.com
 """
 
 # Python Imports
@@ -51,8 +54,8 @@ class Rorschach(Watchman):
 
     def monitor(self):
         """
-        Monitors the s3 targets.
-        @return: <Result> List of Result objects
+        Monitors the S3 targets defined in the s3_targets{ENV}.yaml file.
+        :return: <list> List of Result objects containing information from the file checks performed.
         """
         if self._check_invalid_event():
             return self._create_invalid_event_results()
@@ -72,7 +75,8 @@ class Rorschach(Watchman):
         Method to check that the event passed in from the Lambda has the correct parameters. If there is no "Type"
         parameter passed in, or the "Type" does not equal any of the allowed event types, then the
         event parameter is invalid.
-        @return: True if the event parameter passed from the Lambda is invalid, false if the event parameter is valid.
+        :return: <bool> True if the event parameter passed from the Lambda is invalid, false if the event parameter is
+                        valid.
         """
         if not self.event or self.event not in ALL_EVENT_TYPES:
             self.logger.info(MESSAGES.get("failure_event_check").format(self.event))
@@ -84,7 +88,7 @@ class Rorschach(Watchman):
     def _create_invalid_event_results(self):
         """
         Method to create the results for the scenario when the Lambda sends in invalid event parameters.
-        @return: List of a single Result object to be sent to the Generic S3 target
+        :return: <list> List containing the generic Result object containing information for an invalid event.
         """
         return [Result(
             details=MESSAGES.get("exception_invalid_event_details"),
@@ -101,7 +105,9 @@ class Rorschach(Watchman):
     def _load_config(self):
         """
         Method to load the .yaml config file that contains configuration details of each s3 target.
-        @return: a tuple of the s3 targets, None or None, traceback upon exception
+        :return: <dictionary>, <string>
+                 <dictionary>: A dictionary of dictionaries containing the s3 target check configurations.
+                 <string>: A string containing the traceback if an exception occurs, else None.
         """
         try:
             with open(CONFIG_PATH) as f:
@@ -117,8 +123,9 @@ class Rorschach(Watchman):
 
     def _create_config_not_load_results(self, tb):
         """
-        Method to create the Result object if the config file did not successfully loaded.
-        @return: One result object for the email SNS topic.
+        Method to create the Result object if the s3_targets config file could not be loaded.
+        :param tb: <string> containing the traceback from the exception encountered.
+        :return: <list>: List containing one Result object with information for the config load exception.
         """
         return [Result(
             details=MESSAGES.get("exception_config_load_failure_details").format(CONFIG_NAME, tb),
@@ -134,18 +141,18 @@ class Rorschach(Watchman):
 
     def _process_checking(self, s3_targets):
         """
-        Method to conduct various checks for each S3 item under each target. The specific checks for each
-        item is determined from the config data. It is possible for there to be many targets and each
-        with multiple S3 items. For each item, the appropriate method will be called to handle the amount of files being
-        checked.
-        :param s3_targets: The list of dictionaries loaded from the s3_targets config file. Each dictionary contains
+        Method to conduct the various files checks for each S3 item under each target. The specific checks for each
+        item are determined from the s3_targets config file. It is possible for there to be many targets with multiple
+        S3 items to check. For each item, the appropriate method will be called to handle the amount of files being
+        checked (single or multiple files).
+        :param s3_targets: <list> of dictionaries loaded from the s3_targets config file. Each dictionary contains
                            items to be checked.
-        :return: A dictionary containing all of the dictionaries for each target that was checked. For each target,
-                 a dictionary will be creating which contains:
-                    - a boolean "success" indicating if the check was valid (True: success, False: failures (and
+        :return: <dictionary> A dictionary containing all of the dictionaries for each target that was checked. For each
+                              target, a dictionary will be created which contains:
+                    - <bool> "success" indicating if the check was valid (True: success, False: failures (and
                       exceptions), None: all checks resulted in exceptions.
-                    - a list "exception_strings" which contains strings that detail any exceptions encountered.
-                    - a list "failure_strings" which contains strings that detail any failures encountered.
+                    - <list> "exception_strings" which contains strings that detail any exceptions encountered.
+                    - <list> "failure_strings" which contains strings that detail any failures encountered.
 
         Example returned dictionary:
             processed_targets =
@@ -211,11 +218,11 @@ class Rorschach(Watchman):
     def _check_single_file(self, item):
         """
         Method to perform all of the required checks if an item consists of only one file.
-        :param item: The current item that is being checked. This item is a member of a "target" which are all defined
-                     in the s3_targets config file.
-        :return: The exceptions_strings list and the failure_strings list. Each of these lists contains the exceptions
-                 and failures encountered while performing the checks. If all checks are successful, both of these lists
-                 will be empty.
+        :param item: <dict>: The current item that is being checked. This item is a member of a "target" which are all
+                             defined in the s3_targets config file.
+        :return: <list>, <list>
+                    <list>: "exception_strings" which contains strings that detail any exceptions encountered.
+                    <list>: "failure_strings" which contains strings that detail any failures encountered.
         """
         exception_strings = []
         failure_strings = []
@@ -253,9 +260,11 @@ class Rorschach(Watchman):
     def _check_single_file_size(self, item, s3_key):
         """
         Method to check that the single file size meets the required size set in the s3_targets config file.
-        :param item: The current item, with one file, that is being checked.
-        :return: boolean: True if the file is a valid size, false if not.
-                 string: Traceback if an exception occurred, None otherwise.
+        :param item: <dict> The current item, with one file, that is being checked.
+        :param s3_key: <string> The s3 key with the proper date formatted into it.
+        :return: <bool>, <string>
+                 <bool>: True if the file is a valid size, false if not.
+                 <string>: Traceback if an exception occurred, None otherwise.
         """
         try:
             kb_threshold = item.get("min_total_size_kb")
@@ -273,11 +282,11 @@ class Rorschach(Watchman):
     def _check_multiple_files(self, item):
         """
         Method to perform all of the required checks if an item consists of multiple files.
-        :param item: The current item that is being checked. This item is a member of a "target" which are all defined
-                     in the s3_targets config file.
-        :return: The exceptions_strings list and the failure_strings list. Each of these lists contains the exceptions
-                 and failures encountered while performing the checks. If all checks are successful, both of these lists
-                 will be empty.
+        :param item: <dict>: The current item that is being checked. This item is a member of a "target" which are all
+                             defined in the s3_targets config file.
+        :return: <list>, <list>
+                    <list>: "exception_strings" which contains strings that detail any exceptions encountered.
+                    <list>: "failure_strings" which contains strings that detail any failures encountered.
         """
         exception_strings = []
         failure_strings = []
@@ -326,9 +335,9 @@ class Rorschach(Watchman):
     def _create_details(self, target_name, target_check_results):
         """
         Method to create the details for a target.
-        :param target_name: A string for the name of the target that was checked.
-        :param target_check_results: A dictionary containing the results from checking the target and all of its items.
-        :return: A string with properly formatted details for the passed in target.
+        :param target_name: <string> The name of the target that was checked.
+        :param target_check_results: <dictionary> Contains the results from checking the target and all of its items.
+        :return: <string> Properly formatted details for the passed in target.
         """
         success = target_check_results.get("success")
 
@@ -350,7 +359,9 @@ class Rorschach(Watchman):
     def _create_summary_parameters(self, processed_targets):
         """
         Method to create a summary object for all s3 targets with details messages based on the check results summary.
-        @return: A list of dictionaries where each dict is a summary of the checking results of each target.
+        :param processed_targets: <dictionary> Contains multiple dictionaries, one for each target that was processed.
+        :return: <list> Dictionaries containing the summary parameters required to create the Result object for each
+                        target that was checked.
         """
         summary_parameters = []
         parameter_chart = {
@@ -403,9 +414,9 @@ class Rorschach(Watchman):
         """
         Method to create all of the result objects based on the summary parameters. These result objects are used for
         sending SNS alerts when the target's state is "failure" or "exception".
-        :param summary_parameters: List of summary_parameter dictionaries. Each dictionary will be used to create
-                                   a Result object.
-        :return: List of Result objects for each target that was checked.
+        :param summary_parameters: <list> Dictionaries containing summary parameters. Each dictionary will be used to
+                                          create a Result object.
+        :return: <list> Result objects for each target that was checked.
         """
         results = []
         generic_result_details = ''
@@ -445,8 +456,13 @@ class Rorschach(Watchman):
 
     def _generate_key(self, prefix_format, event, time_offset=1):
         """
-        Method to generate prefix key for each target based on the event type.
-        @return: Prefix
+        Method to generate the key for each target based on the event type.
+        :param prefix_format: <string> The S3 key prefix format.
+        :param event: <string> The event type.
+        :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
+        :return: <string>, <string>
+                 <string>: The properly formatted S3 key with the correct date based off the time_offset.
+                 <string>: Traceback if an exception was encountered, None otherwise.
         """
         try:
             arg_dict = {'Hourly': 'hours', 'Daily': 'days'}
@@ -463,7 +479,10 @@ class Rorschach(Watchman):
     def _generate_contents(self, item):
         """
         Method to generate contents for the given s3 path configuration.
-        @return: The files contents, files count, s3 prefix, and possible traceback.
+        :param item: <dictionary> The current item being checked.
+        :return: <dictionary>, <string>
+                 <dictionary>: The files content, files count, and the s3 prefix.
+                 <string>: Traceback if an exception was encountered, None otherwise.
         """
         contents_dict = {
             "contents": None,
@@ -502,9 +521,9 @@ class Rorschach(Watchman):
     def _remove_whitelisted_files_from_contents(self, whitelist, contents):
         """
         Method to remove the whitelisted files from the contents.
-        :param whitelist: A list of file names that should be removed from the contents.
-        :param contents: List of all the files to be checked.
-        :return: Updated list of contents with whitelisted files removed.
+        :param whitelist: <list> File names that should be removed from the contents.
+        :param contents: <list> Dictionaries containing all of the files to be checked.
+        :return: <list>: Updated contents with whitelisted files removed.
         """
         for file in list(contents):
             if file.get("Key").split('/')[-1] in whitelist:
@@ -515,7 +534,11 @@ class Rorschach(Watchman):
     def _check_single_file_existence(self, item, s3_key):
         """
         Method to check if a single file exists.
-        @return: True if the file exists and False otherwise with a file path.
+        :param item: <dictionary> Contains all of the config data for the item being checked.
+        :param s3_key: <string> The properly formatted s3_key with the date based off of the time_offset.
+        :return: <bool>, <string>
+                 <bool>: True if the file exists, False if the file doesn't exist, None if an exception was encountered.
+                 <string>: Traceback if an exception was encountered, None otherwise.
         """
         try:
             found_file = _s3.validate_file_on_s3(bucket_name=item['bucket_name'], key=s3_key)
@@ -530,11 +553,11 @@ class Rorschach(Watchman):
     def _check_file_suffix(self, contents, suffix):
         """
         This method verifies that each file in the contents has the expected suffix, such as ".parquet".
-        :param contents: A list of the generated contents for the item currently being checked.
-        :param suffix: A string containing the suffix to check for in all files.
+        :param contents: <list> The generated contents for the item currently being checked.
+        :param suffix: <string> Contains the suffix to check for in all files.
         :return: <String>, <String>
                  <String>: String containing all of the file(s) that did not have the correct suffix.
-                 <String>: Traceback if an exception occurred.
+                 <String>: Traceback if an exception occurred, None otherwise.
         """
         try:
             incorrect_suffix_files = ""
@@ -556,11 +579,11 @@ class Rorschach(Watchman):
     def _create_generic_result(self, failure_in_parameters, exception_in_parameters, details):
         """
         Method to create the generic result object.
-        :param failure_in_parameters: Bool that indicates whether a failure was encountered in any of the target checks.
-        :param exception_in_parameters: Bool that indicates whether an exception was encountered in any of the target
-               checks.
-        :param details: String containg th details for all of the target checks performed.
-        :return: Generic Result object.
+        :param failure_in_parameters: <bool> Indicates whether a failure was encountered in any of the target checks.
+        :param exception_in_parameters: <bool> Indicates whether an exception was encountered in any of the target
+                                               checks.
+        :param details: <string> Contains the details for all of the target checks performed.
+        :return: <Result> Generic Result object.
         """
         if failure_in_parameters and exception_in_parameters:
             disable_notifier = False
@@ -605,11 +628,11 @@ class Rorschach(Watchman):
     def _check_multiple_files_size(self, contents, item, s3_prefix):
         """
         Method to perform the empty file check and/or the total file size check for multiple files.
-        :param contents: The contents containing all of the files for the current item being checked.
-        :param item: The current item being checked.
-        :param s3_prefix: The formatted S3 prefix of the current item being checked. This is required to make the
-                          message if the total file size requirement is not met.
-        :return: <list> <string>
+        :param contents: <list> Contents containing all of the files for the current item being checked.
+        :param item: <dict> The current item being checked.
+        :param s3_prefix: <string> The formatted S3 prefix of the current item being checked. This is required to make 
+                          the message if the total file size requirement is not met.
+        :return: <list>, <string>
                  <list>: List of all strings for all of the possible failures encountered during the checks.
                  <string>: Traceback if an exception was encountered, else None.
         """
