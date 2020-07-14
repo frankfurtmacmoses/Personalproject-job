@@ -156,7 +156,7 @@ class Rorschach(Watchman):
         file_size_failure_strings, tb = self._check_multiple_files_size(contents, item, s3_prefix)
         if tb:
             exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
-        
+
         if file_size_failure_strings:
             failure_strings.append(file_size_failure_strings)
 
@@ -173,7 +173,7 @@ class Rorschach(Watchman):
         Method to perform the empty file check and/or the total file size check for multiple files.
         :param contents: <list> Contents containing all of the files for the current item being checked.
         :param item: <dict> The current item being checked.
-        :param s3_prefix: <string> The formatted S3 prefix of the current item being checked. This is required to make 
+        :param s3_prefix: <string> The formatted S3 prefix of the current item being checked. This is required to make
                           the message if the total file size requirement is not met.
         :return: <list>, <string>
                  <list>: List of all strings for all of the possible failures encountered during the checks.

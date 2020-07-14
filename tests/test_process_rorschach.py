@@ -1,42 +1,36 @@
+# Python imports:
 import datetime
-from mock import patch, mock_open
 import pytz
 import unittest
+from mock import patch, mock_open
 
-from watchmen.process.rorschach import Rorschach
-from watchmen.process.rorschach import MESSAGES
+# Watchmen imports:
+from watchmen import const
+from watchmen.common.watchman import Watchman
+from watchmen.process.rorschach import Rorschach, MESSAGES, CONFIG_NAME
 
 
 class TestRorschach(unittest.TestCase):
 
     def setUp(self):
         self.example_event_daily = {'Type': 'Daily'}
-        self.example_event_hourly = {'Type': 'Hourly'}
-        self.example_invalid_events = [
-            {'Type': 'hourly'},
-            {'Type': 'daily'},
-            {'type': 'Hourly'},
-            {'type': 'Daily'},
-            {'': ''},
-            {}
-        ]
-        self.example_config_path = '../watchmen/process/s3_config.yaml'
         self.example_traceback = 'Traceback'
         self.expected_invalid_event_email_result = {
             'details': MESSAGES.get("exception_invalid_event_details"),
             'disable_notifier': False,
             'dt_created': '2020-12-15T00:00:00+00:00',
-            'short_message': MESSAGES.get('exception_message'),
             'result_id': 0,
+            'short_message': MESSAGES.get('exception_message'),
             'snapshot': {},
-            'watchman_name': 'Rorschach',
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_invalid_event_subject"),
             'success': False,
-            'target': 'Generic S3'
+            'target': 'Generic S3',
+            'watchman_name': 'Rorschach',
         }
         self.expected_invalid_config_file_result = {
-            'details': "Cannot load S3 targets from file: s3_targets_test.yaml\nException: (None, 's3_config.yaml')",
+            'details': MESSAGES.get("exception_config_load_failure_details").format(CONFIG_NAME,
+                                                                                    self.example_traceback),
             'disable_notifier': False,
             'dt_created': '2020-12-15T00:00:00+00:00',
             'short_message': MESSAGES.get('exception_message'),
@@ -49,25 +43,25 @@ class TestRorschach(unittest.TestCase):
             'target': 'Generic S3'
         }
         self.example_config_file = {
-            "Daily": [{
-                "target_name": "target1",
-                "items": [{
-                    "bucket_name": "bucket",
-                    "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
-                    "suffix": ".parquet"
-                }]
-            }]
+            "Daily": [
+                {
+                    "target_name": "target1",
+                    "items": [
+                        {
+                            "bucket_name": "bucket",
+                            "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
+                            "suffix": ".parquet",
+                            "min_total_size_kb": 50
+                        },
+                        {
+                            "bucket_name": "bucket",
+                            "prefix": "random/path/year=%0Y/month=%0m/day=%0d/",
+                            "suffix": ".json",
+                        }
+                    ]
+                }
+            ]
         }
-        self.example_process_checking_result = {
-            "target1": []
-        }
-        self.example_create_summary_result = [{
-            "success": True,
-            "subject": MESSAGES.get("success_subject").format("target1"),
-            "details": MESSAGES.get("success_details").format("target1"),
-            "short_message": MESSAGES.get("success_message").format("target1"),
-            "target": "target1"
-        }]
         self.example_contents = [{
             'Key': 'some/path/to/something.parquet',
             'Size': 100,
@@ -85,416 +79,140 @@ class TestRorschach(unittest.TestCase):
             'Size': 0,
             'LastModified': datetime.datetime(2020, 5, 20, 0, 23, 29)
         }]
-        self.example_process_checking_cases = {
-            'success_multi_items': {
-                "input": [{
-                    "target_name": 'target1',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        "prefix": "some/path/to/",
-                        "suffix": ".parquet",
-                        "check_total_object": 1,
-                        "check_total_size_kb": 0,
-                        "check_most_recent_file": 2
-                    }]
-                }],
-                "return": {
-                    'target': 'target1',
-                    'bucket_result': {
-                        'okay': True,
-                        'err': None
-                    },
-                    'contents': ([{
-                        'Size': 100,
-                        'Key': 'some/path/to/something.parquet'
-                    }, {
-                        'Size': 100,
-                        'Key': 'some/path/to/something.parquet'
-                    }, {
-                        'Size': 100,
-                        'Key': 'some/path/to/something.parquet'
-                    }], 3, 'some/path/to/', 's3://some/path/to/', None),
-                    'recent_contents': ([{
-                        'Size': 100,
-                        'Key': 'some/path/to/something.parquet'
-                    }, {
-                        'Size': 100,
-                        'Key': 'some/path/to/something.parquet'
-                    }], 2),
-                    'prefix_suffix': (True, None),
-                    'file_empty': (False, [], None),
-                    'file_size': (True, 0.2, None)
-                }
-            },
-            'fail_items': {
-                "input": [{
-                    "target_name": 'target2',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        "prefix": "some/path/to/",
-                        "suffix": ".parquet",
-                        "check_total_object": 5,
-                        "check_total_size_kb": 0.5
-                    }]
-                }],
-                "return": {
-                    'target': 'target2',
-                    'bucket_result': {
-                        'okay': True,
-                        'err': None
-                    },
-                    'contents': ([{
-                        'Size': 100,
-                        'Key': 'some/path/to/something.json'
-                    }, {
-                        'Size': 100,
-                        'Key': 'some/path/to/something.parquet'
-                    }, {
-                        'Size': 0,
-                        'Key': 'some/path/to/something.parquet'
-                    }], 3,
-                                 'some/path/to/',
-                                 's3://some/path/to/', None),
-                    'prefix_suffix': (False, None),
-                    'file_empty': (True, ['some/path/to/something.parquet'], None),
-                    'file_size': (True, 0.2, None)
-                }
-            },
-            'fail_found_bucket': {
-                "input": [{
-                    "target_name": 'target3',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        'prefix': 'some/path/to'
-                    }]
-                }],
-                "return": {
-                    'target': 'target3',
-                    'bucket_result': {
-                        'okay': False,
-                        'err': None
+        self.process_checking_examples = [
+            {
+                "target_name": "target 1",
+                "items": [
+                    {
+                        "bucket_name": "bad_bucket_example"
                     }
-                }
-            },
-            'ex_found_bucket': {
-                "input": [{
-                    "target_name": 'target4',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        'prefix': 'some/path/to'
-                    }]
-                }],
-                "return": {
-                    'target': 'target4',
-                    'bucket_result': {
-                        'okay': None,
-                        'err': Exception
+                 ],
+                "mocks": {
+                    "mock_bucket": (False, None)
+                },
+                "processed_targets": {
+                    "target 1": {
+                        "success": False,
+                        "exception_strings": [],
+                        "failure_strings": [MESSAGES.get('failure_bucket_not_found').format("bad_bucket_example")]
                     }
-                }
+                },
+                "summary_parameters": [
+                    {
+                        "details": "Example details.",
+                        "disable_notifier": False,
+                        "short_message": MESSAGES.get("failure_message"),
+                        "state": Watchman.STATE.get("failure"),
+                        "subject": MESSAGES.get("failure_subject").format("target 1"),
+                        "success": False,
+                        "target": "target 1"
+                    }
+                ]
             },
-            'fail_full_path': {
-                "input": [{
-                    "target_name": 'target5',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        "full_path": "some/path/to/something.parquet"
-                    }]
-                }],
-                "return": {
-                    'target': 'target5',
-                    'bucket_result': {
-                        'okay': True,
-                        'err': None
-                    },
-                    'full_path': (False, "s3://bucket/some/path/to/something.parquet", None)
-                }
+            {
+                "target_name": "target 2",
+                "items": [
+                    {
+                        "bucket_name": "full_path_example",
+                        "full_path": "path/to/file.json"
+                    }
+                ],
+                "mocks": {
+                    "mock_single_file_check": (["Exception 1"], ["Failure 1"])
+                },
+                "processed_targets": {
+                    "target 2": {
+                        "success": False,
+                        "exception_strings": ["Exception 1"],
+                        "failure_strings": ["Failure 1"]
+                    }
+                },
+                "summary_parameters": [
+                    {
+                        "details": "Example details.",
+                        "disable_notifier": False,
+                        "short_message": MESSAGES.get("failure_exception_message"),
+                        "state": Watchman.STATE.get("failure"),
+                        "subject": MESSAGES.get("failure_exception_subject").format("target 2"),
+                        "success": False,
+                        "target": "target 2"
+                    }
+                ]
             },
-            'ex_full_path': {
-                "input": [{
-                    "target_name": 'target6',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        "full_path": "some/path/to/something.parquet"
-                    }]
-                }],
-                "return": {
-                    'target': 'target6',
-                    'bucket_result': {
-                        'okay': True,
-                        'err': None
-                    },
-                    'full_path': (None, None, Exception)
-                }
+            {
+                "target_name": "target 3",
+                "items": [
+                    {
+                        "bucket_name": "multiple_files_example"
+                    }
+                ],
+                "mocks": {
+                    "mock_multiple_files_check": (["Exception 2"], [])
+                },
+                "processed_targets": {
+                    "target 3": {
+                        "success": None,
+                        "exception_strings": ["Exception 2"],
+                        "failure_strings": []
+                    }
+                },
+                "summary_parameters": [
+                    {
+                        "details": "Example details.",
+                        "disable_notifier": False,
+                        "short_message": MESSAGES.get("exception_message"),
+                        "state": Watchman.STATE.get("exception"),
+                        "subject": MESSAGES.get("exception_subject").format("target 3"),
+                        "success": None,
+                        "target": "target 3"
+                    }
+                ]
             },
-            'fail_contents': {
-                "input": [{
-                    "target_name": 'target7',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        "prefix": "some/path/to/",
-                        "suffix": ".parquet",
-                    }]
-                }],
-                "return": {
-                    'target': 'target7',
-                    'bucket_result': {
-                        'okay': True,
-                        'err': None
-                    },
-                    'contents': ([], 0,
-                                 'some/path/to/',
-                                 's3://some/path/to/', None)
-                }
-            },
-            'ex_contents': {
-                "input": [{
-                    "target_name": 'target8',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        "prefix": "some/path/to/",
-                        "suffix": ".parquet"
-                    }]
-                }],
-                "return": {
-                    'target': 'target8',
-                    'bucket_result': {
-                        'okay': True,
-                        'err': None
-                    },
-                    'contents': (None, None, None, None, Exception)
-                }
-            },
-            'ex_multi_items': {
-                "input": [{
-                    "target_name": 'target9',
-                    "items": [{
-                        "bucket_name": "bucket",
-                        "prefix": "some/path/to/",
-                        "suffix": ".parquet",
-                        "check_total_object": 0,
-                        "check_total_size_kb": 1
-                    }]
-                }],
-                "return": {
-                    'target': 'target9',
-                    'bucket_result': {
-                        'okay': True,
-                        'err': None
-                    },
-                    'contents': ([{
-                        'Size': None,
-                        'Key': 'some/path/to/something.parquet'
-                    }, {
-                        'Size': None,
-                        'Key': 'some/path/to/something.parquet'
-                    }, {
-                        'Size': None,
-                        'Key': 'some/path/to/something.parquet'
-                    }], 3,
-                                 'some/path/to/',
-                                 's3://some/path/to/', None),
-                    'prefix_suffix': (None, Exception),
-                    'file_empty': (None, None, Exception),
-                    'file_size': (None, None, Exception),
-                }
+            {
+                "target_name": "target 4",
+                "items": [
+                    {
+                        "bucket_name": "success_example",
+                        "full_path": "path/to/file.json"
+                    }
+                ],
+                "mocks": {},
+                "processed_targets": {
+                    "target 4": {
+                        "success": True,
+                        "exception_strings": [],
+                        "failure_strings": []
+                    }
+                },
+                "summary_parameters": [
+                    {
+                        "details": "Example details.",
+                        "disable_notifier": True,
+                        "short_message": MESSAGES.get("success_message"),
+                        "state": Watchman.STATE.get("success"),
+                        "subject": MESSAGES.get("success_subject").format("target 4"),
+                        "success": True,
+                        "target": "target 4"
+                    }
+                ]
             }
-        }
-        self.example_process_checking_results = {
-            'success_multi_items': {
-                'target1': {
-                    'success': True,
-                    'failed_checks': []
-                }
-            },
-            'fail_items': {
-                'target2': {
-                    'success': False,
-                    'failed_checks': [
-                        ({
-                             "bucket_name": "bucket",
-                             "prefix": "some/path/to/",
-                             "suffix": ".parquet",
-                             "check_total_object": 5,
-                             "check_total_size_kb": 0.5
-                         }, {
-                             'at_least_one_file_empty': (True, ['some/path/to/something.parquet']),
-                             'count_object_too_less': ('s3://some/path/to/', 3, 5),
-                             'prefix_suffix_not_match': ('some/path/to/',
-                                                         '.parquet'),
-                             'total_file_size_below_threshold': (
-                                 's3://some/path/to/', 0.2, 0.5)
-                         })
-                    ]
-                }
-            },
-            'fail_found_bucket': {
-                'target3': {
-                    'success': False,
-                    'failed_checks': [({
-                                           'bucket_name': 'bucket',
-                                           'prefix': 'some/path/to'
-                                       }, {
-                                           'bucket_not_found': 's3://{}'.format(
-                                               'bucket')
-                                       })]
-                }
-            },
-            'ex_found_bucket': {
-                'target4': {
-                    'success': None,
-                    'failed_checks': [({
-                                           'bucket_name': 'bucket',
-                                           'prefix': 'some/path/to'
-                                       }, {
-                                           'exception': Exception
-                                       })]
-                }
-            },
-            'fail_full_path': {
-                'target5': {
-                    'success': False,
-                    'failed_checks': [({
-                                           "bucket_name": "bucket",
-                                           "full_path": "some/path/to/something.parquet"
-                                       }, {
-                                           'no_file_found_s3': "s3://bucket/some/path/to/something.parquet"
-                                       })]
-                }
-            },
-            'ex_full_path': {
-                'target6': {
-                    'success': None,
-                    'failed_checks': [({
-                                           "bucket_name": "bucket",
-                                           "full_path": "some/path/to/something.parquet"
-                                       }, {
-                                           'exception': Exception
-                                       })]
-                }
-            },
-            'fail_contents': {
-                'target7': {
-                    'success': False,
-                    'failed_checks': [({
-                                           "bucket_name": "bucket",
-                                           "prefix": "some/path/to/",
-                                           "suffix": ".parquet"
-                                       }, {
-                                           'no_file_found_s3': 's3://some/path/to/'
-                                       })]
-                }
-            },
-            'ex_contents': {
-                'target8': {
-                    'success': None,
-                    'failed_checks': [({
-                                           "bucket_name": "bucket",
-                                           "prefix": "some/path/to/",
-                                           "suffix": ".parquet"
-                                       }, {
-                                           'exception': Exception
-                                       })]
-                }
-            },
-            'ex_multi_items': {
-                'target9': {
-                    'success': None,
-                    'failed_checks': [({
-                                           "bucket_name": "bucket",
-                                           "prefix": "some/path/to/",
-                                           "suffix": ".parquet",
-                                           "check_total_object": 0,
-                                           "check_total_size_kb": 1
-                                       },
-                                       {
-                                           'exception': [Exception, Exception, Exception]
-                                       })]
-                }
-            },
-            'fail_ex_items': {
-                'target10': {
-                    'success': False,
-                    'failed_checks': [({
-                                           "bucket_name": "bucket",
-                                           "prefix": "some/path/to/",
-                                           "suffix": ".parquet",
-                                           "check_total_object": 0,
-                                           "check_total_size_kb": 1
-                                       },
-                                       {
-                                           'exception': [Exception],
-                                           'at_least_one_file_empty': (True, ['some/path/to/something.parquet'])
-                                       })]
-                }
-            }
-        }
-        self.example_create_summary_results = {
-            'success_multi_items': [{
-                "short_message": MESSAGES.get("success_message").format('target1'),
-                "success": True,
-                "subject": MESSAGES.get("success_subject").format('target1'),
-                "details": MESSAGES.get("success_details").format('target1'),
-                "target": 'target1'
-            }],
-            'fail_items': [{
-                "short_message": MESSAGES.get("failure_message").format('target2'),
-                "success": False,
-                "subject": MESSAGES.get("failure_subject").format('target2'),
-                "details": (MESSAGES.get('failure_details').format(
-                    MESSAGES.get('failure_prefix_suffix_not_match').format('some/path/to/', '.parquet') +
-                    MESSAGES.get('failure_file_empty').format('some/path/to/something.parquet') +
-                    MESSAGES.get('failure_total_file_size_below_threshold').format('s3://some/path/to/', 0.2, 0.5) +
-                    MESSAGES.get('failure_total_objects').format('s3://some/path/to/', 3, 5)) + '\n\n'),
-                "target": 'target2'
-            }],
-            'fail_found_bucket': [{
-                "short_message": MESSAGES.get("failure_message").format('target3'),
-                "success": False,
-                "subject": MESSAGES.get("failure_subject").format('target3'),
-                "details": (MESSAGES.get('failure_details').format(
-                    MESSAGES.get('failure_bucket_not_found').format('bucket')) + '\n\n'),
-                "target": 'target3'
-            }],
-            'ex_found_bucket': [{
-                "short_message": MESSAGES.get("exception_message"),
-                "success": None,
-                "subject": MESSAGES.get("exception_subject").format('target4'),
-                "details": MESSAGES.get('exception_details').format(
-                    '{}{}: {}\n'.format('bucket', 'some/path/to', Exception)),
-                "target": 'target4'
-            }],
-            'fail_full_path': [{
-                "short_message": MESSAGES.get("failure_message").format('target5'),
-                "success": False,
-                "subject": MESSAGES.get("failure_subject").format('target5'),
-                "details": (MESSAGES.get('failure_details').format(
-                    MESSAGES.get('failure_no_file_found_s3').format('some/path/to/something.parquet')) + '\n\n'),
-                "target": 'target5'
-            }],
-            'fail_ex_items': [{
-                "short_message": MESSAGES.get("failure_message").format('target10'),
-                "success": False,
-                "subject": MESSAGES.get("failure_subject").format('target10'),
-                "details": ((MESSAGES.get('failure_details').format(MESSAGES.get('failure_file_empty').format(
-                    'some/path/to/something.parquet')) + '\n\n') + MESSAGES.get('exception_details').format(
-                    'bucket/some/path/to/: {}\n'.format(Exception))),
-                "target": 'target10'
-            }]
-        }
+        ]
         self.example_state_cases = {
             'T': [{
                 'success': True,
                 'subject': 'Rorschach Success',
                 'details': 'some details',
                 'short_message': 'some message',
-                'target': 'target 1'
+                'target': 'target 1',
+                'state': Watchman.STATE.get("success"),
+                'disable_notifier': True,
             }, {
                 'details': 'some details',
                 'disable_notifier': True,
                 'dt_created': '2020-12-15T00:00:00+00:00',
                 'short_message': 'some message',
                 'result_id': 0,
-                'snapshot': None,
+                'snapshot': {},
                 'watchman_name': 'Rorschach',
                 'state': 'SUCCESS',
                 'subject': 'Rorschach Success',
@@ -506,14 +224,16 @@ class TestRorschach(unittest.TestCase):
                 'subject': 'Rorschach Failure',
                 'details': 'some details',
                 'short_message': 'some message',
-                'target': 'target 1'
+                'target': 'target 1',
+                'state': Watchman.STATE.get("failure"),
+                'disable_notifier': False,
             }, {
                 'details': 'some details',
                 'disable_notifier': False,
                 'dt_created': '2020-12-15T00:00:00+00:00',
                 'short_message': 'some message',
                 'result_id': 0,
-                'snapshot': None,
+                'snapshot': {},
                 'watchman_name': 'Rorschach',
                 'state': 'FAILURE',
                 'subject': 'Rorschach Failure',
@@ -525,14 +245,16 @@ class TestRorschach(unittest.TestCase):
                 'subject': 'Rorschach Exception',
                 'details': 'some details',
                 'short_message': 'some message',
-                'target': 'target 1'
+                'target': 'target 1',
+                'state': Watchman.STATE.get("exception"),
+                'disable_notifier': False,
             }, {
                 'details': 'some details',
                 'disable_notifier': False,
                 'dt_created': '2020-12-15T00:00:00+00:00',
                 'short_message': 'some message',
                 'result_id': 0,
-                'snapshot': None,
+                'snapshot': {},
                 'watchman_name': 'Rorschach',
                 'state': 'EXCEPTION',
                 'subject': 'Rorschach Exception',
@@ -540,149 +262,167 @@ class TestRorschach(unittest.TestCase):
                 'target': 'target 1'
             }]
         }
-        self.example_state_cases_summary = {
-            'TT': [self.example_state_cases.get('T')[0],
-                   self.example_state_cases.get('T')[0]
-                   ],
-            'TF': [self.example_state_cases.get('T')[0],
-                   self.example_state_cases.get('F')[0]
-                   ],
-            'TE': [self.example_state_cases.get('T')[0],
-                   self.example_state_cases.get('E')[0]
-                   ],
-            'EF': [self.example_state_cases.get('F')[0],
-                   self.example_state_cases.get('E')[0]
-                   ]
+        self.example_s3_prefix = "s3://example/test.json"
+        self.example_generic_results = {
+            "failures_and_exceptions": {
+                'details': MESSAGES.get("failure_exception_message"),
+                'disable_notifier': False,
+                'dt_created': '2020-12-15T00:00:00+00:00',
+                'result_id': 0,
+                'short_message': MESSAGES.get("failure_exception_message"),
+                'snapshot': {},
+                'state': Watchman.STATE.get("failure"),
+                'subject': MESSAGES.get("generic_failure_exception_subject"),
+                'success': False,
+                'target': 'Generic S3',
+                'watchman_name': 'Rorschach',
+            },
+            "failures": {
+                'details': MESSAGES.get("failure_message"),
+                'disable_notifier': False,
+                'dt_created': '2020-12-15T00:00:00+00:00',
+                'result_id': 0,
+                'short_message': MESSAGES.get("failure_message"),
+                'snapshot': {},
+                'state': Watchman.STATE.get("failure"),
+                'subject': MESSAGES.get("generic_failure_subject"),
+                'success': False,
+                'target': 'Generic S3',
+                'watchman_name': 'Rorschach',
+            },
+            "exceptions": {
+                'details': MESSAGES.get("exception_message"),
+                'disable_notifier': False,
+                'dt_created': '2020-12-15T00:00:00+00:00',
+                'result_id': 0,
+                'short_message': MESSAGES.get("exception_message"),
+                'snapshot': {},
+                'state': Watchman.STATE.get("exception"),
+                'subject': MESSAGES.get("generic_exception_subject"),
+                'success': False,
+                'target': 'Generic S3',
+                'watchman_name': 'Rorschach',
+            },
+            "success": {
+                'details': MESSAGES.get("success_message"),
+                'disable_notifier': True,
+                'dt_created': '2020-12-15T00:00:00+00:00',
+                'result_id': 0,
+                'short_message': MESSAGES.get("success_message"),
+                'snapshot': {},
+                'state': Watchman.STATE.get("success"),
+                'subject': MESSAGES.get("generic_success_subject"),
+                'success': True,
+                'target': 'Generic S3',
+                'watchman_name': 'Rorschach',
+            },
         }
         self.example_create_results = {
             'TT': [self.example_state_cases.get('T')[1],
-                   self.example_state_cases.get('T')[1], {
-                       'details': 'Rorschach Success\nsome details\n\nRorschach Success\nsome details\n\n',
-                       'disable_notifier': True,
-                       'dt_created': '2020-12-15T00:00:00+00:00',
-                       'short_message': MESSAGES.get("success_message").format('All targets'),
-                       'result_id': 0,
-                       'snapshot': None,
-                       'watchman_name': 'Rorschach',
-                       'state': 'SUCCESS',
-                       'subject': MESSAGES.get("generic_suceess_subject"),
-                       'success': True,
-                       'target': 'Generic S3'
-                   }
+                   self.example_state_cases.get('T')[1],
+                   self.example_generic_results.get("success")
                    ],
             'TF': [self.example_state_cases.get('T')[1],
-                   self.example_state_cases.get('F')[1], {
-                       'details': 'Rorschach Success\nsome details\n\nRorschach Failure\nsome details\n\n',
-                       'disable_notifier': False,
-                       'dt_created': '2020-12-15T00:00:00+00:00',
-                       'short_message': MESSAGES.get("failure_message"),
-                       'result_id': 0,
-                       'snapshot': None,
-                       'watchman_name': 'Rorschach',
-                       'state': 'FAILURE',
-                       'subject': MESSAGES.get("generic_failure_subject"),
-                       'success': False,
-                       'target': 'Generic S3'
-                   }
+                   self.example_state_cases.get('F')[1],
+                   self.example_generic_results.get("failures")
                    ],
             'TE': [self.example_state_cases.get('T')[1],
-                   self.example_state_cases.get('E')[1], {
-                       'details': 'Rorschach Success\nsome details\n\nRorschach Exception\nsome details\n\n',
-                       'disable_notifier': False,
-                       'dt_created': '2020-12-15T00:00:00+00:00',
-                       'short_message': MESSAGES.get("exception_message"),
-                       'result_id': 0,
-                       'snapshot': None,
-                       'watchman_name': 'Rorschach',
-                       'state': 'EXCEPTION',
-                       'subject': MESSAGES.get("generic_exception_subject"),
-                       'success': None,
-                       'target': 'Generic S3'
-                   }
+                   self.example_state_cases.get('E')[1],
+                   self.example_generic_results.get("exceptions")
                    ],
             'EF': [self.example_state_cases.get('F')[1],
-                   self.example_state_cases.get('E')[1], {
-                       'details': 'Rorschach Failure\nsome details\n\nRorschach Exception\nsome details\n\n',
-                       'disable_notifier': False,
-                       'dt_created': '2020-12-15T00:00:00+00:00',
-                       'short_message': MESSAGES.get("exception_message") + MESSAGES.get("failure_message"),
-                       'result_id': 0,
-                       'snapshot': None,
-                       'watchman_name': 'Rorschach',
-                       'state': 'EXCEPTION',
-                       'subject': MESSAGES.get("generic_fail_exception_subject"),
-                       'success': None,
-                       'target': 'Generic S3'
-                   }
+                   self.example_state_cases.get('E')[1],
+                   self.example_generic_results.get("failures_and_exceptions")
                    ]
         }
 
-    # def test_init_(self):
-
-    @patch('watchmen.process.rorschach.Rorschach._process_checking')
-    @patch('watchmen.process.rorschach.Rorschach._create_summary')
-    @patch('watchmen.process.rorschach.Rorschach._create_result')
-    @patch('watchmen.process.rorschach.Rorschach._load_config')
     @patch('watchmen.process.rorschach.Rorschach._check_invalid_event')
-    def test_monitor(self, mock_event, mock_config, mock_result, mock_summary, mock_checking):
+    @patch('watchmen.process.rorschach.Rorschach._load_config')
+    @patch('watchmen.process.rorschach.Rorschach._process_checking')
+    @patch('watchmen.process.rorschach.Rorschach._create_summary_parameters')
+    @patch('watchmen.process.rorschach.Rorschach._create_results')
+    def test_monitor(self, mock_result, mock_summary, mock_checking, mock_config, mock_event):
         """
         test watchmen.process.rorschach :: Rorschach :: monitor
         """
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        example_process_checking_result = {
+            "target1": {
+                "success": True,
+                "exception_strings": [],
+                "failure_strings": []
+            }
+        }
 
         # check a success case
         mock_event.return_value = False
         mock_config.return_value = self.example_config_file.get('Daily'), None
-        mock_checking.return_value = self.example_process_checking_result
-        mock_summary.return_value = self.example_create_summary_result
+        mock_checking.return_value = example_process_checking_result
+        mock_summary.return_value = [{
+            "details": MESSAGES.get("success_details").format("target1"),
+            "disable_notifier": True,
+            "short_message": MESSAGES.get("success_message"),
+            "state": Watchman.STATE.get("success"),
+            "subject": MESSAGES.get("success_subject").format("target1"),
+            "success": True,
+            "target": "target1"
+        }]
         mock_result.return_value = self.example_create_results.get('TT')
         expected = mock_result()
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
         returned = rorschach_obj.monitor()
         self.assertEqual(expected, returned)
 
         # check a case with invalid event
         mock_event.return_value = True
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
         returned = rorschach_obj.monitor()
         returned = returned[0].to_dict()
         returned['dt_created'] = '2020-12-15T00:00:00+00:00'
-        self.assertEqual(self.expected_invalid_event_email_result, returned)
+        self.assertEqual(returned, self.expected_invalid_event_email_result)
 
         # check a case with s3 target file not loaded
         mock_event.return_value = False
-        mock_config.return_value = None, (None, 's3_config.yaml')
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        mock_config.return_value = None, self.example_traceback
         returned = rorschach_obj.monitor()
         returned = returned[0].to_dict()
         returned['dt_created'] = '2020-12-15T00:00:00+00:00'
-        self.assertEqual(self.expected_invalid_config_file_result, returned)
+        self.assertEqual(returned, self.expected_invalid_config_file_result)
 
     def test_check_invalid_event(self):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_invalid_event
         """
+        example_event_hourly = {'Type': 'Hourly'}
+        invalid_event_examples = [
+            {'Type': 'hourly'},
+            {'Type': 'daily'},
+            {'type': 'Hourly'},
+            {'type': 'Daily'},
+            {'': ''},
+            {}
+        ]
+
         valid_event_tests = [
-            self.example_event_hourly,
+            example_event_hourly,
             self.example_event_daily
         ]
+
         for valid_event in valid_event_tests:
             rorschach_obj = Rorschach(event=valid_event, context=None)
             returned = rorschach_obj._check_invalid_event()
             self.assertFalse(returned)
 
         # Method should return true whenever the event passed in is invalid:
-        for invalid_event in self.example_invalid_events:
+        for invalid_event in invalid_event_examples:
             rorschach_obj = Rorschach(event=invalid_event, context=None)
             returned = rorschach_obj._check_invalid_event()
             self.assertTrue(returned)
 
-    def test_create_invalid_event_results(self):
+    def test_create_invalid_event_result(self):
         """
-        test watchmen.process.rorschach :: Rorschach :: _create_invalid_event_results
+        test watchmen.process.rorschach :: Rorschach :: _create_invalid_event_result
         """
-
         rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned = rorschach_obj._create_invalid_event_results()
+        returned = rorschach_obj._create_invalid_event_result()
         returned = returned[0].to_dict()
         returned["dt_created"] = "2020-12-15T00:00:00+00:00"
         self.assertEqual(self.expected_invalid_event_email_result, returned)
@@ -696,238 +436,572 @@ class TestRorschach(unittest.TestCase):
 
         with mock_open:
             rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+
+            # Testing successful load of config file:
             mock_file.return_value = self.example_config_file
             expected = self.example_config_file.get('Daily')
             returned, returned_tb = rorschach_obj._load_config()
-            self.assertEqual(expected, returned)
-            self.assertEqual(None, returned_tb)
+            self.assertEqual((expected, None), (returned, returned_tb))
 
+            # Testing exception while loading config file:
             mock_file.return_value = None
             mock_open.side_effect = Exception
             returned, returned_msg = rorschach_obj._load_config()
             self.assertEqual(None, returned)
             self.assertTrue(Exception, returned_msg)
 
-    def test_create_config_not_load_results(self):
+    def test_create_config_not_load_result(self):
         """
-        test watchmen.process.rorschach :: Rorschach :: _create_config_not_load_results
+        test watchmen.process.rorschach :: Rorschach :: _create_config_not_load_result
         """
-
-        s3_target = (None, 's3_config.yaml')
         rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned = rorschach_obj._create_config_not_load_results(s3_target)
+        returned = rorschach_obj._create_config_not_load_result(self.example_traceback)
         returned = returned[0].to_dict()
         returned["dt_created"] = "2020-12-15T00:00:00+00:00"
         self.assertEqual(self.expected_invalid_config_file_result, returned)
 
-    @patch('watchmen.process.rorschach.Rorschach._generate_contents')
     @patch('watchmen.process.rorschach._s3.check_bucket')
-    @patch('watchmen.process.rorschach.Rorschach._check_single_file_existence')
-    @patch('watchmen.process.rorschach.Rorschach._check_most_recent_file')
-    @patch('watchmen.process.rorschach.Rorschach._check_file_prefix_suffix')
-    @patch('watchmen.process.rorschach.Rorschach._check_file_empty')
-    @patch('watchmen.process.rorschach.Rorschach._compare_total_file_size_to_threshold')
-    def test_process_checking(self, mock_file_size, mock_file_empty, mock_key_match, mock_recent, mock_full_path,
-                              mock_bucket, mock_contents):
+    @patch('watchmen.process.rorschach.Rorschach._check_single_file')
+    @patch('watchmen.process.rorschach.Rorschach._check_multiple_files')
+    def test_process_checking(self, mock_multiple_files_check, mock_single_file_check, mock_bucket_check):
         """
         test watchmen.process.rorschach :: Rorschach :: _process_checking
         """
-        for key in self.example_process_checking_cases:
-            input = self.example_process_checking_cases .get(key).get('input')
-            # input each edge case for processing checking
-            mock_result = self.example_process_checking_cases .get(key).get('return')
-            # the expected mock results of each edge case
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
 
-            mock_bucket.return_value = mock_result.get('bucket_result')
-            mock_full_path.return_value = mock_result.get('full_path')
-            mock_contents.return_value = mock_result.get('contents')
-            mock_recent.return_value = mock_result.get('recent_contents')
-            mock_key_match.return_value = mock_result.get('prefix_suffix')
-            mock_file_size.return_value = mock_result.get('file_size')
-            mock_file_empty.return_value = mock_result.get('file_empty')
+        for target_example in self.process_checking_examples:
+            mocks = target_example.get("mocks")
+            mock_bucket_check.return_value = mocks.get("mock_bucket", (True, None))
+            mock_single_file_check.return_value = mocks.get("mock_single_file_check", ([], []))
+            mock_multiple_files_check.return_value = mocks.get("mock_multiple_files_check", ([], []))
 
-            expected = self.example_process_checking_results.get(key)
-            rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-            returned = rorschach_obj._process_checking(input)
-            self.assertEqual(returned, expected)
+            expected = target_example.get("processed_targets")
+            returned = rorschach_obj._process_checking([target_example])
+            self.assertEqual(expected, returned)
 
-    def test_create_summary(self):
+    @patch('watchmen.process.rorschach.Rorschach._create_details')
+    def test_create_summary_parameters(self, mock_details):
         """
-        test watchmen.process.rorschach :: Rorschach :: _create_summary
+        test watchmen.process.rorschach :: Rorschach :: _create_summary_parameters
         """
-        for key in self.example_create_summary_results:
-            input = self.example_process_checking_results.get(key)  # input each edge case for creating summary
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        mock_details.return_value = "Example details."
 
-            expected = self.example_create_summary_results.get(key)
-            rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-            returned = rorschach_obj._create_summary(input)
-            self.assertEqual(returned, expected)
+        for target_example in self.process_checking_examples:
+            processed_target_example = target_example.get("processed_targets")
+            expected = target_example.get("summary_parameters")
+            returned = rorschach_obj._create_summary_parameters(processed_target_example)
+            self.assertEqual(expected, returned)
 
-    def test_create_result(self):
+    @patch('watchmen.process.rorschach.Rorschach._create_generic_result')
+    def test_create_results(self, mock_generic_result):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_result
         """
-        for key in self.example_create_results:
-            summary = self.example_state_cases_summary[key]
-            result = self.example_create_results[key]
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        mock_generic_results = {
+            "TT": self.example_generic_results.get("success"),
+            "TF": self.example_generic_results.get("failures"),
+            "TE": self.example_generic_results.get("exceptions"),
+            "EF": self.example_generic_results.get("failures_and_exceptions")
+        }
+        example_state_cases_summary = {
+            'TT': [self.example_state_cases.get('T')[0],
+                   self.example_state_cases.get('T')[0]
+                   ],
+            'TF': [self.example_state_cases.get('T')[0],
+                   self.example_state_cases.get('F')[0]
+                   ],
+            'TE': [self.example_state_cases.get('T')[0],
+                   self.example_state_cases.get('E')[0]
+                   ],
+            'EF': [self.example_state_cases.get('F')[0],
+                   self.example_state_cases.get('E')[0]
+                   ]
+        }
 
-            rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-            returned = rorschach_obj._create_result(summary)
-            example_result_list = []
-            for obj in returned:
+        for key in self.example_create_results:
+            summary = example_state_cases_summary
+            expected_result_list = self.example_create_results.get(key)
+            mock_generic_result.return_value = mock_generic_results.get(key)
+
+            result = rorschach_obj._create_results(summary)
+            returned = []
+            # The mocked generic result is already a dict, so it doesn't need to be converted:
+            for obj in result[:2]:
                 obj = obj.to_dict()
                 obj['dt_created'] = '2020-12-15T00:00:00+00:00'
-                example_result_list.append(obj)
-            self.assertEqual(example_result_list, result)
+                returned.append(obj)
+            # Append the mocked generic result:
+            returned.append(result[2])
+            self.assertEqual(expected_result_list, returned)
 
     def test_generate_key(self):
         """
         test watchmen.process.rorschach :: Rorschach :: _generate_key
         """
-
-        prefix_format = 'some/path/year=%0Y/month=%0m/day=%0d/'
-        check_time = datetime.datetime.now(pytz.utc) - datetime.timedelta(**{'days': 1})
-
-        # test the Try case
-        expected, expected_tb = check_time.strftime(prefix_format), None
+        prefix_format_example = 'some/path/year=%0Y/month=%0m/day=%0d/'
+        check_time_example = datetime.datetime.now(pytz.utc) - datetime.timedelta(**{'days': 1})
         rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_tb = rorschach_obj._generate_key(prefix_format, self.example_event_daily.get('Type'))
+
+        # Test successful key generation with default time_offset:
+        expected, expected_tb = check_time_example.strftime(prefix_format_example), None
+        returned, returned_tb = rorschach_obj._generate_key(prefix_format_example, self.example_event_daily.get('Type'))
         self.assertEqual((expected, expected_tb), (returned, returned_tb))
 
-        # test the Exception case
+        # Test successful key generation with specified time_offset:
+        check_time_example = datetime.datetime.now(pytz.utc) - datetime.timedelta(**{'days': 3})
+        expected, expected_tb = check_time_example.strftime(prefix_format_example), None
+        returned, returned_tb = rorschach_obj._generate_key(prefix_format_example,
+                                                            self.example_event_daily.get('Type'), 3)
+        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Test exception while generating key:
         expected, expected_tb = None, 'Traceback'
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
         returned, returned_tb = rorschach_obj._generate_key(None, None)
         self.assertEqual(expected, returned)
         self.assertTrue(expected_tb in returned_tb)
 
     @patch('watchmen.process.rorschach.Rorschach._generate_key')
     @patch('watchmen.process.rorschach._s3.generate_pages')
-    def test_generate_contents(self, mock_pages, mock_key):
+    @patch('watchmen.process.rorschach.Rorschach._remove_whitelisted_files_from_contents')
+    def test_generate_contents(self, mock_whitelist, mock_pages, mock_key):
         """
         test watchmen.process.rorschach :: Rorschach :: _generate_contents
         """
-
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
         item = self.example_config_file.get('Daily')[0].get('items')[0]
+
+        # Test successful _generate_contents call
         mock_key.return_value = 'some/path/to/', None
         mock_pages.return_value = self.example_contents
-        expected_contents, expected_count, expected_prefix, expected_path, expected_tb = \
-            self.example_contents, 4, 'some/path/to/', 's3://bucket/some/path/to/',  None
-        # test the Try case without offset
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned_contents, returned_count, returned_prefix, returned_path, returned_tb = \
-            rorschach_obj._generate_contents(item)
-        self.assertEqual((expected_contents, expected_count, expected_prefix, expected_path, expected_tb),
-                         (returned_contents, returned_count, returned_prefix, returned_path, returned_tb))
 
-        # test the Try case with offset
-        item.update({'offset': 2})
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned_contents, returned_count, returned_prefix, returned_path, returned_tb = \
-            rorschach_obj._generate_contents(item)
-        self.assertEqual((expected_contents, expected_count, expected_prefix, expected_path, expected_tb),
-                         (returned_contents, returned_count, returned_prefix, returned_path, returned_tb))
+        expected_dict = {
+            "contents": self.example_contents,
+            "count": len(self.example_contents),
+            "s3_prefix": 's3://bucket/some/path/to/'
+        }
+        expected_tb = None
 
-        # test the Exception case
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned_contents, returned_count, returned_prefix, returned_path, returned_tb = \
-            rorschach_obj._generate_contents(None)
-        self.assertEqual((None, None, None, None), (returned_contents, returned_count, returned_prefix, returned_path))
+        returned_dict, returned_tb = rorschach_obj._generate_contents(item)
+        self.assertEqual((expected_dict, expected_tb), (returned_dict, returned_tb))
+
+        # Testing exception:
+        expected_dict = {
+            "contents": None,
+            "count": None,
+            "s3_prefix": None
+        }
+
+        returned_dict, returned_tb = rorschach_obj._generate_contents(None)
+        self.assertEqual(returned_dict, expected_dict)
         self.assertTrue(self.example_traceback in returned_tb)
 
     @patch('watchmen.process.rorschach._s3.validate_file_on_s3')
-    @patch('watchmen.process.rorschach.Rorschach._generate_key')
-    def test_check_single_file_existence(self, mock_key, mock_valid):
+    def test_check_single_file_existence(self, mock_valid):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_single_file_existence
         """
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        s3_key_example = 'some/path/to/something.parquet'
+        item = {
+            "bucket_name": "bucket",
+            "full_path": "some/path/to/something.parquet"
+        }
 
-        mock_key.return_value = 'some/path/to/something.parquet', None
+        # Testing successful file existence check:
         mock_valid.return_value = True
-        item = self.example_process_checking_cases .get('fail_full_path').get('input')[0].get('items')[0]
-        expected, expected_path, expected_tb = True, 'some/path/to/something.parquet', None
-
-        # test the Try case without offset key
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_path, returned_tb = rorschach_obj._check_single_file_existence(item)
-        self.assertEqual((expected, expected_path, expected_tb), (returned, returned_path, returned_tb))
-
-        # test the Try case with offset key
-        item.update({'offset': 2})
-        returned, returned_path, returned_tb = rorschach_obj._check_single_file_existence(item)
-        self.assertEqual((expected, expected_path, expected_tb), (returned, returned_path, returned_tb))
-
-        # test the Exception case
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_path, returned_tb = rorschach_obj._check_single_file_existence(None)
-        self.assertEqual((None, None), (returned, returned_path))
-        self.assertTrue(self.example_traceback in returned_tb)
-
-    def test_check_most_recent_file(self):
-        """
-        test watchmen.process.rorschach :: Rorschach :: _check_most_recent_file
-        """
-        check_most_recent_file = 2
-        expected = [self.example_contents[3], self.example_contents[2]]
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned = rorschach_obj._check_most_recent_file(self.example_contents, check_most_recent_file)
-        self.assertEqual(expected, returned)
-
-    def test_check_file_prefix_suffix(self):
-        """
-        test watchmen.process.rorschach :: Rorschach :: _check_file_prefix_suffix
-        """
-        suffix = '.parquet'
-        prefix = 'some/path/to/'
-
-        # test the Try case
-        expected, expected_tb = False, None
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_tb = rorschach_obj._check_file_prefix_suffix(self.example_contents, suffix, prefix)
+        expected, expected_tb = True, None
+        returned, returned_tb = rorschach_obj._check_single_file_existence(item, s3_key_example)
         self.assertEqual((expected, expected_tb), (returned, returned_tb))
 
-        # test the Exception case
-        expected = None
+        # Testing exception while checking single file existence:
+        mock_valid.side_effect = Exception
+        returned, returned_tb = rorschach_obj._check_single_file_existence(item, s3_key_example)
+        self.assertEqual(None, returned)
+        self.assertTrue(self.example_traceback in returned_tb)
+
+    def test_check_file_suffix(self):
+        """
+        test watchmen.process.rorschach :: Rorschach :: _check_file_suffix
+        """
+        same_suffix_contents = [{
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 20, 29)
+        }, {
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 21, 29)
+        }]
+
+        different_suffix_contents = [{
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 20, 29)
+        }, {
+            'Key': 'some/path/to/something.json',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 21, 29)
+        }]
+
+        suffix = '.parquet'
         rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_tb = rorschach_obj._check_file_prefix_suffix(None, None, None)
+
+        # Test for all correct suffixes:
+        expected, expected_tb = "", None
+        returned, returned_tb = rorschach_obj._check_file_suffix(same_suffix_contents, suffix)
+        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Test for failed suffix check:
+        expected, expected_tb = "{}{}".format(different_suffix_contents[1].get('Key'), const.LINE_SEPARATOR), None
+        returned, returned_tb = rorschach_obj._check_file_suffix(different_suffix_contents, suffix)
+        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Test for exceptions:
+        expected, expected_tb = None, self.example_traceback
+        returned, returned_tb = rorschach_obj._check_file_suffix(None, None)
+        self.assertEqual(expected, returned)
+        self.assertTrue(expected_tb in returned_tb)
+
+    @patch('watchmen.process.rorschach.Rorschach._generate_contents')
+    @patch('watchmen.process.rorschach.Rorschach._check_file_suffix')
+    @patch('watchmen.process.rorschach.Rorschach._check_multiple_files_size')
+    def test_check_multiple_files(self, mock_multiple_files_size_check, mock_suffix_check, mock_generate_contents):
+        """
+        test watchmen.process.rorschach :: Rorschach :: _check_multiple_files_size
+        """
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        example_contents_dicts = {
+            "generate_contents_success": {
+                "contents": self.example_contents,
+                "count": 5,
+                "s3_prefix": self.example_s3_prefix
+            },
+            "no_files_failure": {
+                "contents": {},
+                "count": 0,
+                "s3_prefix": self.example_s3_prefix
+            },
+        }
+        example_suffix_item = {
+            "prefix": "example/path/",
+            "time_offset": 2,
+            "suffix": ".parquet",
+        }
+        example_total_files_item = {
+            "prefix": "example/path/",
+            "min_total_files": 10
+        }
+
+        # Test generate contents exception:
+        mock_generate_contents.return_value = None, self.example_traceback
+
+        expected_exception_strings = [MESSAGES.get("exception_string_format").format(example_suffix_item,
+                                                                                     self.example_traceback)]
+        expected_failure_strings = []
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(example_suffix_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # Test zero files failure:
+        mock_generate_contents.return_value = example_contents_dicts.get("no_files_failure"), None
+
+        expected_exception_strings = []
+        expected_failure_strings = [MESSAGES.get('failure_invalid_s3_key').format(self.example_s3_prefix)]
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(example_suffix_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # Test suffix failure:
+        bad_suffix_files = "bad_file1.json, bad_file2.json"
+        mock_generate_contents.return_value = example_contents_dicts.get("generate_contents_success"), None
+        mock_suffix_check.return_value = bad_suffix_files, None
+        mock_multiple_files_size_check.return_value = None, None
+
+        expected_exception_strings = []
+        expected_failure_strings = [MESSAGES.get('failure_invalid_suffix').format(example_suffix_item.get('suffix'),
+                                                                                  bad_suffix_files)]
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(example_suffix_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # Test check multiple files failure:
+        mock_generate_contents.return_value = example_contents_dicts.get("generate_contents_success"), None
+        mock_suffix_check.return_value = None, None
+        mock_multiple_files_size_check.return_value = "File size failure check occurred.", None
+
+        expected_exception_strings = []
+        expected_failure_strings = ["File size failure check occurred."]
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(example_suffix_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # Test min total files failure:
+        mock_generate_contents.return_value = example_contents_dicts.get("generate_contents_success"), None
+        mock_suffix_check.return_value = None, None
+        mock_multiple_files_size_check.return_value = None, None
+
+        expected_exception_strings = []
+        expected_failure_strings = [MESSAGES.get('failure_total_objects').format(
+            self.example_s3_prefix, 5, example_total_files_item['min_total_files'])]
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(
+            example_total_files_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # Testing success:
+        mock_generate_contents.return_value = example_contents_dicts.get("generate_contents_success"), None
+        mock_suffix_check.return_value = None, None
+        mock_multiple_files_size_check.return_value = None, None
+
+        expected_exception_strings = []
+        expected_failure_strings = []
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(example_suffix_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+    def test_check_multiple_files_size(self):
+        """
+        test watchmen.process.rorschach :: Rorschach :: _check_multiple_files_size
+        """
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        example_successful_contents = [{
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 20, 29)
+        }, {
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 21, 29)
+        }, {
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 22, 29)
+        }]
+
+        examples = [
+            {
+                "contents": self.example_contents,
+                "item": self.example_config_file.get('Daily')[0].get('items')[0],
+                "expected": "{}\n\n".format(MESSAGES.get('failure_file_empty').format(
+                    self.example_contents[3]['Key'])) + MESSAGES.get('failure_multiple_file_size').format(
+                    self.example_s3_prefix, 0.3, 50),
+                "expected_tb": None
+            },
+            {
+                "contents": example_successful_contents,
+                "item": self.example_config_file.get('Daily')[0].get('items')[1],
+                "expected": "",
+                "expected_tb": None
+            }
+        ]
+
+        for example in examples:
+            expected = example.get("expected")
+            expected_tb = example.get("expected_tb")
+
+            returned, returned_tb = rorschach_obj._check_multiple_files_size(example.get("contents"),
+                                                                             example.get("item"),
+                                                                             self.example_s3_prefix)
+            self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Testing exception while checking multiple files size:
+        expected, expected_tb = None, self.example_traceback
+
+        returned, returned_tb = rorschach_obj._check_multiple_files_size(None, None, None)
+        self.assertEqual(expected, returned)
+        self.assertTrue(expected_tb in returned_tb)
+
+    @patch('watchmen.process.rorschach.Rorschach._generate_key')
+    @patch('watchmen.process.rorschach.Rorschach._check_single_file_existence')
+    @patch('watchmen.process.rorschach.Rorschach._check_single_file_size')
+    def test_check_single_file(self, mock_check_size, mock_check_existence, mock_generate_key):
+        """
+        test watchmen.process.rorschach :: Rorschach :: _check_single_file
+        """
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        example_item = {
+            "full_path": "example/bad/path/test.json",
+            "time_offset": 2,
+            "min_total_size_kb": 50
+        }
+
+        # Test for generate_key failure:
+        mock_generate_key.return_value = None, self.example_traceback
+
+        expected_exception_string = self.example_traceback
+        expected_failure_strings = []
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(example_item)
+        self.assertEqual(expected_failure_strings, returned_failure_strings)
+        self.assertTrue(expected_exception_string in returned_exception_strings[0])
+
+        # Test for single file existence check failure:
+        mock_generate_key.return_value = self.example_s3_prefix, None
+        mock_check_existence.return_value = False, None
+
+        expected_exception_strings = []
+        expected_failure_strings = [MESSAGES.get('failure_invalid_s3_key').format(self.example_s3_prefix)]
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(example_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # Test for single file size check failure:
+        mock_generate_key.return_value = self.example_s3_prefix, None
+        mock_check_existence.return_value = True, None
+        mock_check_size.return_value = False, None
+
+        expected_exception_strings = []
+        expected_failure_strings = [MESSAGES.get('failure_single_file_size').format(
+            example_item.get("min_total_size_kb"), self.example_s3_prefix)]
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(example_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # Test for success:
+        mock_generate_key.return_value = self.example_s3_prefix, None
+        mock_check_existence.return_value = True, None
+        mock_check_size.return_value = True, None
+
+        expected_exception_strings = []
+        expected_failure_strings = []
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(example_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+    @patch('botocore.client.BaseClient._make_api_call')
+    def test_check_single_file_size(self, mock_get_object):
+        """
+        test watchmen.process.rorschach :: Rorschach :: _check_single_file_size
+        """
+        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        example_item = {
+            "bucket_name": "random-bucket-that-doesnt-exist",
+            "min_total_size_kb": 1
+        }
+
+        # Test file size check success:
+        mock_get_object.return_value = {"ContentLength": 10000}
+        expected, expected_tb = True, None
+        returned, returned_tb = rorschach_obj._check_single_file_size(example_item, "random-s3-key/example.json")
+        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Test file size check failure:
+        mock_get_object.return_value = {"ContentLength": 100}
+        expected, expected_tb = False, None
+        returned, returned_tb = rorschach_obj._check_single_file_size(example_item, "random-s3-key/example.json")
+        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Test file size check exception:
+        mock_get_object.return_value = {}
+        expected, expected_tb = None, self.example_traceback
+        returned, returned_tb = rorschach_obj._check_single_file_size(example_item, "random-s3-key/example.json")
         self.assertEqual(expected, returned)
         self.assertTrue(self.example_traceback in returned_tb)
 
-    def test_check_file_empty(self):
+    def test_create_details(self):
         """
-        test watchmen.process.rorschach :: Rorschach :: _check_file_empty
+        test watchmen.process.rorschach :: Rorschach :: _create_details
         """
-
-        # test the Try case
-        expected, expected_path, expected_tb = True, ['some/path/to/something.json'], None
         rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_path, returned_tb = rorschach_obj._check_file_empty(self.example_contents)
-        self.assertEqual((expected, expected_path, expected_tb), (returned, returned_path, returned_tb))
+        example_exception_strings = ["Exception 1", "Exception 2"]
+        example_failure_strings = ["Failure 1", "Failure 2"]
+        example_target_check_results = {
+            "success_target": {
+                "success": True,
+                "exception_strings": [],
+                "failure_strings": [],
+                "expected_details": MESSAGES.get("success_details").format("success_target")
+            },
+            "exception_target": {
+                "success": None,
+                "exception_strings": example_exception_strings,
+                "failure_strings": [],
+                "expected_details": MESSAGES.get('exception_details').format("\n\n".join(example_exception_strings))
+            },
+            "failure_target": {
+                "success": False,
+                "exception_strings": example_exception_strings,
+                "failure_strings": example_failure_strings,
+                "expected_details":
+                    MESSAGES.get("failure_details").format("\n\n".join(example_failure_strings)) + "\n\n{}\n\n{}".
+                    format(const.MESSAGE_SEPARATOR, MESSAGES.get('exception_details').format(
+                        "\n\n".join(example_exception_strings)))
+            }
+        }
 
-        # test the Exception case
-        expected, expected_path = None, None
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_path, returned_tb = rorschach_obj._check_file_empty(None)
-        self.assertEqual((expected, expected_path), (returned, returned_path))
-        self.assertTrue(self.example_traceback in returned_tb)
+        for target_name in example_target_check_results:
+            expected_details = example_target_check_results.get(target_name).get("expected_details")
+            returned_details = rorschach_obj._create_details(target_name, example_target_check_results.get(target_name))
+            self.assertEqual(expected_details, returned_details)
 
-    def test_compare_total_file_size_to_threshold(self):
+    def test_create_generic_result(self):
         """
-        test watchmen.process.rorschach :: Rorschach :: _compare_total_file_size_to_threshold
+        test watchmen.process.rorschach :: Rorschach :: _create_generic_result
         """
-        con_total_size = 0.4
-
-        # test the Try case
-        expected, expected_count, expected_tb = True, 0.3, None
         rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_count, returned_tb = rorschach_obj. \
-            _compare_total_file_size_to_threshold(self.example_contents, con_total_size)
-        self.assertEqual((expected, expected_count, expected_tb), (returned, returned_count, returned_tb))
 
-        # test the Exception case
-        expected, expected_count = None, None
+        example_parameters = {
+            "failures_and_exceptions": {
+                'failure_in_parameters': True,
+                'exception_in_parameters': True,
+                'details': MESSAGES.get("failure_exception_message")
+            },
+            "failures": {
+                'failure_in_parameters': True,
+                'exception_in_parameters': False,
+                'details': MESSAGES.get("failure_message")
+            },
+            "exceptions": {
+                'failure_in_parameters': False,
+                'exception_in_parameters': True,
+                'details': MESSAGES.get("exception_message")
+            },
+            "success": {
+                'failure_in_parameters': False,
+                'exception_in_parameters': False,
+                'details': MESSAGES.get("success_message")
+            },
+        }
+
+        for parameters in example_parameters:
+            expected = self.example_generic_results.get(parameters)
+            returned = rorschach_obj._create_generic_result(example_parameters[parameters]['failure_in_parameters'],
+                                                            example_parameters[parameters]['exception_in_parameters'],
+                                                            example_parameters[parameters]['details'])
+            returned = returned.to_dict()
+            returned['dt_created'] = '2020-12-15T00:00:00+00:00'
+            self.assertEqual(expected, returned)
+
+    def test_remove_whitelisted_files_from_contents(self):
+        """
+        test watchmen.process.rorschach :: Rorschach :: _create_generic_result
+        """
         rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
-        returned, returned_count, returned_tb = rorschach_obj. \
-            _compare_total_file_size_to_threshold(None, con_total_size)
-        self.assertEqual((expected, expected_count), (returned, returned_count))
-        self.assertTrue(self.example_traceback in returned_tb)
+        example_whitelist = ['something.json']
+        expected_returned_contents = [{
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 20, 29)
+        }, {
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 21, 29)
+        }, {
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': datetime.datetime(2020, 5, 20, 0, 22, 29)
+        }]
+
+        returned = rorschach_obj._remove_whitelisted_files_from_contents(example_whitelist, self.example_contents)
+        self.assertEqual(returned, expected_returned_contents)
