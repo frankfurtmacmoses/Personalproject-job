@@ -386,6 +386,12 @@ deploy-atg-prod: clean
 	@echo
 	@echo "- DONE :$@"
 
+deploy-saas-test: clean
+	@echo
+	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-saas-test DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE :$@"
+
 deploy-saas-prod: clean
 	@echo
 	BUILD_ENV=prod ACCOUNT=saas BUCKET=ib-cyberint-prod-deploys DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
