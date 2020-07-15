@@ -271,78 +271,157 @@ class Comedian(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
-    def _create_results(self, parameters):
+    def _create_generic_result(self, failure, exception, details):
         """
-        Creates and returns list of the Result objects. This list includes the Result object for the pager SNS topic and
-        a Result object for the email SNS topic.
-        :param parameters: Dictionary of Result attributes corresponding to the result of the quota checks.
-        :return: List of Result objects: [ pager_result, email_result ]
+        Method to create the generic result object
+        :param failure: Boolean value to indicate a failure occurred
+        :param exception: Boolean value to indicate an exception occurred
+        :param details: String of all api details
         """
-        pager_result = Result(
-            details=parameters.get("details"),
-            disable_notifier=parameters.get("disable_notifier"),
-            short_message=parameters.get("short_message"),
-            snapshot=parameters.get("snapshot"),
-            watchman_name=self.watchman_name,
-            state=parameters.get("state"),
-            subject=parameters.get("subject"),
-            success=parameters.get("success"),
-            target=TARGET_PAGER,
-        )
-        email_result = Result(
-            details=parameters.get("details"),
-            disable_notifier=parameters.get("disable_notifier"),
-            short_message=parameters.get("short_message"),
-            snapshot=parameters.get("snapshot"),
-            watchman_name=self.watchman_name,
-            state=parameters.get("state"),
-            subject=parameters.get("subject"),
-            success=parameters.get("success"),
-            target=TARGET_EMAIL,
-        )
-        return [pager_result, email_result]
+        if exception:
+            disable_notifier = False
+            short_message = MESSAGES.get("exception_short_message")
+            state = Watchman.STATE.get("exception")
+            subject = MESSAGES.get("exception_subject")
+            success = False
 
-    def _create_result_parameters(self, success, details, quotas):
+        elif failure:
+            disable_notifier = False
+            short_message = MESSAGES.get("failure_short_message")
+            state = Watchman.STATE.get("failure")
+            subject = MESSAGES.get("failure_subject")
+            success = False
+
+        else:
+            disable_notifier = True
+            short_message = MESSAGES.get("success_short_message")
+            state = Watchman.STATE.get("success")
+            subject = MESSAGES.get("success_subject")
+            success = True
+
+        return Result(
+            details=details,
+            disable_notifier=disable_notifier,
+            short_message=short_message,
+            snapshot={},
+            watchman_name=self.watchman_name,
+            state=state,
+            subject=subject,
+            success=success,
+            target=TARGET_EMAIL.format(GENERIC),
+        )
+
+    def _create_results(self, parameters, failure_in_results, exception_in_results):
+        """
+        Takes in a list of parameters describing the state of the api quotas that have been checked and creates a list
+        of result objects as well as a generic result object which combines all parameters
+        :param parameters: list of parameters describing the state of the api quotas
+        :param failure_in_results: Boolean for if there was a failure
+        :param exception_in_results: Boolean for if there was an exception
+        :return: List of results objects for each api as well as a generic result object
+        """
+        results = []
+        generic_details = ''
+
+        for param in parameters:
+            generic_details += param.get("details") + "\n" + const.MESSAGE_SEPARATOR
+
+            if param.get("api_name") is not ERROR:
+
+                email_result = Result(
+                    details=param.get("details"),
+                    disable_notifier=param.get("disable_notifier"),
+                    short_message=param.get("short_message"),
+                    snapshot=param.get("snapshot"),
+                    watchman_name=self.watchman_name,
+                    state=param.get("state"),
+                    subject=param.get("subject"),
+                    success=param.get("success"),
+                    target=TARGET_EMAIL.format(param.get("api_name")),
+                )
+                pager_result = Result(
+                    details=param.get("details"),
+                    disable_notifier=param.get("disable_notifier"),
+                    short_message=param.get("short_message"),
+                    snapshot=param.get("snapshot"),
+                    watchman_name=self.watchman_name,
+                    state=param.get("state"),
+                    subject=param.get("subject"),
+                    success=param.get("success"),
+                    target=TARGET_PAGER.format(param.get("api_name")),
+                )
+
+                results.extend((email_result, pager_result))
+
+        generic_result = self._create_generic_result(failure_in_results, exception_in_results, generic_details)
+        results.append(generic_result)
+        return results
+
+    def _create_result_parameters(self, targets_check_info):
         """
         Creates the Result object parameters based on the success of the quota checks.
-        :param success: Boolean indicating the result of checking the VirusTotal quotas. True if all quotas were within
-        the threshold, False if not, and None if an exception was encountered while attempting to check the quotas.
-        :param details: Details about the quota check result.
-        :param quotas: Snapshot of the VirusTotal quotas.
+        :param targets_check_info: A dictionary of success, details, snapshots for each target
         :return: A dictionary containing "details", "disable_notifier", "short_message", "snapshot", "state", "subject",
         and "success".
         """
+
         parameter_chart = {
             None: {
-                "details": details,
                 "disable_notifier": False,
                 "short_message": MESSAGES.get("exception_short_message"),
-                "snapshot": quotas,
                 "state": Watchman.STATE.get("exception"),
                 "subject": MESSAGES.get("exception_subject"),
                 "success": False,
             },
             True: {
-                "details": MESSAGES.get("success_details"),
                 "disable_notifier": True,
-                "short_message": MESSAGES.get("success_short_message"),
-                "snapshot": quotas,
                 "state": Watchman.STATE.get("success"),
-                "subject": MESSAGES.get("success_subject"),
                 "success": True,
             },
             False: {
-                "details": details,
                 "disable_notifier": False,
-                "short_message": MESSAGES.get("failure_short_message"),
-                "snapshot": quotas,
                 "state": Watchman.STATE.get("failure"),
-                "subject": MESSAGES.get("failure_subject"),
                 "success": False,
             },
         }
-        parameters = parameter_chart.get(success)
-        return parameters
+
+        parameters = []
+        exception_occurred = False
+        failure_occurred = False
+        for api_name, target_check in targets_check_info.items():
+            api_success = target_check.get("success")
+            target_parameters = parameter_chart.get(api_success).copy()
+
+            if api_success is None:
+                exception_occurred = True
+                target_parameters.update({
+                    "details": target_check.get("api_details"),
+                    "snapshot": target_check.get("snapshot"),
+                    "api_name": api_name,
+                })
+
+            elif not api_success:
+                failure_occurred = True
+                target_parameters.update({
+                    "details": target_check.get("api_details"),
+                    "short_message": MESSAGES.get("failure_short_message_single").format(api_name),
+                    "snapshot": target_check.get("snapshot"),
+                    "subject": MESSAGES.get("failure_subject_single").format(api_name),
+                    "api_name": api_name,
+                })
+
+            else:
+                target_parameters.update({
+                    "details": MESSAGES.get("success_details_single").format(api_name),
+                    "short_message": MESSAGES.get("success_short_message_single").format(api_name),
+                    "snapshot": target_check.get("snapshot"),
+                    "subject": MESSAGES.get("success_subject_single").format(api_name),
+                    "api_name": api_name,
+                })
+
+            parameters.append(target_parameters)
+
+        return parameters, failure_occurred, exception_occurred
 
     def _create_signature(self, sign_key, msg, timestamp, hash_alg, encode):
         """
@@ -556,4 +635,3 @@ class Comedian(Watchman):
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
-
