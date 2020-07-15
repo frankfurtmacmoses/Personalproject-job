@@ -7,50 +7,61 @@ Watchman will send both email and SMS alerts if the used-to-allowed ratio crosse
 @author: Michael Garcia
 @email: garciam@infoblox.com
 """
+
+import hashlib
+import hmac
+import os
 import requests
 import traceback
-from datetime import datetime
+import yaml
 
+from datetime import datetime
 from watchmen import const
 from watchmen import messages
 from watchmen.common.result_svc import Result
 from watchmen.common.watchman import Watchman
 from watchmen.config import settings
-from watchmen.process.quotas import MONTHLY_QUOTAS
 
 
-GROUP_QUOTA_URL = settings("comedian.group_quota_url")
-HEADERS = {"x-apikey": settings("comedian.api_key")}
+ERROR = "ERROR"
+CONFIG_NAME = 'api_targets.yaml'
+CONFIG_PATH = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), CONFIG_NAME)
+
+GENERIC = 'Generic Quota'
 MESSAGES = messages.COMEDIAN
-TARGET_EMAIL = "VirusTotal Email"
-TARGET_PAGER = "VirusTotal Pager"
-THRESHOLD_START = settings("comedian.threshold_start")
+TARGET_EMAIL = "{} Email"
+TARGET_PAGER = "{} Pager"
 
 
 class Comedian(Watchman):
-
     # pylint: disable=unused-argument
     def __init__(self, event, context):
         super().__init__()
 
     def monitor(self) -> [Result]:
-        month_threshold = self._calculate_threshold()
-        group_quota_info, tb = self._get_group_info()
+        api_targets, tb = self._load_config()
+        if tb or api_targets is None:
+            details = MESSAGES.get("exception_config_details").format(tb)
+            result = self._create_generic_result(False, True, details)
+            return [result]
 
-        if not group_quota_info:
-            details = MESSAGES.get("exception_details").format(tb)
-            parameters = self._create_result_parameters(None, details, {})
-            results = self._create_results(parameters)
+        targets_quota_info = self._get_targets_quota_info(api_targets)
+        if not targets_quota_info:
+            details = MESSAGES.get("exception_api_details")
+            result = self._create_generic_result(False, True, details)
+            return [result]
 
-            return results
+        targets_check_info, tb = self._check_api_quotas(targets_quota_info)
+        if tb:
+            details = MESSAGES.get("quota_exception_details").format(tb)
+            result = self._create_generic_result(False, True, details)
+            return [result]
 
-        group_check_info = self._check_group_info(month_threshold, group_quota_info)
-        parameters = self._create_result_parameters(group_check_info.get("success"),
-                                                    group_check_info.get("details"),
-                                                    group_quota_info)
-        results = self._create_results(parameters)
+        result_parameters, failure_in_results, exception_in_results = self._create_result_parameters(targets_check_info)
 
-        return results
+        return self._create_results(result_parameters,  failure_in_results, exception_in_results)
+
 
     def _calculate_threshold(self):
         """
