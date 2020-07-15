@@ -63,57 +63,105 @@ class Comedian(Watchman):
         return self._create_results(result_parameters,  failure_in_results, exception_in_results)
 
 
-    def _calculate_threshold(self):
+    def _calculate_threshold(self, api_target):
         """
         Calculates the used-to-allowed quota threshold based on the current day of the month. The threshold is
-        calculated by starting at 28% for the first day of the month, and adding 2% to the threshold each day. By the
-        end of the month the threshold will be around 90%.
+        calculated by starting at the api-specified start_threshold(found in api_targets.yaml) for the first day of the
+        month, and adding the api-specified increment to the threshold each day.
+        :param: The api to calculate the threshold for
         :return: The current used-to-allowed quota threshold.
         """
-        day = datetime.utcnow().day
-        threshold = (THRESHOLD_START + (day * 2)) / 100
-
-        return threshold
-
-    def _check_group_info(self, threshold, group_quota_info):
-        """
-        Checks the quotas within the group_quota_info to ensure that the values are within the current threshold. If any
-        quotas listed in MONTHLY_QUOTAS is over the threshold, an SNS alert will be sent.
-        :param threshold: The current used-to-allowed threshold.
-        :param group_quota_info: Dictionary of the quotas for the "infoblox" group. These quotas include the Used and
-        Allowed values, which is compared against the current used-to-allowed threshold.
-        :return: Dictionary containing information about the quota checks. "success" indicates the result of checking
-        all the quotas. The "details" is a properly formatted string of all the quotas that exceeded the
-        used-to-allowed threshold.
-        """
-        group_check_info = {
-            "success": True,
-            "details": ""
-        }
-
         try:
-            for quota in MONTHLY_QUOTAS:
-                current_quota = group_quota_info[quota]
-                used = current_quota["used"]
-                allowed = current_quota["allowed"]
-
-                # Multiplying `used` by 1.0 to prevent the decimal being truncated by Python.
-                quota_usage = (used * 1.0) / allowed
-                if quota_usage >= threshold:
-                    exceeded_details = MESSAGES.get("quota_exceeded")\
-                                               .format(quota, threshold * 100, used, allowed, quota_usage * 100)
-
-                    group_check_info["details"] += (exceeded_details + "\n" + const.MESSAGE_SEPARATOR + "\n")
-                    group_check_info["success"] = False
-
-            return group_check_info
+            day = datetime.utcnow().day
+            threshold = (api_target['threshold_start'] + (day * api_target['increment'])) / 100
+            return threshold, None
         except Exception as ex:
+            self.logger.error("ERROR With Threshold Values!")
             self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
+            return None, tb
 
-            group_check_info["details"] = MESSAGES.get("quota_exception_details").format(tb)
-            group_check_info["success"] = None
+    def _check_api_quotas(self, target_quota_info):
+        """
+        Checks the quotas for each API within target_quota_info to ensure that the values are within the
+        current threshold. If any quotas listed are above their threshold, an SNS alert will be sent.
+        :param target_quota_info: Dictionary of each API's formatted quota usage information. Each quota includes
+        Used and Allowed values, which is compared against their API's threshold.
+        :return: A list containing the results of the quota check for each API as well as a combined result.
+        """
+        check_results = {}
+        try:
+            for api_name in target_quota_info:
+                success = True
+                api_details = ''
+
+                #checks to see if there is a traceback instead of target quota data
+                if isinstance(target_quota_info.get(api_name), str):
+                    tb = target_quota_info.get(api_name)
+                    api_details = MESSAGES.get("exception_details").format(api_name, tb)
+                    success = None
+                else:
+
+                    threshold, tb = self._calculate_threshold(target_quota_info[api_name])
+                    if tb:
+                        api_details = MESSAGES.get("exception_details").format(api_name, tb)
+                        success = None
+
+                    else:
+                        target_quota_list = target_quota_info[api_name]['quotas']
+                        for quota in target_quota_list:
+
+                            used = target_quota_list[quota]["used"]
+                            allowed = target_quota_list[quota]["allowed"]
+
+                            if used is None or not allowed:
+                                success = None
+                                api_details += MESSAGES.get('exception_quota_details').format(quota)
+                                continue
+
+                            used = int(used)
+                            allowed = int(allowed)
+                            check_quota_results, check_success = self._check_threshold(threshold, used, allowed, quota)
+                            api_details += check_quota_results
+
+                            success = check_success
+
+                    api_details = "\n\n{}\n{}".format(api_name, api_details)
+
+                check_results.update(
+                    {
+                        api_name:
+                            {
+                                'success': success,
+                                'api_details': api_details,
+                                'snapshot': target_quota_info[api_name]
+                            }
+                    })
+
+            return check_results, None
+        except Exception as ex:
+            self.logger.info("ERROR Checking API Quotas")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
+    def _check_threshold(self, threshold, used, allowed, quota_name):
+        """
+        Checks the used statistic against its corresponding threshold. Returns the result as a message
+        :param threshold: The percentage used should not go beyond
+        :param used: The current usage of the specified quota
+        :param allowed: The allowed amount of usage for the quota
+        :param quota_name: The quota name
+        """
+        # Multiplying `used` by 1.0 to prevent the decimal being truncated by Python.
+        quota_usage = (used * 1.0) / allowed
+        if quota_usage >= threshold:
+            exceeded_details = MESSAGES.get("quota_exceeded") \
+                .format(quota_name, threshold * 100, quota_usage * 100, used, allowed)
+            return exceeded_details, False
+        return '', True
 
     def _create_data_template(self, api):
         """
