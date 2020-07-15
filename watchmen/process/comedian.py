@@ -115,7 +115,24 @@ class Comedian(Watchman):
             group_check_info["details"] = MESSAGES.get("quota_exception_details").format(tb)
             group_check_info["success"] = None
 
-            return group_check_info
+    def _create_data_template(self, api):
+        """
+        Creates a template dictionary to enter quota information into
+        :params api: api config info
+        :return: dictionary with threshold and increment information and an empty section for quota information
+        """
+        try:
+            formatted_data = {
+                'threshold_start': api['threshold_start'],
+                'increment': api['increment'],
+                'quotas': {}}
+            return formatted_data, None
+        except Exception as ex:
+            self.logger.error("ERROR retrieving threshold information from Config")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
 
     def _create_results(self, parameters):
         """
@@ -190,44 +207,175 @@ class Comedian(Watchman):
         parameters = parameter_chart.get(success)
         return parameters
 
-    def _get_group_info(self):
+    def _get_api_info(self, api):
         """
-        Performs a GET request to the VirusTotal API to get the quota information for the "infoblox" group.
-        :return: The "quotas" dictionary returned from the VirusTotal API. This dictionary contains all the quotas
-        to be checked.
-
-        VirusTotal's response value comes in the following format (with a lot of other information that we do not use):
-        {"data":
-            {"attributes":
-                {"quotas":
-                    {"api_requests_daily": {"allowed": 5000, "used": 0},
-                    "api_requests_hourly": {"allowed": 600000, "used": 0},
-                    "api_requests_monthly": {"allowed": 1000000000, "used": 3},
-                    "intelligence_downloads_monthly": {"allowed": 300, "used": 3},
-                    "intelligence_graphs_private": {"allowed": 0, "used": 0},
-                    "intelligence_hunting_rules": {"allowed": 20000, "used": 52},
-                    "intelligence_retrohunt_jobs_monthly": {"allowed": 5, "used": 0},
-                    "intelligence_searches_monthly": {"allowed": 300, "used": 99},
-                    "monitor_storage_bytes": {"allowed": 0, "used": 0},
-                    "monitor_storage_files": {"allowed": 0, "used": 0},
-                    "monitor_uploaded_bytes": {"allowed": 0, "used": 0},
-                    "monitor_uploaded_files": {"allowed": 0, "used": 0}
-                    }
-                },
-         }
-
-         The only part we are interested in is the "quotas" dictionary, so we grab that and return it as the
-         "group_quota_information".
+        Retrieves the api-specific function and returns formatted api quota details based on the api name. Function
+        naming convention is _get_[api_name]_data(). It then passes the config details to the api-specific function
+        :param api: The config details for the specific api found in api_targets_{}.yaml
+        :return: Dictionary of formatted information returned from the api-specific function
         """
         try:
-            virustotal_api_response = requests.get(url=GROUP_QUOTA_URL, headers=HEADERS).json()
-            group_quota_information = virustotal_api_response["data"]["attributes"]["quotas"]
-            return group_quota_information, None
+            source_function = getattr(self, '_get_{}_data'.format(api['target_name'].lower()))
+            return source_function(api)
         except Exception as ex:
+            self.logger.error("ERROR retrieving source {} function!".format(api['target_name']))
             self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
+
+    def _get_api_key(self, api):
+        """
+        Gets and decodes the api key from config.yaml file. Naming is [target_name]_api_key in config.yaml
+        :param api: Config details for the specific api
+        :return: decoded api key
+        """
+        path = 'comedian.{}_api_key'.format(api['target_name'].lower())
+        return settings(path)
+
+    def _get_domaintools_data(self, api):
+        """
+        Performs the DomainTools get request and formats the response
+        :param api: the DomainTools api config information
+        :return: A specially formatted dictionary of quota information and quota limits. Example:
+            {
+            'threshold_start': 26,
+            'increment': 2,
+            'quotas': {'api_requests_monthly': {'used': 311, 'allowed': 1000000000},
+                       'intelligence_downloads_monthly': {'used': 0, 'allowed': 300},
+                       'intelligence_hunting_rules': {'used': 20, 'allowed': 20000},
+                       'intelligence_retrohunt_jobs_monthly': {'used': 0, 'allowed': 5},
+                       'intelligence_searches_monthly': {'used': 21, 'allowed': 300}}}
+            }
+        """
+        timestamp = datetime.utcnow().strftime(api['timestamp'])
+
+        url, tb = self._build_url(api, timestamp)
+        if tb:
+            return None, tb
+
+        try:
+            domaintools_response = requests.get(url).json()
+            domaintools_quotas = domaintools_response['response']['products']
+        except Exception as ex:
+            self.logger.info("ERROR in DomainTools GET Request")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
+        formatted_data, tb = self._create_data_template(api)
+        if tb:
+            return None, tb
+
+        api_quotas = api['quotas']
+        for quota in domaintools_quotas:
+            if quota['id'] in api_quotas:
+                formatted_data['quotas'].update({quota['id']:
+                                                {
+                                                    'used': quota['usage']['month'],
+                                                    'allowed': quota['per_month_limit']
+                                                }})
+        return formatted_data, None
+
+    def _get_targets_quota_info(self, api_targets):
+        """
+        For each API specified in the config file it will call the API-specific method which will provide its current
+        quota information.
+        :param api_targets: All API targets in the config file
+        :return: A Dictionary of quota usage and quota limits for each API, as well as a traceback if an exception
+        occurs .
+        Example Dictionary:
+        {
+             'DomainTools': {
+                'threshold_start': 26,
+                'increment': 2,
+                'quotas': {
+                    'api_requests_monthly': {'used': 311, 'allowed': 1000000000},
+                    'intelligence_downloads_monthly': {'used': 0, 'allowed': 300},
+                    'intelligence_hunting_rules': {'used': 20, 'allowed': 20000},
+                    'intelligence_retrohunt_jobs_monthly': {'used': 0, 'allowed': 5},
+                    'intelligence_searches_monthly': {'used': 21, 'allowed': 300}}}
+            },
+             'VirusTotal': {
+                'threshold_start': 26,
+                'increment': 2,
+                'quotas': {
+                    'api_requests_monthly': {'used': 311, 'allowed': 1000000000},
+                    'intelligence_downloads_monthly': {'used': 0, 'allowed': 300},
+                    'intelligence_hunting_rules': {'used': 20, 'allowed': 20000},
+                    'intelligence_retrohunt_jobs_monthly': {'used': 0, 'allowed': 5},
+                    'intelligence_searches_monthly': {'used': 21, 'allowed': 300}}}
+             }
+        }
+
+        """
+
+        api_target_quotas = {}
+        for api in api_targets:
+            try:
+                self.logger.info("Reading: {}".format(api['target_name']))
+                info, tb = self._get_api_info(api)
+                if tb:
+                    api_target_quotas.update({api['target_name']: tb})
+                    continue
+
+                api_target_quotas.update({api['target_name']: info})
+            except Exception as ex:
+                self.logger.info("ERROR Retrieving quota information!")
+                self.logger.info(const.MESSAGE_SEPARATOR)
+                self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+                tb = traceback.format_exc()
+                api_target_quotas.update({ERROR: tb})
+
+        return api_target_quotas
+
+    def _get_virustotal_data(self, api):
+        """
+        Performs the VirusTotal get request and formats the response
+        :param api: the VirusTotal api config information
+        :return: A specially formatted dictionary of quota information and quota limits. Example:
+            {
+            'threshold_start': 26,
+            'increment': 2,
+            'quotas': {'api_requests_monthly': {'used': 311, 'allowed': 1000000000},
+                      'intelligence_downloads_monthly': {'used': 0, 'allowed': 300},
+                      'intelligence_hunting_rules': {'used': 20, 'allowed': 20000},
+                      'intelligence_retrohunt_jobs_monthly': {'used': 0, 'allowed': 5},
+                      'intelligence_searches_monthly': {'used': 21, 'allowed': 300}}}
+            }
+        """
+        header, tb = self._build_header(api)
+        if tb:
+            return None, tb
+
+        url, tb = self._build_url(api)
+        if tb:
+            return None, tb
+
+        try:
+            virustotal_api_response = requests.get(url=url, headers=header).json()
+            virustotal_quotas = virustotal_api_response["data"]["attributes"]["quotas"]
+        except Exception as ex:
+            self.logger.info("ERROR in VirusTotal GET Request")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
+        formatted_data, tb = self._create_data_template(api)
+        if tb:
+            return None, tb
+
+        api_quotas = api['quotas']
+        for quota in virustotal_quotas:
+            if quota in api_quotas:
+                formatted_data['quotas'].update({quota:
+                                                {
+                                                    'used': virustotal_quotas[quota]['used'],
+                                                    'allowed': virustotal_quotas[quota]['allowed']
+                                                }})
+        return formatted_data, None
 
     def _load_config(self):
         """
