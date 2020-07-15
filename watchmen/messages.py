@@ -7,17 +7,26 @@ the subject of emails.
 """
 
 COMEDIAN = {
-    "exception_details": "There was an exception retrieving the quota information from the VirusTotal API.\n\nTraceback"
-                         " of exception:\n{}",
-    "exception_short_message": "EXCEPTION: Unable to check VirusTotal quotas, please check logs!",
-    "exception_subject": "EXCEPTION: Unable to Check VirusTotal Quotas!",
-    "failure_short_message": "FAILURE: A quota was exceeded, please check the logs for more information!",
-    "failure_subject": "FAILURE: VirusTotal Quota Exceeded!",
-    "quota_exceeded": "Quota \"{}\" exceeded the {:.2f}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {:.2f}%\n",
-    "quota_exception_details": "An expected quota was missing from the VirusTotal API response.\n\n{}",
-    "success_details": "All VirusTotal quota checks ran successfully and were within the current threshold.",
-    "success_short_message": "SUCCESS: All VirusTotal quota checks were within the threshold for today!",
-    "success_subject": "SUCCESS: All VirusTotal Quotas Within Threshold!",
+    "exception_api_details": "Unable to check api quota info. An exception has occurred. Check logs for more detail. ",
+    "exception_config_details": "An exception occurred while reading the api_targets config file. "
+                                "\n\nTraceback of exception:\n{}",
+    "exception_details": "\nThere was an exception retrieving {} quota information.\n\nTraceback of exception:\n{}",
+    "exception_quota_details": "\n\"{}\" usage is not being tracked. \nThis could be caused by an issue with the config"
+                               " or a None value in the API's response.\nCheck the logs for more information.\n",
+    "exception_short_message": "EXCEPTION: Unable to check API quotas, please check logs!",
+    "exception_subject": "EXCEPTION: Unable to Check API Quotas!",
+    "failure_short_message": "FAILURE: At least one quota was exceeded, please check the logs for more information!",
+    "failure_short_message_single": "FAILURE: A quota in {} was exceeded, please check the logs for more information!",
+    "failure_subject": "FAILURE: At Least One API Quota Was Exceeded!",
+    "failure_subject_single": "FAILURE: A {} Quota Exceeded!",
+    "quota_exceeded": "\nQuota \"{}\" exceeded the {:.2f}% threshold!\nPercent Used: {:.2f}%\nUsed: {}, Allowed: {}\n",
+    "quota_exception_details": "There is API information missing.\n\n{}",
+    "success_details": "All API quota checks ran successfully and were within the current thresholds.",
+    "success_details_single": "\n{} quota checks ran successfully and were within the current thresholds.\n",
+    "success_short_message": "SUCCESS: All API quota checks were within the threshold for today!",
+    "success_short_message_single": "SUCCESS: {} quota checks were within the threshold for today!",
+    "success_subject": "SUCCESS: All API Quotas Within Thresholds!",
+    "success_subject_single": "SUCCESS: {} Quotas Within Thresholds!",
 }
 
 CROOKSHANKS = {
@@ -151,20 +160,6 @@ MOTHMAN = {
     "failure_equal_files": "The same file was uploaded twice in a row.\nLatest file: {}\nPrevious file: {}",
     "failure_short_message": "FAILURE: S3 file(s) do not exist or files are the same size.",
     "failure_subject": "FAILURE: ForeverMail S3 Files Error"
-}
-
-SLATER = {
-    "exception_details": "There was an exception retrieving the quota information from the "
-                         "DomainTools API.\n\nTraceback"
-                         " of exception:\n{}",
-    "exception_message": "EXCEPTION: Unable to check DomainTools quotas, please check logs!",
-    "exception_subject": "EXCEPTION: Unable to check DomainTools Quotas!",
-    "failure_message": "FAILURE: A quota was exceeded, please check the logs for more information!",
-    "failure_subject": "WARNING: DomainTools Quota Exceeded!",
-    "quota_exceeded": "Quota for {} exceeded the {}% threshold!\nUsed: {}\nAllowed: {}\nPercent Used: {}%\n",
-    "success_details": "All the DomainTools quota checks ran successfully and were within the threshold.",
-    "success_message": "SUCCESS: All DomainTools quota checks were within the threshold for today!",
-    "success_subject": "SUCCESS: All DomainTools Quotas Within Threshold!"
 }
 
 RORSCHACH = {
