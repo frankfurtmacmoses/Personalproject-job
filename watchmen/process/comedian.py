@@ -1,11 +1,11 @@
 """
-Created on November 27, 2019
+Created on July 28, 2020
 
-This Watchman monitors the VirusTotal API to ensure that our team does not go over our monthly quota limit. This
+This Watchman monitors API quotas to ensure that our team does not go over our monthly quota limit. This
 Watchman will send both email and SMS alerts if the used-to-allowed ratio crosses its threshold.
 
-@author: Michael Garcia
-@email: garciam@infoblox.com
+@author: Phillip Hecksel
+@email: phecksel@infoblox.com
 """
 
 import hashlib
