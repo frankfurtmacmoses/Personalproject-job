@@ -23,6 +23,10 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
+  "Generic Quota Email": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
   "Georgia Tech S3": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
