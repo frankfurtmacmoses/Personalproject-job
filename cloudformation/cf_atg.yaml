@@ -295,35 +295,6 @@ Resources:
             Value: watchmen-silhouette
           - Key: Env
             Value: !Ref Env
-    WatchmenSlaterLambda:
-      Type: 'AWS::Lambda::Function'
-      Properties:
-        FunctionName: !Join ["-", [ !Ref "AWS::StackName", Slater]]
-        Runtime: python3.7
-        Code:
-          S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
-          S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-        Description: Monitors the DomainTools API quota daily
-        Environment:
-          Variables:
-            ENVIRONMENT: !Ref Env
-        Handler: !Sub watchmen.main_${Account}.start_slater_watcher
-        MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
-        Timeout: 30
-        Tags:
-          - Key: Owner
-            Value: CyberIntel
-          - Key: Product
-            Value: watchmen
-          - Key: Protected
-            Value: 'TRUE'
-          - Key: Component
-            Value: lambda
-          - Key: Name
-            Value: watchmen-slater
-          - Key: Env
-            Value: !Ref Env
     WatchmenSpectreLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
@@ -468,15 +439,6 @@ Resources:
         Targets:
           - Id: SilhouetteScheduler
             Arn: !GetAtt WatchmenSilhouetteLambda.Arn
-    SlaterScheduledEvent:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A daily event that kicks off Slater Watchman.
-        ScheduleExpression: cron(0 15 * * ? *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: SlaterScheduler
-            Arn: !GetAtt WatchmenSlaterLambda.Arn
     SpectreScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -570,13 +532,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt SilhouetteScheduledEvent.Arn
-    InvokeSlaterLambdaPermission:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenSlaterLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt SlaterScheduledEvent.Arn
     InvokeSpectreLambdaPermission:
       Type: 'AWS::Lambda::Permission'
       Properties:
