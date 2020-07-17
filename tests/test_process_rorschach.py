@@ -335,6 +335,13 @@ class TestRorschach(unittest.TestCase):
             'target': 'Generic S3'
         }
 
+    def _create_rorschach(self):
+        """
+        Create a Rorschach object with a Daily event.
+        @return: <Rorschach> rorschach object
+        """
+        return Rorschach(context=None, event=self.example_event_daily)
+
     def test_check_file_suffix(self):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_file_suffix
@@ -360,7 +367,7 @@ class TestRorschach(unittest.TestCase):
         }]
 
         suffix = '.parquet'
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
 
         # Test for all correct suffixes:
         expected, expected_tb = "", None
@@ -415,7 +422,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_multiple_files_size
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         example_contents_dicts = {
             "generate_contents_success": {
                 "contents": self.example_contents,
@@ -515,7 +522,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_multiple_files_size
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         example_successful_contents = [{
             'Key': 'some/path/to/something.parquet',
             'Size': 100,
@@ -570,7 +577,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_single_file
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         example_item = {
             "full_path": "example/bad/path/test.json",
             "time_offset": 2,
@@ -628,7 +635,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_single_file_existence
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         s3_key_example = 'some/path/to/something.parquet'
         item = {
             "bucket_name": "bucket",
@@ -652,7 +659,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_single_file_size
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         example_item = {
             "bucket_name": "random-bucket-that-doesnt-exist",
             "min_total_size_kb": 1
@@ -681,7 +688,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_config_not_load_result
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         returned = rorschach_obj._create_config_not_load_result(self.example_traceback)
         returned = returned[0].to_dict()
         returned["dt_created"] = "2020-12-15T00:00:00+00:00"
@@ -691,7 +698,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_details
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         example_exception_strings = ["Exception 1", "Exception 2"]
         example_failure_strings = ["Failure 1", "Failure 2"]
         example_target_check_results = {
@@ -727,7 +734,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_generic_result
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
 
         example_parameters = {
             "failures_and_exceptions": {
@@ -765,7 +772,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_invalid_event_result
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         returned = rorschach_obj._create_invalid_event_result()
         returned = returned[0].to_dict()
         returned["dt_created"] = "2020-12-15T00:00:00+00:00"
@@ -776,7 +783,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_result
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         mock_generic_results = {
             "TT": self.example_generic_results.get("success"),
             "TF": self.example_generic_results.get("failures"),
@@ -819,7 +826,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_summary_parameters
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         mock_details.return_value = "Example details."
 
         for target_example in self.process_checking_examples:
@@ -835,7 +842,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _generate_contents
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         item = self.example_config_file.get('Daily')[0].get('items')[0]
 
         # Test successful _generate_contents call
@@ -869,7 +876,7 @@ class TestRorschach(unittest.TestCase):
         """
         prefix_format_example = 'some/path/year=%0Y/month=%0m/day=%0d/'
         check_time_example = datetime.datetime.now(pytz.utc) - datetime.timedelta(**{'days': 1})
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
 
         # Test successful key generation with default time_offset:
         expected, expected_tb = check_time_example.strftime(prefix_format_example), None
@@ -897,7 +904,7 @@ class TestRorschach(unittest.TestCase):
         """
 
         with mock_open:
-            rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+            rorschach_obj = self._create_rorschach()
 
             # Testing successful load of config file:
             mock_file.return_value = self.example_config_file
@@ -921,7 +928,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: monitor
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         example_process_checking_result = {
             "target1": {
                 "success": True,
@@ -970,7 +977,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _process_checking
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
 
         for target_example in self.process_checking_examples:
             mocks = target_example.get("mocks")
@@ -986,7 +993,7 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _create_generic_result
         """
-        rorschach_obj = Rorschach(event=self.example_event_daily, context=None)
+        rorschach_obj = self._create_rorschach()
         example_whitelist = ['something.json']
         expected_returned_contents = [{
             'Key': 'some/path/to/something.parquet',
