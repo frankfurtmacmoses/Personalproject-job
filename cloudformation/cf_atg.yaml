@@ -100,7 +100,7 @@ Resources:
                   - 's3:ListBucket'
                 Resource:
                   - "arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*"
-                  - "arn:aws:s3:::cyber-intel-test/*"
+                  - !If [ IsProd,"", "arn:aws:s3:::cyber-intel-test/*"]
   WatchmenComedianLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -640,10 +640,10 @@ Resources:
                 Resource:
                   - 'arn:aws:s3:::bitaa'
                   - 'arn:aws:s3:::cyber-intel'
-                  - 'arn:aws:s3:::cyber-intel-test'
+                  - !If [ IsProd,"", "arn:aws:s3:::cyber-intel-test/*"]
                   - 'arn:aws:s3:::bitaa/*'
                   - 'arn:aws:s3:::cyber-intel/*'
-                  - 'arn:aws:s3:::cyber-intel-test/*'
+                  - !If [ IsProd,"", "arn:aws:s3:::cyber-intel-test/*"]
                   - 'arn:aws:s3:::deteque-new-observable-data'
                   - 'arn:aws:s3:::deteque-new-observable-data/*'
               - Effect: Allow
