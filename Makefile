@@ -376,25 +376,25 @@ build-test-only:
 
 deploy-atg-test: clean
 	@echo
-	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-test DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
+	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-test FEATURE=watchmen DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
 deploy-atg-prod: clean
 	@echo
-	BUILD_ENV=prod ACCOUNT=atg BUCKET=cyber-intel DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
+	BUILD_ENV=prod ACCOUNT=atg BUCKET=cyber-intel FEATURE=watchmen DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
 deploy-saas-test: clean
 	@echo
-	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-saas-test DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
+	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-saas-test FEATURE=watchmen-saas DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
 deploy-saas-prod: clean
 	@echo
-	BUILD_ENV=prod ACCOUNT=saas BUCKET=ib-cyberint-prod-deploys DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
+	BUILD_ENV=prod ACCOUNT=saas BUCKET=ib-cyberint-prod-deploys FEATURE=watchmen DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE: $@"
 

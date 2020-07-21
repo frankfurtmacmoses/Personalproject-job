@@ -22,10 +22,11 @@ aws_s3_path="watchmen/builds/${ymd_utc}_${commit_sha}"
 
 PROJECT="watchmen"
 ACCOUNT="${ACCOUNT}"
+FEATURE="${FEATURE:-${PROJECT}}"
 BUCKET="${BUCKET:-cyber-intel-test}"
 BUILD_ENV="${BUILD_ENV:-test}"
-BUILD_PACKAGE="${PROJECT}-lambdas-${BUILD_ENV}.zip"
-CF_STACK_NAME="CyberInt-${PROJECT}-${BUILD_ENV}"
+BUILD_PACKAGE="${FEATURE}-lambdas-${BUILD_ENV}.zip"
+CF_STACK_NAME="CyberInt-${FEATURE}-${BUILD_ENV}"
 DEPLOY_FILE="${DEPLOY_FILE}"
 
 DRY_RUN_ONLY="${DRY_RUN_ONLY:-false}"
