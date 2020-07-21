@@ -118,5 +118,5 @@ Resources:
                 Resource:
                   - "arn:aws:s3:::bitaa"
                   - "arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*"
-                  - "arn:aws:s3:::ib-customer-data-usa-va"
-                  - "arn:aws:s3:::ib-customer-data-usa-va/*"
+                  - "arn:aws:s3:::ib-customer-data-usa-va/parquet-northstar-dns"
+                  - "arn:aws:s3:::ib-customer-data-usa-va/parquet-dns"
