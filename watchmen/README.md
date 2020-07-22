@@ -482,6 +482,11 @@ the other Watchmen do not require.
           Value: !Ref Env
       VpcId: !FindInMap [EnvMap, !Ref Env, VPC]
 ```
+ 5) Add cloudformation files for other AWS environments.
+  - Rorschach is the only Watchman that exists in multiple AWS accounts (saas and atg) at the moment. If your new 
+  Watchman exists within multiple AWS accounts, then you will most likely need separate cloudformation template files 
+  for each account. The main reason for creating separate cloudformation template files for separate AWS accounts is
+  to prevent permission/access issues that occur if you try to access AWS items from a different account.  
 
 ### Cron Schedule Example Table
 Cron schedules are used by every Lambda to determine when they are to be fired off.
@@ -542,15 +547,26 @@ Review and Merge Slack Message
 ![](images/Review_merge_message.png)
 
 ## Deployment
-The deployment may vary depending on what is added to the cloud formation template.
-Once the changes are added to the master branch in Infoblox-CTO then Jenkins will
-automatically run against there environment.
-If completed then Jenkins has a build called:
+The deployment process may vary depending on what code changes were made. If changes are made to the cloudformation 
+template, or code changes modify the core functionality of a Watchman, then a cloudformation stack update is required.
+
+Once the changes are added to the master branch in Infoblox-CTO then Jenkins will automatically run its tests. If the 
+tests completed successfully, then Jenkins has a build called that needs to be manually ran:
  
 **cyberint-watchmen-deploy**
 
-That needs to be manually ran at the moment. In other cases you can deploy to 
-production with:
-```
-make deploy-cf-prod
-```
+Deployments can, and often times are, run using makefile commands:
+
+Before deploying to prod, a test deployment should take place. All test deployments should be done within the atg AWS 
+account.
+
+Test and prod deployments can be done through makefile commands. For example, to deploy
+the test Watchmen stack, use `make deploy-test`. To deploy the prod Watchmen stack, use `make deploy-prod`. 
+
+Makefile commands will need to be made for Watchmen that exist in multiple accounts and have multiple cloudformation 
+stacks to test and deploy. As an example, Rorschach has separate `make deploy-rorschach-prod` and 
+`make deploy-rorschach-test` makefile commands. 
+
+If changes are only done to config files that exist in S3, such as the `feeds_to_check.json` file for Manhattan, then a 
+cloudformation deployment is not required. Updates to S3 config files should be done through a makefile command. To see
+an example look at the `make deploy-feeds-to-check-prod` command in the Makefile.

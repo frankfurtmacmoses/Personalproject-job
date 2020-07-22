@@ -168,42 +168,41 @@ SLATER = {
 }
 
 RORSCHACH = {
-    "exception_subject": "EXCEPTION: Unable to Check S3 files for {}!",
-    "exception_invalid_event_subject": "EXCEPTION: Rorschach Received An Invalid CloudWatch Event!",
+    "exception_config_load_failure_details": "Cannot load S3 targets from file: {}\nException: {}",
     "exception_config_load_failure_subject": "EXCEPTION: Unable to Load S3 Targets Config File!",
+    "exception_details": "The following S3 paths threw exceptions during their file checks:\n\n{}",
     "exception_invalid_event_details": "An invalid event was passed from the CloudWatch event, please check the "
                                        "CloudFormation file and CloudWatch events to ensure that the correct"
                                        " parameters are being sent. S3 targets can not be checked with an invalid "
                                        "event parameter.",
-    "exception_config_not_load_details": "Cannot load S3 targets from file: {}\nException: {}",
+    "exception_invalid_event_subject": "EXCEPTION: Rorschach Received An Invalid CloudWatch Event!",
     "exception_message": "Exception occurred when checking S3 targets! Please check the logs for more details.",
-    "exception_details": "The following S3 paths threw exceptions during their file checks:\n\n{}",
-    "success_message": "SUCCESS: All S3 File Checks for {} passed!",
-    "success_details": "All of the S3 file checks for the {} target passed successfully!",
-    "success_subject": "SUCCESS: All S3 File Checks for {} Passed!",
-    "success_event_check": "The event parameter passed from Lambda is valid.",
-    "failed_event_check": "Invalid event parameter type passed in from Lambda: {}.",
-    "failure_prefix_suffix_not_match": "There is at least one S3 that key did not match the expected "
-                                       "prefix: {} and suffix: {}.\n",
-    "failure_file_empty": "The following S3 file is empty: {}",
-    "failure_total_file_size_below_threshold": "The size of all files found in {} is {} KB, which is less than "
-                                               "expected total file size {} KB.\n",
-    "failure_total_objects": "The number of objects found in {} is {}, which is less than expected total objects "
-                             "count {}.\n",
+    "exception_string_format": "Item: {}\nException: {}",
+    "exception_subject": "EXCEPTION: Unable to Check S3 files for {}!",
     "failure_bucket_not_found": "FAILURE: The following bucket was not found: {}.\n",
-    "failure_no_file_found_s3": "The following file was not found in S3: {}",
-    "failure_subject": "FAILURE: {} S3 File Checks Failed!",
-    "failure_details": "The following S3 paths failed their checks:\n{}",
-    "failure_message": "FAILURE: At least one S3 file check did not pass, please check the logs for more details!",
-    "generic_failure_subject": "FAILURE: At Least One S3 Target Has Failed!",
-    "generic_exception_subject": "Exception: At Least One S3 Target Has An Exception!",
-    "generic_fail_exception_subject": "EXCEPTION and FAILURE: At Least One S3 Target Has An Exception"
-                                      " and Failure!",
-    "generic_success_subject": "SUCCESS: All S3 Targets Passed!",
-    "failure_exception_subject": "FAILURE AND EXCEPTION: {} S3 File Checks Encountered Failures and Exceptions!",
+    "failure_details": "The following failures were encountered while performing checks:\n\n{}",
+    "failure_event_check": "Invalid event parameter type passed in from Lambda: {}.",
     "failure_exception_message": "FAILURE AND EXCEPTION: S3 file checks could not be performed, please look at the logs"
                                  " for more details!",
-    "exception_string_format": "Item: {}\nException: {}",
+    "failure_exception_subject": "FAILURE AND EXCEPTION: Unable to Check S3 files for {}!",
+    "failure_file_empty": "The following S3 file is empty: {}",
+    "failure_invalid_s3_key": "The following key was not found in S3: {}",
+    "failure_invalid_suffix": "The following file(s) did not have the required suffix \"{}\":\n{}",
+    "failure_message": "FAILURE: At least one S3 file check did not pass, please check the logs for more details!",
+    "failure_multiple_file_size": "The size of all files found in {} is {} KB, which is less than expected"
+                                  " total file size {} KB.",
+    "failure_single_file_size": "The following file did not meet the {} KB size threshold: {}",
+    "failure_subject": "FAILURE: S3 File Checks Failed for {}!",
+    "failure_total_objects": "The number of objects found in {} is {}, which is less than expected total objects count:"
+                             " {}.",
+    "generic_exception_subject": "EXCEPTION: At Least One S3 Target Has An Exception!",
+    "generic_failure_exception_subject": "EXCEPTION and FAILURE: At Least One S3 Target Has An Exception and Failure!",
+    "generic_failure_subject": "FAILURE: At Least One S3 Target Has Failed!",
+    "generic_success_subject": "SUCCESS: All S3 Targets Passed!",
+    "success_details": "All of the S3 file checks for the {} target passed successfully!",
+    "success_event_check": "The event parameter passed in from Lambda is valid.",
+    "success_message": "SUCCESS: All S3 File Checks passed!",
+    "success_subject": "SUCCESS: All S3 File Checks for {} Passed!",
 }
 
 SILHOUETTE = {

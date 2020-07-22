@@ -62,11 +62,6 @@ mothman:
   bucket_name: cyber-intel
   path_prefix: malspam/forevermail
 
-rorschach:
-  bucket_name: bitaa
-  path_prefix: parquet/com.farsightsecurity.300021
-  sns_topic: arn:aws:sns:us-east-1:405093580753:Hancock
-
 silhouette:
   bucket_name: cyber-intel
   path_prefix: analytics/lookalike2/prod/status/
