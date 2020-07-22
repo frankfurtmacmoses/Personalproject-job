@@ -32,7 +32,8 @@ from watchmen.common.watchman import Watchman
 
 MESSAGES = messages.RORSCHACH
 ENVIRONMENT = settings("ENVIRONMENT", "test")
-CONFIG_NAME = 's3_targets_{}.yaml'.format(ENVIRONMENT)
+ACCOUNT = settings("ACCOUNT", "atg")
+CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), CONFIG_NAME)
 HOURLY = "Hourly"

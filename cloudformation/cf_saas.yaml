@@ -33,6 +33,7 @@ Resources:
       Environment:
         Variables:
           ENVIRONMENT: !Ref Env
+          ACCOUNT: !Ref Account
       Handler: !Sub watchmen.main_${Account}.start_rorschach_watcher
       MemorySize: 256
       Role: !GetAtt RorschachExecutionRole.Arn
