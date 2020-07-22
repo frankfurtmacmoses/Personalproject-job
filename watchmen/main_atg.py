@@ -57,11 +57,12 @@ from watchmen.process.manhattan import Manhattan
 from watchmen.process.metropolis import Metropolis
 from watchmen.process.moloch import Moloch
 from watchmen.process.mothman import Mothman
+from watchmen.common.result_svc import ResultSvc
+from watchmen.process.rorschach import Rorschach
 from watchmen.process.silhouette import Silhouette
 from watchmen.process.slater import Slater
 from watchmen.process.spectre import Spectre
-from watchmen.common.result_svc import ResultSvc
-from watchmen.process.rorschach import Rorschach
+
 
 
 def start_rorschach_watcher(event, context):

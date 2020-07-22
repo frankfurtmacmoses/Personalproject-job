@@ -15,7 +15,6 @@ builds_path="${script_base}/builds"
 
 PROJECT="watchmen"
 FEATURE="${FEATURE:-${PROJECT}}"
-ACCOUNT="${ACCOUNT}"
 BUILD_ENV="${1:-${BUILD_ENV:-test}}"
 BUILD_PACKAGE="${FEATURE}-lambdas-${BUILD_ENV}.zip"
 DEFAULT_BUILD="${PROJECT}-lambdas"
