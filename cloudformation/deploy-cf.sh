@@ -5,7 +5,7 @@
 # Environment variables:
 #   BUCKET: e.g. 'cyber-intel-test' (default), 'cyber-intel'
 #   BUILD_ENV: e.g. 'dev' (default), 'preprod' (test), 'beta', 'prod'
-#
+#   ACCOUNT: e.g. 'saas' or 'atg'
 ######################################################################
 set +x
 script_file="$( readlink "${BASH_SOURCE[0]}" 2>/dev/null || echo ${BASH_SOURCE[0]} )"
@@ -21,12 +21,13 @@ ymd_utc="$(TZ=UTC date +'%Y%m%d')"
 aws_s3_path="watchmen/builds/${ymd_utc}_${commit_sha}"
 
 PROJECT="watchmen"
+ACCOUNT="${ACCOUNT}"
 FEATURE="${FEATURE:-${PROJECT}}"
 BUCKET="${BUCKET:-cyber-intel-test}"
 BUILD_ENV="${BUILD_ENV:-test}"
 BUILD_PACKAGE="${FEATURE}-lambdas-${BUILD_ENV}.zip"
 CF_STACK_NAME="CyberInt-${FEATURE}-${BUILD_ENV}"
-DEPLOY_FILE="${DEPLOY_FILE:-cloudformation.yaml}"
+DEPLOY_FILE="${DEPLOY_FILE}"
 
 DRY_RUN_ONLY="${DRY_RUN_ONLY:-false}"
 
@@ -119,11 +120,12 @@ function deploy_stack() {
   local _cmd_="${1:-create}"
   local _env_="${BUILD_ENV}"
   local _yml_="${DEPLOY_FILE}"
+  local _acct_="${ACCOUNT}"
   local _chk_="aws cloudformation validate-template --template-body file://${_yml_}"
   local _cli_="aws cloudformation ${_cmd_}-stack
     --capabilities CAPABILITY_NAMED_IAM
     --stack-name ${CF_STACK_NAME}
-    --parameters ParameterKey=Env,ParameterValue=${_env_} ParameterKey=BuildsPrefix,ParameterValue=${aws_s3_path}
+    --parameters ParameterKey=Env,ParameterValue=${_env_} ParameterKey=Account,ParameterValue=${_acct_} ParameterKey=BuildsPrefix,ParameterValue=${aws_s3_path}
     --template-body file://${_yml_}
 "
 
@@ -136,7 +138,7 @@ function deploy_stack() {
   ${_chk_} || log_fatal "CloudFormation template has error"
 
   echo ""
-  echo "Deploying cyberint-${PROJECT} [${_env_}]"
+  echo "Deploying cyberint-${PROJECT} [${_env_}] ${_acct_}"
   echo "......................................................................."
   echo "${_cli_}"
 

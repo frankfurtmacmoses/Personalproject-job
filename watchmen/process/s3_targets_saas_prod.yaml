@@ -6,6 +6,7 @@ Hourly:
     suffix: .parquet
     time_offset: 1
 
+
 Daily:
 - target_name: Poseidon DNS Data
   items:

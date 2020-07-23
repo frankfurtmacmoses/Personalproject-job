@@ -11,6 +11,44 @@ from watchmen.process.rorschach import Rorschach, MESSAGES, CONFIG_NAME
 class TestRorschach(unittest.TestCase):
 
     def setUp(self):
+        self.example_event_daily = {'Type': 'Daily'}
+        self.example_event_hourly = {'Type': 'Hourly'}
+        self.example_invalid_events = [
+            {'Type': 'hourly'},
+            {'Type': 'daily'},
+            {'type': 'Hourly'},
+            {'type': 'Daily'},
+            {'': ''},
+            {}
+        ]
+        self.example_config_path = '../watchmen/process/s3_config.yaml'
+        self.example_traceback = 'Traceback'
+        self.expected_invalid_event_email_result = {
+            'details': MESSAGES.get("exception_invalid_event_details"),
+            'disable_notifier': False,
+            'dt_created': '2020-12-15T00:00:00+00:00',
+            'short_message': MESSAGES.get('exception_message'),
+            'result_id': 0,
+            'snapshot': {},
+            'watchman_name': 'Rorschach',
+            'state': 'EXCEPTION',
+            'subject': MESSAGES.get("exception_invalid_event_subject"),
+            'success': False,
+            'target': 'Generic S3'
+        }
+        self.expected_invalid_config_file_result = {
+            'details': "Cannot load S3 targets from file: s3_targets_atg_test.yaml\nException: (None, 's3_config.yaml')",
+            'disable_notifier': False,
+            'dt_created': '2020-12-15T00:00:00+00:00',
+            'short_message': MESSAGES.get('exception_message'),
+            'result_id': 0,
+            'snapshot': {},
+            'watchman_name': 'Rorschach',
+            'state': 'EXCEPTION',
+            'subject': MESSAGES.get("exception_config_load_failure_subject"),
+            'success': False,
+            'target': 'Generic S3'
+        }
         self.example_config_file = {
             "Daily": [
                 {

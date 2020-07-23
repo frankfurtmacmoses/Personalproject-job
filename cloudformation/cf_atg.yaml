@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Watchmen project monitors several CyberIntel services for issues and outages"
+Description: "Watchmen monitors several data sources in the atg account for issues and outages."
 Mappings:
   EnvMap:
     test:
@@ -21,10 +21,13 @@ Parameters:
   BuildsPrefix:
     Description: The S3 prefix that contains the Watchmen builds.
     Type: String
+  Account:
+    Description: The aws account alias (eg. atg)
+    Type: String
 Conditions:
   IsProd: !Equals [ !Ref Env, prod ]
 Resources:
-  WatchmenComedianLambda:
+    WatchmenComedianLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: !Join ["-", [ !Ref "AWS::StackName", Comedian]]
@@ -233,6 +236,38 @@ Resources:
           Value: watchmen-mothman
         - Key: Env
           Value: !Ref Env
+
+  WatchmenRorschachLambda:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-Rorschach-${Env}
+      Runtime: python3.7
+      Code:
+        S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+        S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+      Description: Monitors s3 targets hourly and daily.
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Env
+          ACCOUNT: !Ref Account
+      Handler: !Sub watchmen.main_${Account}.start_rorschach_watcher
+      MemorySize: 256
+      Role: !GetAtt RorschachExecutionRole.Arn
+      Timeout: 300
+      Tags:
+        - Key: Owner
+          Value: CyberIntel
+        - Key: Product
+          Value: watchmen
+        - Key: Protected
+          Value: 'TRUE'
+        - Key: Component
+          Value: lambda
+        - Key: Name
+          Value: watchmen-rorschach
+        - Key: Env
+          Value: !Ref Env
+
   WatchmenSilhouetteLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -406,6 +441,26 @@ Resources:
       Targets:
         - Id: MothmanScheduler
           Arn: !GetAtt WatchmenMothmanLambda.Arn
+  RorschachDailyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A daily event that kicks off the Rorschach Watchman
+      ScheduleExpression: cron(0 15 * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
+      Targets:
+        - Id: RorschachDailyScheduler
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+          Input: '{"Type": "Daily"}'
+  RorschachHourlyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A hourly event that kicks off the Rorschach Watchman
+      ScheduleExpression: cron(0 * * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
+      Targets:
+        - Id: RorschachHourlyScheduler
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+          Input: '{"Type": "Hourly"}'
   SilhouetteScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -496,6 +551,20 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt MothmanScheduledEvent.Arn
+  InvokeRorschachHourlyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachHourlyScheduledEvent.Arn
+  InvokeRorschachDailyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
   InvokeSilhouetteLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -517,6 +586,42 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt SpectreScheduledEvent.Arn
+  RorschachExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Sub RorschachExecutionRole-${Env}
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: !Sub RorschachExecutionRole-${Env}
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "kms:Decrypt"
+                Resource:
+                  - "arn:aws:kms:us-east-1:405093580753:key/336e1b0b-39da-44ad-b565-e6fe51a1b810"
+              - Effect: Allow
+                Action:
+                  - 'SNS:Publish'
+                Resource:
+                  - !If [ IsProd, "arn:aws:sns:us-east-1:405093580753:Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test" ]
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:HeadBucket'
+                  - 's3:ListBucket'
+                Resource:
+                  - !If [ IsProd,"arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*", "arn:aws:s3:::cyber-intel-test/*"]
+
   WatchmenLambdaExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -564,9 +669,10 @@ Resources:
                   - 'arn:aws:s3:::bitaa'
                   - 'arn:aws:s3:::cyber-intel'
                   - 'arn:aws:s3:::cyber-intel-test'
+                  - !If [ IsProd,"", "arn:aws:s3:::cyber-intel-test/*"]
                   - 'arn:aws:s3:::bitaa/*'
                   - 'arn:aws:s3:::cyber-intel/*'
-                  - 'arn:aws:s3:::cyber-intel-test/*'
+                  - !If [ IsProd,"", "arn:aws:s3:::cyber-intel-test/*"]
                   - 'arn:aws:s3:::deteque-new-observable-data'
                   - 'arn:aws:s3:::deteque-new-observable-data/*'
               - Effect: Allow

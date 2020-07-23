@@ -36,12 +36,13 @@ from watchmen.config import settings
 # Rorschach Constants:
 DAILY = "Daily"
 ENVIRONMENT = settings("ENVIRONMENT", "test")
+ACCOUNT = settings("ACCOUNT", "atg")
 HOURLY = "Hourly"
 MESSAGES = messages.RORSCHACH
 
 # Constants dependent on previously defined constants:
 ALL_EVENT_TYPES = [HOURLY, DAILY]
-CONFIG_NAME = 's3_targets_{}.yaml'.format(ENVIRONMENT)
+CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), CONFIG_NAME)
 
