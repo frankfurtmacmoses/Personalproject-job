@@ -9,7 +9,6 @@ import logging
 import unittest
 
 
-
 class MainAtgTester(unittest.TestCase):
     """
     MainAtgTester includes all unit tests for main module

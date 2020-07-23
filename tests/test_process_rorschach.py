@@ -37,7 +37,8 @@ class TestRorschach(unittest.TestCase):
             'target': 'Generic S3'
         }
         self.expected_invalid_config_file_result = {
-            'details': "Cannot load S3 targets from file: s3_targets_atg_test.yaml\nException: (None, 's3_config.yaml')",
+            'details': "Cannot load S3 targets from file: s3_targets_atg_test.yaml\nException: "
+                       "(None, 's3_config.yaml')",
             'disable_notifier': False,
             'dt_created': '2020-12-15T00:00:00+00:00',
             'short_message': MESSAGES.get('exception_message'),

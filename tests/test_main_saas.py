@@ -3,7 +3,7 @@
 """
 import unittest
 from mock import patch
-from watchmen import const, main_rorschach
+from watchmen import const, main_saas
 from watchmen.common.result import Result
 
 
@@ -27,5 +27,5 @@ class MainRorschachTester(unittest.TestCase):
         )]
 
         expected = example_lambda_message + const.LINE_SEPARATOR
-        returned = main_rorschach.start_rorschach_watcher({}, None)
+        returned = main_saas.start_rorschach_watcher({}, None)
         self.assertEqual(expected, returned)
