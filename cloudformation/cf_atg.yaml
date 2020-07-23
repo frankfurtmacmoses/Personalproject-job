@@ -606,6 +606,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - "kms:Decrypt"
+                Resource:
+                  - "arn:aws:kms:us-east-1:405093580753:key/336e1b0b-39da-44ad-b565-e6fe51a1b810"
+              - Effect: Allow
+                Action:
                   - 'SNS:Publish'
                 Resource:
                   - !If [ IsProd, "arn:aws:sns:us-east-1:405093580753:Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test" ]
