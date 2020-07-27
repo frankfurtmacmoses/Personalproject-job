@@ -39,7 +39,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_comedian_watcher
+        Handler: !Sub watchmen.main_${Account}.start_comedian_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
@@ -68,7 +68,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_crookshanks_watcher
+        Handler: !Sub watchmen.main_${Account}.start_crookshanks_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
@@ -97,7 +97,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_jupiter_watcher
+        Handler: !Sub watchmen.main_${Account}.start_jupiter_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 300
@@ -132,7 +132,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_manhattan_watcher
+        Handler: !Sub watchmen.main_${Account}.start_manhattan_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
@@ -161,7 +161,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_metropolis_watcher
+        Handler: !Sub watchmen.main_${Account}.start_metropolis_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
@@ -190,7 +190,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_moloch_watcher
+        Handler: !Sub watchmen.main_${Account}.start_moloch_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
@@ -219,7 +219,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_mothman_watcher
+        Handler: !Sub watchmen.main_${Account}.start_mothman_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
@@ -236,7 +236,6 @@ Resources:
             Value: watchmen-mothman
           - Key: Env
             Value: !Ref Env
-
     WatchmenRorschachLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
@@ -267,7 +266,6 @@ Resources:
             Value: watchmen-rorschach
           - Key: Env
             Value: !Ref Env
-
     WatchmenSilhouetteLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
@@ -280,7 +278,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_silhouette_watcher
+        Handler: !Sub watchmen.main_${Account}.start_silhouette_watcher
         MemorySize: 128
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 7
@@ -309,7 +307,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_slater_watcher
+        Handler: !Sub watchmen.main_${Account}.start_slater_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
@@ -338,7 +336,7 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
-        Handler: handler.start_spectre_watcher
+        Handler: !Sub watchmen.main_${Account}.start_spectre_watcher
         MemorySize: 256
         Role: !GetAtt WatchmenLambdaExecutionRole.Arn
         Timeout: 30
