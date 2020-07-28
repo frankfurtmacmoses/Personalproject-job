@@ -24,7 +24,7 @@ Resources:
   WatchmenRorschachLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
-      FunctionName: !Sub ${AWS::StackName}-Rorschach-${Env}
+      FunctionName: !Sub ${AWS::StackName}-Rorschach
       Runtime: python3.7
       Code:
         S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
