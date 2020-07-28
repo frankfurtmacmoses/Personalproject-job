@@ -228,3 +228,20 @@ class Comedian(Watchman):
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
+
+    def _load_config(self):
+        """
+        Loads the config file, api_targets.yaml
+        :returns: List of config details for each api
+        """
+        try:
+            with open(CONFIG_PATH) as f:
+                api_targets = yaml.load(f, Loader=yaml.FullLoader)
+            return api_targets, None
+        except Exception as ex:
+            self.logger.error("ERROR Loading Config!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
