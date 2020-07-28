@@ -17,7 +17,7 @@
   },
   "Farsight Data": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:902917483333:Farsight_Data"
+    "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
   },
   "ForeverMail": {
     "notifier": "SnsNotifier",
@@ -67,7 +67,11 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Pager"
   },
-  "Generic S3":{
+  "Generic S3 atg":{
+  "notifier": "SnsNotifier",
+  "sns": "arn:aws:sns:us-east-1:405093580753:Generic_S3_atg"
+  },
+  "Generic S3 saas":{
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:902917483333:Generic_S3_Rorschach"
   },
