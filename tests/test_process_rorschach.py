@@ -34,7 +34,7 @@ class TestRorschach(unittest.TestCase):
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_invalid_event_subject"),
             'success': False,
-            'target': 'Generic S3'
+            'target': 'Generic S3 atg'
         }
         self.expected_invalid_config_file_result = {
             'details': "Cannot load S3 targets from file: s3_targets_atg_test.yaml\nException: "
@@ -48,7 +48,7 @@ class TestRorschach(unittest.TestCase):
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_config_load_failure_subject"),
             'success': False,
-            'target': 'Generic S3'
+            'target': 'Generic S3 atg'
         }
         self.example_config_file = {
             "Daily": [
@@ -99,7 +99,7 @@ class TestRorschach(unittest.TestCase):
                 'state': Watchman.STATE.get("failure"),
                 'subject': MESSAGES.get("generic_failure_exception_subject"),
                 'success': False,
-                'target': 'Generic S3',
+                'target': 'Generic S3 atg',
                 'watchman_name': 'Rorschach',
             },
             "failures": {
@@ -112,7 +112,7 @@ class TestRorschach(unittest.TestCase):
                 'state': Watchman.STATE.get("failure"),
                 'subject': MESSAGES.get("generic_failure_subject"),
                 'success': False,
-                'target': 'Generic S3',
+                'target': 'Generic S3 atg',
                 'watchman_name': 'Rorschach',
             },
             "exceptions": {
@@ -125,7 +125,7 @@ class TestRorschach(unittest.TestCase):
                 'state': Watchman.STATE.get("exception"),
                 'subject': MESSAGES.get("generic_exception_subject"),
                 'success': False,
-                'target': 'Generic S3',
+                'target': 'Generic S3 atg',
                 'watchman_name': 'Rorschach',
             },
             "success": {
@@ -138,7 +138,7 @@ class TestRorschach(unittest.TestCase):
                 'state': Watchman.STATE.get("success"),
                 'subject': MESSAGES.get("generic_success_subject"),
                 'success': True,
-                'target': 'Generic S3',
+                'target': 'Generic S3 atg',
                 'watchman_name': 'Rorschach',
             },
         }
@@ -152,7 +152,7 @@ class TestRorschach(unittest.TestCase):
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_invalid_event_subject"),
             'success': False,
-            'target': 'Generic S3',
+            'target': 'Generic S3 atg',
             'watchman_name': 'Rorschach',
         }
         self.process_checking_examples = [
@@ -371,7 +371,7 @@ class TestRorschach(unittest.TestCase):
             'state': 'EXCEPTION',
             'subject': MESSAGES.get("exception_config_load_failure_subject"),
             'success': False,
-            'target': 'Generic S3'
+            'target': 'Generic S3 atg'
         }
 
     def _create_rorschach(self):

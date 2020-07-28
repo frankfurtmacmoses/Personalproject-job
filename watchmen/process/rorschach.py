@@ -45,6 +45,7 @@ ALL_EVENT_TYPES = [HOURLY, DAILY]
 CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), CONFIG_NAME)
+GENERIC_TARGET = 'Generic S3 {}'.format(ACCOUNT)
 
 
 class Rorschach(Watchman):
@@ -314,7 +315,7 @@ class Rorschach(Watchman):
             state=Watchman.STATE.get("exception"),
             subject=MESSAGES.get("exception_config_load_failure_subject"),
             success=False,
-            target="Generic S3",
+            target=GENERIC_TARGET,
             watchman_name=self.watchman_name,
         )]
 
@@ -387,7 +388,7 @@ class Rorschach(Watchman):
             state=state,
             subject=subject,
             success=success,
-            target='Generic S3',
+            target=GENERIC_TARGET,
             watchman_name=self.watchman_name,
         ))
 
@@ -404,7 +405,7 @@ class Rorschach(Watchman):
             state=Watchman.STATE.get("exception"),
             subject=MESSAGES.get("exception_invalid_event_subject"),
             success=False,
-            target="Generic S3",
+            target=GENERIC_TARGET,
             watchman_name=self.watchman_name,
         )]
 

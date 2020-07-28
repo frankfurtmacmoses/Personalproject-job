@@ -67,7 +67,11 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
-  "Generic S3":{
+  "Generic S3 atg":{
+  "notifier": "SnsNotifier",
+  "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Generic S3 saas":{
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
