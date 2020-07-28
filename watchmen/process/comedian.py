@@ -62,6 +62,95 @@ class Comedian(Watchman):
 
         return self._create_results(result_parameters,  failure_in_results, exception_in_results)
 
+    def _build_header(self, api_config, timestamp=None):
+        """
+        Builds the header for a get request. The config tags must match the header tags.
+        :param api_config: The api configuration information
+        :param timestamp: The current timestamp
+        :return: A Dictionary of the header information
+        """
+        try:
+            head = api_config['head']
+            header = {}
+
+            for tag in head:
+                if head[tag] == 'apikey':
+                    header.update({tag: self._get_api_key(api_config)})
+                    continue
+
+                if head[tag] == 'timestamp':
+                    header.update({tag: timestamp})
+                    continue
+
+                if tag == 'signature':
+                    tag_name = tag
+                    if 'api_key' in head[tag]:
+                        key = self._get_api_key(api_config)
+                    else:
+                        key = head[tag]['key']
+
+                    if 'tag' in head[tag]:
+                        tag_name = head[tag]['tag']
+
+                    signature = self._create_signature(key, head['signature']['msg'], timestamp, api_config['hash'],
+                                                       api_config['encode'])
+
+                    header.update({tag_name: signature})
+                    continue
+
+                header.update({tag: api_config['head'][tag]})
+
+            return header, None
+        except Exception as ex:
+            self.logger.error("ERROR Creating HEADER!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
+    def _build_url(self, api_config, timestamp=None):
+        """
+        Builds the url for a get request.
+        :param api_config: The api configuration information
+        :param timestamp: The current timestamp
+        :return: The Url as a string
+        """
+        try:
+            url = api_config['url']
+            if 'url_arguments' not in api_config.keys():
+                return url, None
+
+            url_arguments = api_config['url_arguments']
+            kwargs = {}
+
+            for arg_key, arg_val in url_arguments.items():
+                if arg_key == 'timestamp':
+                    kwargs.update({'timestamp': timestamp})
+                    continue
+
+                if arg_key == 'signature':
+                    if 'api_key' in url_arguments['signature']:
+                        key = self._get_api_key(api_config)
+
+                    else:
+                        key = url_arguments['signature']['key']
+
+                    signature = self._create_signature(key, url_arguments['signature']['msg'], timestamp,
+                                                       api_config['hash'],
+                                                       api_config['encode'])
+
+                    kwargs.update({'signature': signature})
+                    continue
+
+                kwargs.update({arg_key: arg_val})
+
+            return url.format(**kwargs), None
+        except Exception as ex:
+            self.logger.error("ERROR Creating URL!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
 
     def _calculate_threshold(self, api_target):
         """
@@ -254,6 +343,33 @@ class Comedian(Watchman):
         }
         parameters = parameter_chart.get(success)
         return parameters
+
+    def _create_signature(self, sign_key, msg, timestamp, hash_alg, encode):
+        """
+        Creates a signature by hashing a key and message together with the specified hashing algorithm
+        :param sign_key: The signatures key
+        :param msg: The signature message. It may be a combination of arguments
+        :param timestamp: The timestamp of the request
+        :param hash_alg: The algorithm to hash the other arguments by. Currently only supports: sha1, sha256
+        :param encode: What to encode the arguments as.
+        """
+        params_builder = []
+
+        for key in msg:
+            if key == 'timestamp':
+                params_builder.append(timestamp)
+            else:
+                params_builder.append(msg[key])
+
+        params = ''.join(params_builder)
+
+        if hash_alg == 'sha1':
+            return hmac.new(sign_key.encode(encode), params.encode(encode), digestmod=hashlib.sha1).hexdigest()
+
+        if hash_alg == 'sha256':
+            return hmac.new(sign_key.encode(encode), params.encode(encode), digestmod=hashlib.sha256).hexdigest()
+
+        return None
 
     def _get_api_info(self, api):
         """
