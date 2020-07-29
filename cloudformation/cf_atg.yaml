@@ -610,16 +610,17 @@ Resources:
                 - Effect: Allow
                   Action:
                     - 'SNS:Publish'
-                  Resource:
-                    - !If [ IsProd, "arn:aws:sns:us-east-1:405093580753:Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test" ]
+                  Resource: '*'
                 - Effect: Allow
                   Action:
                     - 's3:GetObject'
                     - 's3:HeadBucket'
                     - 's3:ListBucket'
                   Resource:
-                    - !If [ IsProd,"arn:aws:s3:::bitaa", "arn:aws:s3:::cyber-intel-test"]
-                    - !If [ IsProd,"arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*", "arn:aws:s3:::cyber-intel-test/*"]
+                    - 'arn:aws:s3:::bitaa'
+                    - 'arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*'
+                    - 'arn:aws:s3:::cyber-intel'
+                    - 'arn:aws:s3:::cyber-intel/*'
 
     WatchmenLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
