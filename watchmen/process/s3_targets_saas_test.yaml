@@ -10,6 +10,12 @@ Hourly:
     time_offset: 2
 
 Daily:
+- target_name: DS Summaries
+  items:
+  - bucket_name: cyber-intel-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/
+    suffix: .json
+
 - target_name: Georgia Tech S3
   items:
   - bucket_name: cyber-intel-test

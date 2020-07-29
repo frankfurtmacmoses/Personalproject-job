@@ -15,6 +15,10 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:DomainTools_Quota_Pager"
   },
+  "DS Summaries": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:DS_Summaries"
+  },
   "Farsight Data": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
