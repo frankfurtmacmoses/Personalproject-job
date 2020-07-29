@@ -239,7 +239,7 @@ class TestRorschach(unittest.TestCase):
                         "short_message": MESSAGES.get("exception_message"),
                         "state": Watchman.STATE.get("exception"),
                         "subject": MESSAGES.get("exception_subject").format("target 3"),
-                        "success": None,
+                        "success": False,
                         "target": "target 3"
                     }
                 ]
