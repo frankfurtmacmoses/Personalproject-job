@@ -12,6 +12,12 @@ mysql:
 api:
   timeout: 7
 
+bernard:
+  json_file: emr_clusters_to_check.json
+  s3_bucket: cyber-intel
+  s3_prefix: watchmen/bernard
+  hour_threshold: 12
+
 comedian:
   api_key: AQICAHiWWK54vE77SA6IjYZJ/ttX+qO2oK2rkuGMvS+t7o+vygHkO7QLSjRHQP6cQnRK9GUkAAAAojCBnwYJKoZIhvcNAQcGoIGRMIGOAgEAMIGIBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDFx06wSdcdQ3wHjbEgIBEIBbMiwUqYUOU31l84vhEEanSVri8Jk+BrRGJgfuh0njdR8CIDVN+iv7B8wSGuSWkzZPYSe7RBu9IVakPsYEFyiXSRGDGWj5N2fWeTdh2A37ZegX+o9RiPioxQQ6PA==
   group_quota_url: https://www.virustotal.com/api/v3/groups/infoblox
@@ -21,6 +27,9 @@ ecs:
   feeds:
     cluster: cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8
     url: https://console.aws.amazon.com/ecs/home?region=us-east-1#/clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services
+
+emr:
+  clusters_url: https://console.aws.amazon.com/elasticmapreduce/home?region=us-east-1#cluster-list 
 
 holiday:
   good_friday: false

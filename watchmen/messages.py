@@ -6,6 +6,26 @@ the subject of emails.
 @email: garciam@infoblox.com
 """
 
+BERNARD = {
+    "exception_local_load_failure_message": "Cannot load clusters to check from file:\n{}\n\nException: {}",
+    "exception_short_message": "Bernard failed due to an exception!",
+    "exception_subject": "EXCEPTION: Bernard Encountered an Exception Checking the EMR Cluster!",
+    "exception_s3_load_failure_message": "A failure occurred loading the emr_clusters_to_check.json file from S3!"
+                                         "The local emr_clusters_to_check.json file will be used instead. Please "
+                                         "check the logs for more details.\n\nS3 file location: {}/{}\n\nException: {}",
+    "exception_s3_load_failure_subject": "Bernard Exception: Unable to Load Clusters to check from S3!",
+    "failed_cluster": "The following cluster terminated with errors: {} \nStatus: {}\n",
+    "failure_short_message": "There were failures while checking the EMR cluster status!",
+    "failure_subject": "FAILURE: Bernard Encountered Failure while Checking the EMR Cluster!",
+    "hung_cluster": "The following EMR Cluster has been hung for more than {} hours: {}\nStatus: {}\n",
+    "not_loaded_details": "Failed to load the config file {} due to the following:\n{}\n\nPlease look at the "
+                          "logs.",
+    "not_loaded_message": "Failed to load the config file, please check logs.",
+    "success_details": "Cluster: {} successfully terminated",
+    "success_short_message": "All Clusters were terminated successfully!",
+    "success_subject": "SUCCESS: EMR Clusters Terminated Properly!",
+}
+
 COMEDIAN = {
     "exception_details": "There was an exception retrieving the quota information from the VirusTotal API.\n\nTraceback"
                          " of exception:\n{}",

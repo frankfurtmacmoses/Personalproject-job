@@ -1,0 +1,19 @@
+{
+    "step_clusters": [
+        { 
+           "cluster_name": "cyberintel-mining-algorithms-prod"
+        },
+        {
+            "cluster_name": "CyberIntel Sinkhole Detector"
+        },
+        {
+            "cluster_name": "ParkingDomain_Miner"
+        },
+        {
+            "cluster_name": "CyberIntel CDN Detector"
+        },
+        {
+            "cluster_name": "CyberIntel Cryptocurrency Detector"
+        }
+    ]
+}

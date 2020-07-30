@@ -19,6 +19,10 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:DS_Summaries"
   },
+  "EMR Cluster Status": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:405093580753:EMR_Clusters"
+  },
   "Farsight Data": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"

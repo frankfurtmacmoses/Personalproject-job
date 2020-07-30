@@ -50,6 +50,7 @@ Refactored on 2020-06-29:
 }
 """
 from watchmen.common.result_svc import ResultSvc
+from watchmen.process.bernard import Bernard
 from watchmen.process.comedian import Comedian
 from watchmen.process.crookshanks import Crookshanks
 from watchmen.process.jupiter import Jupiter
@@ -61,6 +62,18 @@ from watchmen.process.rorschach import Rorschach
 from watchmen.process.silhouette import Silhouette
 from watchmen.process.slater import Slater
 from watchmen.process.spectre import Spectre
+
+
+def start_bernard_watcher(event, context):
+    """
+    Start the Bernard watcher for monitoring EMR clusters.
+    :return: The context that the code is being run in.
+    """
+    bernard = Bernard(event, context)
+    results = bernard.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
 
 
 def start_comedian_watcher(event, context):

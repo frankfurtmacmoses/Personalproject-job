@@ -33,6 +33,16 @@ class MainAtgTester(unittest.TestCase):
             target="Fake target",
         )]
 
+    @patch('watchmen.process.bernard.Bernard')
+    @patch('watchmen.process.bernard.Bernard.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_bernard_watcher(self, mock_alert, mock_monitor, mock_bernard):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
+        returned = main.start_bernard_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
     @patch('watchmen.process.comedian.Comedian')
     @patch('watchmen.process.comedian.Comedian.monitor')
     @patch('watchmen.common.result_svc.ResultSvc.send_alert')
