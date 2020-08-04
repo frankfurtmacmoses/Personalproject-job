@@ -1,0 +1,72 @@
+#Example Setup Config
+#-target_name:
+# threshold_start:
+# increment:
+# hash:
+# encode:
+# timestamp: (timestamp format in string)
+# head: (no value)
+#   *head_attr_name: possible values include: your own, timestamp(Comedian inputs correct timestamp),
+#                                                       apikey(Comedian inputs decoded key))
+#   signature:
+#       tag: name of head attribute
+#       api_key or key: key or nothing for api key
+#       msg: (no value/ what to combine for the hash)
+#         timestamp: (no value, just tag is needed)
+#         *attr_name: attr_value
+#
+#
+# url: value(if arguments format: url.com/{argument_name})
+# url_arguments: (if arguments for url) no value
+#  *argument_name(match argument name in url): value
+#  signature:(no val/ will correspond to argument named signature in url)
+#   api_key or key: key or nothing for api key
+#   msg: (no value/ what to combine for the hash)
+#    timestamp: (no value, just tag is needed)
+#    *attr_name: attr_value
+#
+# quotas:
+# - *quota_name:
+
+- target_name: VirusTotal
+  head:
+    x-apikey: apikey
+  url: https://www.virustotal.com/api/v3/groups/infoblox
+  threshold_start: 26
+  increment: 2
+  quotas:
+  - api_requests_monthly
+  - intelligence_downloads_monthly
+  - intelligence_hunting_rules
+  - intelligence_retrohunt_jobs_monthly
+  - intelligence_searches_monthly
+
+- target_name: DomainTools
+  hash: sha1
+  encode: utf-8
+  timestamp: '%Y-%m-%dT%H:%M:%SZ'
+  url: http://api.domaintools.com/v1/account?api_username={username}&signature={signature}&timestamp={timestamp}
+  url_arguments:
+    username: IID_dev
+    signature:
+      api_key:
+      msg:
+        username: IID_dev
+        timestamp:
+        uri: /v1/account
+    timestamp:
+  threshold_start: 50
+  increment: 1
+  quotas:
+  - whois
+  - whois-history
+  - reverse-ip
+  - reverse-name-server
+  - reverse-whois
+  - domain-search
+  - hosting-history
+  - mark-alert
+  - registrant-alert
+  - whois-live
+  - parsed-whois
+  - account-information
