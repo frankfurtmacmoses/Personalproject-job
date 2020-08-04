@@ -185,7 +185,7 @@ class Comedian(Watchman):
                 success = True
                 api_details = ''
 
-                #checks to see if there is a traceback instead of target quota data
+                # checks to see if there is a traceback instead of target quota data
                 if isinstance(target_quota_info.get(api_name), str):
                     tb = target_quota_info.get(api_name)
                     api_details = MESSAGES.get("exception_details").format(api_name, tb)
