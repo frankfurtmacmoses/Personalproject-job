@@ -1,5 +1,5 @@
-import unittest
 import datetime
+import unittest
 from mock import patch
 from moto import mock_emr
 
@@ -50,9 +50,9 @@ class TestBernard(unittest.TestCase):
                                         'Timeline': {'CreationDateTime': datetime.datetime(2020, 7, 16, 10, 23, 19),
                                                      'EndDateTime': datetime.datetime(2020, 7, 16, 5, 34, 40)}}}]
         self.example_hung_cluster = [{'Id': 'j-3BEYCAG31GW3J', 'Name': 'CyberIntel CDN Detector', 'Status':
-                                     {'State': 'TERMINATED', 'StateChangeReason': {},
-                                      'Timeline': {'CreationDateTime': datetime.datetime(2020, 7, 16, 10, 23, 19),
-                                                   'EndDateTime': datetime.datetime(2020, 7, 18, 5, 34, 40)}}}]
+                                     {'State': 'RUNNING', 'StateChangeReason': {},
+                                      'Timeline': {'CreationDateTime': datetime.datetime(2020, 7, 16, 10, 23, 19)
+                                                   }}}]
         self.example_list_clusters = {'Clusters': [{'Id': 'j-3BEYCAG31GW3J', 'Name': 'ParkingDomain_Miner'}]}
         self.example_list_clusters_return = [{'Id': 'j-3BEYCAG31GW3J', 'Name': 'ParkingDomain_Miner'}]
         self.example_parameters = {
@@ -75,6 +75,14 @@ class TestBernard(unittest.TestCase):
                                       'Timeline': {'CreationDateTime': datetime.datetime(2020, 7, 1, 4, 30, 52),
                                                    'ReadyDateTime': datetime.datetime(2020, 7, 1, 4, 40, 26),
                                                    'EndDateTime': datetime.datetime(2020, 7, 1, 5, 37, 12)}}}
+        self.example_hung_cluster_within_limit = {'Id': 'j-3BEYCAG31GW3J', 'Name': 'CyberIntel CDN Detector', 'Status':
+                                                  {'State': 'RUNNING', 'StateChangeReason': {'Code': 'STEPS_RUNNING'},
+                                                   'Timeline': {'CreationDateTime': datetime.datetime(2020, 7, 1, 4, 3),
+                                                                'ReadyDateTime': datetime.datetime(2020, 7, 1, 4, 40)}}}
+        self.example_hung_cluster_fail = {'Id': 'j-3BEYCAG31GW3J', 'Name': 'CyberIntel CDN Detector', 'Status':
+                                          {'State': 'RUNNING', 'StateChangeReason': {'Code': 'STEPS_RUNNING'},
+                                           'Timeline': {'CreationDateTime': datetime.datetime(2020, 6, 30, 4, 30, 52),
+                                                        'ReadyDateTime': datetime.datetime(2020, 7, 1, 4, 40, 26)}}}
         self.example_step_cluster = [{'Id': 'j-3BEYCAG31GW3J', 'Name': 'CyberIntel CDN Detector', 'Status':
                                      {'State': 'TERMINATED', 'StateChangeReason': {},
                                       'Timeline': {'CreationDateTime': datetime.datetime(2020, 7, 16, 10, 23, 19),
@@ -125,10 +133,21 @@ class TestBernard(unittest.TestCase):
             self.assertEqual((test.get('expected')), returned)
 
     @patch('watchmen.process.bernard.traceback.format_exc')
-    def test_check_cluster_runtime(self, mock_traceback):
+    @patch("watchmen.process.bernard.datetime")
+    def test_check_cluster_runtime(self, mock_datetime, mock_traceback):
         """
         watchmen.process.bernard :: Bernard :: _check_hung_cluster
         """
+        mock_datetime.now.return_value = datetime.datetime(year=2020, month=7, day=1, hour=6)
+        self.emr_check_tests = [{
+            "input_status": self.example_hung_cluster_within_limit,
+            "cluster_check_info": self.example_cluster_info,
+            "expected": True,
+        }, {
+            "input_status": self.example_hung_cluster_fail,
+            "cluster_check_info": self.example_cluster_info,
+            "expected": False,
+        }]
         for test in self.emr_check_tests:
             bernard = self._create_bernard()
             bernard._check_cluster_runtime(test.get('input_status'),
@@ -142,10 +161,12 @@ class TestBernard(unittest.TestCase):
                                                       self.example_cluster_info)
         self.assertEqual(None, test.get('cluster_check_info').get('success'))
 
-    def test_check_step_clusters(self):
+    @patch("watchmen.process.bernard.datetime")
+    def test_check_step_clusters(self, mock_datetime):
         """
         watchmen.process.bernard :: Bernard :: _check_step_clusters
         """
+        mock_datetime.now.return_value = datetime.datetime(year=2020, month=7, day=17, hour=6)
         tests = [{
             "cluster_list": self.example_step_cluster,
             "expected": True

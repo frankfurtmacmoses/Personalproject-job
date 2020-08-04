@@ -251,8 +251,6 @@ class TestComedian(unittest.TestCase):
             "target": TARGET_EMAIL.format(GENERIC),
         }]
 
-        quota_err = {"ERROR": self.traceback}
-
         tests = [
             {
                 "api_config": self.config,
