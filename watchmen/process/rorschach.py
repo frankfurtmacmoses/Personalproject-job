@@ -44,7 +44,7 @@ MESSAGES = messages.RORSCHACH
 ALL_EVENT_TYPES = [HOURLY, DAILY]
 CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), CONFIG_NAME)
+    os.path.realpath('configs'), CONFIG_NAME)
 GENERIC_TARGET = 'Generic S3 {}'.format(ACCOUNT)
 
 
