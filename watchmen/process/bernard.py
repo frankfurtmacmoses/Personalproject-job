@@ -9,6 +9,7 @@ cluster running much longer than necessary -  step clusters.
 """
 import json
 import traceback
+from datetime import datetime, timezone
 
 from watchmen import const
 from watchmen import messages
@@ -95,14 +96,15 @@ class Bernard(Watchman):
         :param cluster_check_info <dict> Dictionary containing information about the cluster check
         """
         try:
-            timeline = cluster.get('Status').get('Timeline')
-            delta_time = timeline.get('EndDateTime') - timeline.get('CreationDateTime')
-            # Stores number of hours the cluster is been running
-            elapsed_time = int(delta_time.total_seconds()/3600)
-            if elapsed_time > THRESHOLD_TIME_HRS:
-                hung_details = MESSAGES.get("hung_cluster").format(THRESHOLD_TIME_HRS, cluster.get('Name'),
-                                                                   cluster.get('Status').get('State'))
-                self._update_cluster_check_info(hung_details, False, cluster_check_info)
+            if cluster.get('Status').get('State') == 'RUNNING':
+                timeline = cluster.get('Status').get('Timeline')
+                delta_time = datetime.now(timezone.utc) - timeline.get('CreationDateTime')
+                # Stores number of hours the cluster is been running
+                elapsed_time = int(delta_time.total_seconds()/3600)
+                if elapsed_time > THRESHOLD_TIME_HRS:
+                    hung_details = MESSAGES.get("hung_cluster").format(THRESHOLD_TIME_HRS, cluster.get('Name'),
+                                                                       cluster.get('Status').get('State'))
+                    self._update_cluster_check_info(hung_details, False, cluster_check_info)
         except Exception as ex:
             self.logger.exception(traceback.extract_stack())
             self.logger.info(const.MESSAGE_SEPARATOR)
