@@ -159,7 +159,7 @@ class TestManhattan(unittest.TestCase):
             "watchman_name": "Manhattan",
             "state": "EXCEPTION",
             "subject": MESSAGES.get("subject_exception_message"),
-            "success": None,
+            "success": False,
             "target": TARGET,
         }
         self.example_pager_result_dict_ex = {
@@ -172,7 +172,7 @@ class TestManhattan(unittest.TestCase):
             "watchman_name": "Manhattan",
             "state": "EXCEPTION",
             "subject": MESSAGES.get("subject_exception_message"),
-            "success": None,
+            "success": False,
             "target": PAGER_TARGET,
         }
         self.example_result_dict_ex = {

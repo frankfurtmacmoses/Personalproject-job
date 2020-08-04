@@ -466,7 +466,7 @@ class Rorschach(Watchman):
                 "disable_notifier": False,
                 "short_message": MESSAGES.get("exception_message"),
                 "state": Watchman.STATE.get("exception"),
-                "success": None
+                "success": False
             },
             True: {
                 "disable_notifier": True,

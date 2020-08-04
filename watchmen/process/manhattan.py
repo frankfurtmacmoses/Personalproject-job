@@ -163,14 +163,15 @@ class Manhattan(Watchman):
         results = []
 
         # Result for email SNS
-        check_result = summary.get("success")
+        success = False if summary.get("success") is None else summary.get("success")
         subject = summary.get("subject")
         details = summary.get("details")
         short_message = summary.get("short_message")
-        parameters = parameter_chart.get(check_result)
+        parameters = parameter_chart.get(summary.get("success"))
+
         results.append(Result(
             **parameters,
-            success=check_result,
+            success=success,
             subject=subject,
             watchman_name=self.watchman_name,
             target=TARGET,
@@ -182,7 +183,7 @@ class Manhattan(Watchman):
         # result for Pager Duty SNS
         results.append(Result(
             **parameters,
-            success=check_result,
+            success=success,
             subject=subject,
             watchman_name=self.watchman_name,
             target=PAGER_TARGET,
