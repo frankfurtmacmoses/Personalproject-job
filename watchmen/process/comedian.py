@@ -340,7 +340,7 @@ class Comedian(Watchman):
                     target=TARGET_EMAIL.format(param.get("api_name")),
                 )
                 pager_result = Result(
-                    details=param.get("details"),
+                    details=param.get("short_message"),
                     disable_notifier=param.get("disable_notifier"),
                     short_message=param.get("short_message"),
                     snapshot=param.get("snapshot"),
