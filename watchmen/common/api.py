@@ -43,7 +43,7 @@ def get_api_data(api_url, api_headers={}, api_data=None, timeout=20):
             headers = res.headers
             content_type = headers.get('content-type', '').split(';')[0]
             decoded_data = data.decode('utf-8', errors='ignore')
-            LOGGER.info('- decoded data: %s', decoded_data)
+            LOGGER.debug('- decoded data: %s', decoded_data)
             if 'application/json' in content_type:
                 # LOGGER.debug("Decoded data [%s]: %s", type(decoded_data), decoded_data)
                 api_obj = json.loads(decoded_data)
