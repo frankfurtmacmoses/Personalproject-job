@@ -27,6 +27,7 @@ DOCKER_DENV := $(wildcard /.dockerenv)
 DOCKER_PATH := $(shell which docker)
 
 BUILD_ENV ?= test
+CONFIG_DIR := configs
 COVERAGE_DIR := htmlcov
 COVERAGE_REPORT := $(COVERAGE_DIR)/index.html
 ENDPOINTS_JSON := endpoints.json
@@ -400,20 +401,20 @@ deploy-saas-prod: clean
 
 deploy-endpoints-test:
 	@echo "--- Deploying endpoints.json to test S3 folder..."
-	aws s3 cp $(PROJECT)/$(PROCESS)/$(ENDPOINTS_JSON) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(CONFIG_DIR)/$(ENDPOINTS_JSON) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
 	@echo "--- Done."
 
 deploy-endpoints-prod:
 	@echo "--- Deploying endpoints.json to prod S3 folder..."
-	aws s3 cp $(PROJECT)/$(PROCESS)/$(ENDPOINTS_JSON) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(CONFIG_DIR)/$(ENDPOINTS_JSON) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(JUPITER)/$(ENDPOINTS_JSON)
 	@echo "--- Done."
 
 deploy-feeds-to-check-test:
 	@echo "--- Deploying feeds_to_check.json to test S3 folder..."
-	aws s3 cp $(PROJECT)/$(PROCESS)/$(FEEDS_TO_CHECK_JSON) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(MANHATTAN)/$(FEEDS_TO_CHECK_JSON)
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(CONFIG_DIR)/$(FEEDS_TO_CHECK_JSON) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(MANHATTAN)/$(FEEDS_TO_CHECK_JSON)
 	@echo "--- Done."
 
 deploy-feeds-to-check-prod:
 	@echo "--- Deploying feeds_to_check.json to prod S3 folder..."
-	aws s3 cp $(PROJECT)/$(PROCESS)/$(FEEDS_TO_CHECK_JSON) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(MANHATTAN)/$(FEEDS_TO_CHECK_JSON)
+	aws s3 cp $(PROJECT)/$(PROCESS)/$(CONFIG_DIR)/$(FEEDS_TO_CHECK_JSON) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(MANHATTAN)/$(FEEDS_TO_CHECK_JSON)
 	@echo "--- Done."
