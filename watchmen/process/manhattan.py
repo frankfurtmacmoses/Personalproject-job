@@ -44,6 +44,8 @@ FEED_URL = settings(
     'clusters/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8/services')
 FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 JSON_FILE = settings('manhattan.json_file')
+LOCAL_CONFIG_PATH = os.path.join(
+                    os.path.realpath('configs'), JSON_FILE)
 LOG_GROUP_NAME = settings('manhattan.log_group_name', 'feed-eaters-prod')
 SNS_TOPIC_ARN = settings("manhattan.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 S3_BUCKET = settings('manhattan.s3_bucket', 'cyber-intel-test')
@@ -464,7 +466,7 @@ class Manhattan(Watchman):
                 raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=short_message,
                             subject=MESSAGES.get("exception_s3_load_failure_subject"))
 
-                with open(JSON_FILE) as file:
+                with open(LOCAL_CONFIG_PATH) as file:
                     feeds_dict = json.load(file)
 
                 return feeds_dict, None

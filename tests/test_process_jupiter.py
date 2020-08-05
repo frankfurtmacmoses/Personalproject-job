@@ -5,7 +5,7 @@ from datetime import datetime
 from mock import patch
 
 from watchmen import const
-from watchmen.process.endpoints import DATA as LOCAL_ENDPOINTS
+from watchmen.process.configs.endpoints import DATA as LOCAL_ENDPOINTS
 from watchmen.process.jupiter import Jupiter
 from watchmen.process.jupiter import \
     MESSAGES, \

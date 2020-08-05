@@ -23,11 +23,11 @@ from watchmen.common.watchman import Watchman
 from watchmen.config import settings
 
 
-ERROR = "ERROR"
 CONFIG_NAME = 'api_targets.yaml'
 CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), CONFIG_NAME)
+    os.path.realpath('configs'), CONFIG_NAME)
 
+ERROR = "ERROR"
 GENERIC = 'Generic Quota'
 MESSAGES = messages.COMEDIAN
 TARGET_EMAIL = "{} Email"
@@ -340,7 +340,7 @@ class Comedian(Watchman):
                     target=TARGET_EMAIL.format(param.get("api_name")),
                 )
                 pager_result = Result(
-                    details=param.get("details"),
+                    details=param.get("short_message"),
                     disable_notifier=param.get("disable_notifier"),
                     short_message=param.get("short_message"),
                     snapshot=param.get("snapshot"),

@@ -8,6 +8,7 @@ cluster running much longer than necessary -  step clusters.
 
 """
 import json
+import os
 import traceback
 from datetime import datetime, timezone
 
@@ -22,6 +23,9 @@ from watchmen.utils.s3 import get_content
 
 EMR_TARGET = "EMR Cluster Status"
 JSON_FILE = settings('bernard.json_file')
+LOCAL_CONFIG_PATH = os.path.join(
+                    os.path.realpath("configs"), JSON_FILE)
+
 MESSAGES = messages.BERNARD
 SNS_TOPIC_ARN = settings("bernard.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
 S3_BUCKET = settings('bernard.s3_bucket', 'cyber-intel-test')
@@ -235,7 +239,7 @@ class Bernard(Watchman):
                 raise_alarm(topic_arn=SNS_TOPIC_ARN, msg=short_message,
                             subject=MESSAGES.get("exception_s3_load_failure_subject"))
 
-                with open(JSON_FILE) as file:
+                with open(LOCAL_CONFIG_PATH) as file:
                     clusters_dict = json.load(file)
 
                 step_clusters = clusters_dict.get("step_clusters")

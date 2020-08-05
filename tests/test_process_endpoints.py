@@ -1,7 +1,7 @@
 """
 # test_main
 """
-from watchmen.process.endpoints import DATA
+from watchmen.process.configs.endpoints import DATA
 import logging
 import unittest
 

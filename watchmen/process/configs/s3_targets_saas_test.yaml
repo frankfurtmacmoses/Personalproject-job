@@ -1,0 +1,41 @@
+Daily:
+- target_name: Poseidon DNS Data # do single file tests here
+  items:
+  - bucket_name: cyber-intel-saas-test
+    full_path: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/single_file/example.json # full path check success
+  - bucket_name: cyber-intel-saas-test
+    full_path: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/single_file/failed_example.json # full path check failure
+  - bucket_name: cyber-intel-saas-test
+    full_path: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/single_file/example.json
+    min_total_size_kb: 0 # single file size check success
+  - bucket_name: cyber-intel-saas-test
+    full_path: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/single_file/example.json
+    min_total_size_kb: 100000 # single file size check failure
+  - bucket_name: cyber-intel-saas-test
+    full_path: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/single_file/example.json
+    time_offset: 1 # time offset check success
+  - bucket_name: bad_bucket # bad bucket check failure
+- target_name: Poseidon Northstar DNS Data # multiple file tests here
+  items:
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/empty_folder # zero files check failure
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/ # suffix check success
+    suffix: .json
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/ # suffix check failure
+    suffix: .parquet
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/empty_files/ # empty files check failure
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/ # total size check success
+    min_total_size_kb: 1
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/ # total size check failure
+    min_total_size_kb: 100000
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/ # total files count check success
+    min_total_files: 2
+  - bucket_name: cyber-intel-saas-test
+    prefix: watchmen/rorschach/test/year=%0Y/month=%0m/day=%0d/multiple_files/ # total files count check failure
+    min_total_files: 5

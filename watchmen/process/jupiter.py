@@ -25,7 +25,7 @@ from watchmen.common.result import Result
 from watchmen.common.svc_checker import ServiceChecker
 from watchmen.common.watchman import Watchman
 from watchmen.config import settings
-from watchmen.process.endpoints import DATA as ENDPOINTS_DATA
+from watchmen.process.configs.endpoints import DATA as ENDPOINTS_DATA
 from watchmen.utils.sns_alerts import raise_alarm
 from watchmen.utils.s3 import copy_contents_to_bucket
 from watchmen.utils.s3 import get_content

@@ -97,7 +97,7 @@ class TestComedian(unittest.TestCase):
             "success": False,
             "target": TARGET_EMAIL.format('OneTestyBoi'),
         }, {
-            "details": "\n\nOneTestyBoi" + "\n" + self.exceeded_quota_message,
+            "details": MESSAGES.get("failure_short_message_single").format('OneTestyBoi'),
             "disable_notifier": False,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "short_message": MESSAGES.get("failure_short_message_single").format('OneTestyBoi'),
@@ -171,7 +171,7 @@ class TestComedian(unittest.TestCase):
             "success": True,
             "target": TARGET_EMAIL.format('OneTestyBoi'),
         }, {
-            "details": MESSAGES.get("success_details_single").format('OneTestyBoi'),
+            "details": MESSAGES.get("success_short_message_single").format('OneTestyBoi'),
             "disable_notifier": True,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "short_message": MESSAGES.get("success_short_message_single").format('OneTestyBoi'),
