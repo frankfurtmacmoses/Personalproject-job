@@ -25,8 +25,7 @@ from watchmen.config import settings
 
 CONFIG_NAME = 'api_targets.yaml'
 CONFIG_PATH = os.path.join(
-    os.path.realpath('configs'), CONFIG_NAME)
-
+    os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
 ERROR = "ERROR"
 GENERIC = 'Generic Quota'
 MESSAGES = messages.COMEDIAN

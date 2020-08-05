@@ -24,7 +24,7 @@ from watchmen.utils.s3 import get_content
 EMR_TARGET = "EMR Cluster Status"
 JSON_FILE = settings('bernard.json_file')
 LOCAL_CONFIG_PATH = os.path.join(
-                    os.path.realpath("configs"), JSON_FILE)
+                    os.path.realpath(os.path.dirname(__file__)), 'configs', JSON_FILE)
 
 MESSAGES = messages.BERNARD
 SNS_TOPIC_ARN = settings("bernard.sns_topic", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test")
