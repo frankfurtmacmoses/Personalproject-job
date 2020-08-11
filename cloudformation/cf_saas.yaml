@@ -37,7 +37,7 @@ Resources:
           TARGET_ACCOUNT: saas   # This is necessary in order to find the correct targets file. Definitely hacky.
       Handler: watchmen.main_saas.start_rorschach_watcher
       MemorySize: 256
-      Role: !GetAtt RorschachExecutionRole.Arn
+      Role: !GetAtt RorschachSaasExecutionRole.Arn
       Timeout: 300
       Tags:
         - Key: Owner
@@ -86,10 +86,10 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
-  RorschachExecutionRole:
+  RorschachSaasExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub RorschachExecutionRole-${Env}
+      RoleName: !Sub RorschachSaasExecutionRole-${Env}
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
@@ -101,7 +101,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: !Sub RorschachExecutionRole-${Env}
+        - PolicyName: !Sub RorschachSaasExecutionRole-${Env}
           PolicyDocument:
             Statement:
               - Effect: Allow
