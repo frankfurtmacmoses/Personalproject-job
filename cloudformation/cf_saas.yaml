@@ -4,10 +4,10 @@ Mappings:
   EnvMap:
     test:
       Bucket: cyber-intel-saas-test
-      BuildFile: watchmen-lambdas-test.zip
+      BuildFile: watchmen-saas-lambdas-test.zip
     prod:
       Bucket: ib-cyberint-prod-deploys
-      BuildFile: watchmen-lambdas-prod.zip
+      BuildFile: watchmen-saas-lambdas-prod.zip
 Parameters:
   Env:
     Description: Environment to be deployed.
@@ -16,7 +16,7 @@ Parameters:
     Description: The S3 prefix that contains the Watchmen builds.
     Type: String
   Account:
-    Description: AWS account alias to be used (eg. atg)
+    Description: AWS account to be deployed in (eg. atg)
     Type: String
 Conditions:
   IsProd: !Equals [ !Ref Env, prod ]
@@ -34,9 +34,10 @@ Resources:
         Variables:
           ENVIRONMENT: !Ref Env
           ACCOUNT: !Ref Account
-      Handler: !Sub watchmen.main_${Account}.start_rorschach_watcher
+          TARGET_ACCOUNT: saas   # This is necessary in order to find the correct targets file. Definitely hacky.
+      Handler: watchmen.main_saas.start_rorschach_watcher
       MemorySize: 256
-      Role: !GetAtt RorschachExecutionRole.Arn
+      Role: !GetAtt RorschachSaasExecutionRole.Arn
       Timeout: 300
       Tags:
         - Key: Owner
@@ -85,10 +86,10 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
-  RorschachExecutionRole:
+  RorschachSaasExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub RorschachExecutionRole-${Env}
+      RoleName: !Sub RorschachSaasExecutionRole-${Env}
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
@@ -100,7 +101,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: !Sub RorschachExecutionRole-${Env}
+        - PolicyName: !Sub RorschachSaasExecutionRole-${Env}
           PolicyDocument:
             Statement:
               - Effect: Allow

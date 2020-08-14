@@ -278,6 +278,7 @@ Resources:
           Variables:
             ENVIRONMENT: !Ref Env
             ACCOUNT: !Ref Account
+            TARGET_ACCOUNT: atg   # This is necessary in order to find the correct targets file. Definitely hacky.
         Handler: !Sub watchmen.main_${Account}.start_rorschach_watcher
         MemorySize: 256
         Role: !GetAtt RorschachExecutionRole.Arn
