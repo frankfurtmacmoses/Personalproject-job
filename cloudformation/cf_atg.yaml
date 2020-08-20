@@ -45,7 +45,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_bernard_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaEmrExecutionRole.Arn
+        Role: !GetAtt BernardLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -589,6 +589,53 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt SpectreScheduledEvent.Arn
+
+    BernardLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub BernardLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+           - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: !Sub BernardLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                    - 's3:HeadBucket'
+                    - 's3:ListBucket'
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:s3:::${s3_bucket}/watchmen/bernard/*'
+                      - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
+                - Effect: Allow
+                  Action:
+                    - "elasticmapreduce:DescribeCluster"
+                    - "elasticmapreduce:DescribeSteps"
+                    - "elasticmapreduce:ListSteps"
+                  Resource: !Sub "arn:${AWS::Partition}:elasticmapreduce:${AWS::Region}:${AWS::AccountId}:cluster/*"
+                - Effect: Allow
+                  Action:
+                    - "elasticmapreduce:ListClusters"
+                  Resource:
+                    - "*"
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource: "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:EMR_Clusters"
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
