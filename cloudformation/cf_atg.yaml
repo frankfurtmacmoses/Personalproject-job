@@ -24,6 +24,10 @@ Parameters:
   Account:
     Description: The aws account alias (eg. atg)
     Type: String
+  KmsKeyId:
+    Description: The AWS KMS key ID
+    type: String
+    Default: 336e1b0b-39da-44ad-b565-e6fe51a1b810
 Conditions:
   IsProd: !Equals [ !Ref Env, prod ]
 Resources:
@@ -221,7 +225,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_moloch_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt MolochLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -585,6 +589,42 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt SpectreScheduledEvent.Arn
+
+    MolochLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub MolochLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: !Sub MolochLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'kms:Decrypt'
+                  Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                    - 's3:HeadBucket'
+                    - 's3:ListBucket'
+                  Resource:
+                    - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedDomains/*'
+                    - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedHostname/*'
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cyberintel-feeds-prod'
+
     RorschachExecutionRole:
       Type: 'AWS::IAM::Role'
       Properties:
@@ -739,6 +779,7 @@ Resources:
                     - 's3:ListAllMyBuckets'
                     - 's3:HeadBucket'
                   Resource: '*'
+
     JupiterSecurityGroup:
       Type: AWS::EC2::SecurityGroup
       Properties:
