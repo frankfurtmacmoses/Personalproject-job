@@ -7,7 +7,7 @@ Mappings:
       BuildFile: watchmen-saas-lambdas-test.zip
     prod:
       Bucket: ib-cyberint-prod-deploys
-      BuildFile: watchmen-saas-lambdas-prod.zip
+      BuildFile: watchmen-lambdas-prod.zip
 Parameters:
   Env:
     Description: Environment to be deployed.
