@@ -603,7 +603,7 @@ Resources:
               Action:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
-           - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         Policies:
           - PolicyName: !Sub BernardLambdaExecutionRole${Env}
             PolicyDocument:
@@ -635,7 +635,10 @@ Resources:
                 - Effect: Allow
                   Action:
                     - 'SNS:Publish'
-                  Resource: "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:EMR_Clusters"
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
+                      - {Topic: !If [IsProd, EMR_Clusters, Watchmen_Test] } 
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -650,7 +653,7 @@ Resources:
               Action:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         Policies:
           - PolicyName: !Sub MolochLambdaExecutionRole${Env}
             PolicyDocument:
@@ -670,7 +673,10 @@ Resources:
                 - Effect: Allow
                   Action:
                     - 'SNS:Publish'
-                  Resource: !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cyberintel-feeds-prod'
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
+                      - {Topic: !If [IsProd, cyberintel-feeds-prod, Watchmen_Test] }
 
     RorschachExecutionRole:
       Type: 'AWS::IAM::Role'
