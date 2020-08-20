@@ -26,7 +26,7 @@ Parameters:
     Type: String
   KmsKeyId:
     Description: The AWS KMS key ID
-    type: String
+    Type: String
     Default: 336e1b0b-39da-44ad-b565-e6fe51a1b810
 Conditions:
   IsProd: !Equals [ !Ref Env, prod ]
