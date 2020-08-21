@@ -132,7 +132,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_jupiter_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt JupiterLambdaExecutionRole.Arn
         Timeout: 300
         Tags:
           - Key: Owner
@@ -713,6 +713,42 @@ Resources:
                     - !Sub
                       - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
                       - { Topic: !If [IsProd, Smartlisting, Watchmen_Test] }
+
+    JupiterLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub JupiterLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        Policies:
+          - PolicyName: !Sub JupiterLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                    - 's3:PutObject'
+                    - 's3:DeleteObject'
+                  Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/watchmen/jupiter/*'
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
+                      - {Topic: !If [IsProd, Sockeye, Watchmen_Test] }
 
     ManhattanLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
