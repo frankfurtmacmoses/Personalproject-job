@@ -1,0 +1,6 @@
+Daily:
+
+  - target_name: Ozone .com Data
+    items:
+    - bucket_name: cyberintel-ozone
+      full_path: data/%0Y%0m%0d/zone/%0Y%0m%0d.com.zone.gz
