@@ -5,7 +5,7 @@
 # Environment variables:
 #   BUCKET: e.g. 'cyber-intel-test' (default), 'cyber-intel'
 #   BUILD_ENV: e.g. 'dev' (default), 'preprod' (test), 'beta', 'prod'
-#   ACCOUNT: e.g. 'saas' or 'atg'
+#   ACCOUNT: e.g. 'saas', 'atg' or 'cyberintel'
 ######################################################################
 set +x
 script_file="$( readlink "${BASH_SOURCE[0]}" 2>/dev/null || echo ${BASH_SOURCE[0]} )"
