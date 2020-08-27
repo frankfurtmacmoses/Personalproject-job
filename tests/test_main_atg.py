@@ -122,13 +122,3 @@ class MainAtgTester(unittest.TestCase):
         expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_silhouette_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
-
-    @patch('watchmen.process.spectre.Spectre')
-    @patch('watchmen.process.spectre.Spectre.monitor')
-    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
-    def test_start_spectre_watcher(self, mock_alert, mock_monitor, mock_spectre):
-        mock_monitor.return_value = self.example_result_list
-
-        expected = self.example_lambda_message + const.LINE_SEPARATOR
-        returned = main.start_spectre_watcher(self.event, self.context)
-        self.assertEqual(expected, returned)
