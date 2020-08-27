@@ -640,6 +640,41 @@ Resources:
                       - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
                       - {Topic: !If [IsProd, EMR_Clusters, Watchmen_Test] } 
 
+    ComedianLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub ComedianLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies:
+          - PolicyName: !Sub ComedianLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource:
+                    - !If
+                      - IsProd
+                      - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Email"
+                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Pager"
+                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Email"
+                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Pager"
+                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Generic_Quota_Email"
+                      - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
+
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
       Properties:
