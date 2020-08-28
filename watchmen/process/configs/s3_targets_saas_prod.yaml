@@ -12,6 +12,14 @@ Hourly:
     prefix: heka/year=%0Y/month=%0m/day=%0d/
     suffix: .json.gz
 
+- target_name: Newly Observed Data
+  items:
+  - bucket_name: deteque-new-observable-data
+    full_path: NewlyObserved{var}/%Y/%-m/%-d/ZMQ_Output_%Y_%-m_%-d_%-H_
+    path_vars: [Domains, Hostname]
+    suffix: .txt
+
+
 Daily:
 
 - target_name: Poseidon DNS Data - LZ
