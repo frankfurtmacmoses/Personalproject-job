@@ -74,7 +74,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_comedian_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt ComedianLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -666,7 +666,7 @@ Resources:
                   Action:
                     - 'SNS:Publish'
                   Resource:
-                    - !If
+                    Fn::If:
                       - IsProd
                       - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Email"
                         - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Pager"
