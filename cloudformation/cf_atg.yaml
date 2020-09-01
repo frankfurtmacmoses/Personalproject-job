@@ -103,7 +103,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_crookshanks_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt CrookshanksLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -638,7 +638,7 @@ Resources:
                   Resource:
                     - !Sub
                       - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
-                      - {Topic: !If [IsProd, EMR_Clusters, Watchmen_Test] } 
+                      - {Topic: !If [IsProd, EMR_Clusters, Watchmen_Test] }
 
     ComedianLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -674,6 +674,45 @@ Resources:
                         - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Pager"
                         - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Generic_Quota_Email"
                       - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
+
+    CrookshanksLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub CrookshanksLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies:
+          - PolicyName: !Sub CrookshanksLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                    - 's3:HeadBucket'
+                    - 's3:ListBucket'
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:s3:::${s3_bucket}/whitelist/smartlisting/prod/smartlist/*'
+                      - {s3_bucket: !FindInMap [EnvMap, !Ref Env, Bucket]}
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource:
+                    - !Sub
+                      - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
+                      - { Topic: !If [IsProd, Smartlisting, Watchmen_Test] }
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
