@@ -74,7 +74,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_comedian_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt ComedianLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -167,7 +167,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_manhattan_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt ManhattanLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -666,7 +666,7 @@ Resources:
                   Action:
                     - 'SNS:Publish'
                   Resource:
-                    - !If
+                    Fn::If:
                       - IsProd
                       - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Email"
                         - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Pager"
@@ -713,6 +713,68 @@ Resources:
                     - !Sub
                       - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
                       - { Topic: !If [IsProd, Smartlisting, Watchmen_Test] }
+
+    ManhattanLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub ManhattanLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies:
+          - PolicyName: !Sub ManhattanLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - 'logs:DescribeLogStreams'
+                  Resource:
+                    - !Sub 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:feed-eaters-prod:*'
+                - Effect: Allow
+                  Action:
+                    - 'dynamodb:Query'
+                  Resource: !Sub |
+                    {
+                      "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:
+                       table/CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ"
+                    }
+                - Effect: Allow
+                  Action:
+                    - 'ecs:ListTasks'
+                    - 'ecs:DescribeTasks'
+                  Resource: !Sub |
+                    {
+                      "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:
+                       cluster/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8"
+                    }
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource:
+                    - !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                  Resource:
+                    - !Sub
+                      - 'arn:aws:s3:::${s3_bucket}/watchmen/manhattan/feeds_to_check.json'
+                      - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource:
+                    Fn::If:
+                      - IsProd
+                      - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cyberintel-feeds-prod"
+                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:PagerDuty"
+                      - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
