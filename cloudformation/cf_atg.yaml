@@ -740,20 +740,17 @@ Resources:
                 - Effect: Allow
                   Action:
                     - 'dynamodb:Query'
-                  Resource: !Sub |
-                    {
-                      "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:
-                       table/CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ"
-                    }
+                  Resource:
+                    - !Sub "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/CyberInt-Reaper-prod-DynamoDbStack-3XBEIHSJPHBT-ReaperMetricsTable-1LHW3I46AEDQJ"
                 - Effect: Allow
                   Action:
                     - 'ecs:ListTasks'
                     - 'ecs:DescribeTasks'
-                  Resource: !Sub |
-                    {
-                      "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:
-                       cluster/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8"
-                    }
+                  Resource: "*"
+                  Condition:
+                    ArnEquals:
+                      ecs:cluster:
+                         - !Sub "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:cluster/cyberint-feed-eaters-prod-EcsCluster-L94N32MQ0KU8"
                 - Effect: Allow
                   Action:
                     - "kms:Decrypt"
