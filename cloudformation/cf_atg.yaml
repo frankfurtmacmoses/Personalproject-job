@@ -196,7 +196,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_metropolis_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt MetropolisLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -772,6 +772,48 @@ Resources:
                       - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cyberintel-feeds-prod"
                         - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:PagerDuty"
                       - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
+
+    MetropolisLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub MetropolisLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies:
+          - PolicyName: !Sub MetropolisLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource:  !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                    - 's3:HeadBucket'
+                    - 's3:ListBucket'
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:s3:::${s3_bucket}/analytics/change_detection/prod/*'
+                      - {s3_bucket: !FindInMap [EnvMap, !Ref Env, Bucket]}
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource:
+                    Fn::If:
+                      - IsProd
+                      - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Domain_Counts_Metrics"
+                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Slowdrip_Metrics"
+                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Reaper_Metrics"
+                      - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test"
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
