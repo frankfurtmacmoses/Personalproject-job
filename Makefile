@@ -387,6 +387,18 @@ deploy-atg-prod: clean
 	@echo
 	@echo "- DONE :$@"
 
+deploy-cyberintel-test: clean
+	@echo
+	BUILD_ENV=test ACCOUNT=cyberintel BUCKET=cyberintel-test FEATURE=watchmen-cyberintel DEPLOY_FILE=cf_cyberintel.yaml $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE :$@"
+
+deploy-cyberintel-prod: clean
+	@echo
+	BUILD_ENV=prod ACCOUNT=cyberintel BUCKET=cyber-intel-prod FEATURE=watchmen-cyberintel DEPLOY_FILE=cf_cyberintel.yaml $(MAKE_DEPLOY)
+	@echo
+	@echo "- DONE: $@"
+
 deploy-saas-test: clean
 	@echo
 	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-saas-test FEATURE=watchmen-saas DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
