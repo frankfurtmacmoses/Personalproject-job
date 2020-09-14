@@ -25,6 +25,7 @@ import os
 import pytz
 import traceback
 import yaml
+from dateutil.relativedelta import relativedelta
 
 # External Libraries
 import watchmen.utils.s3 as _s3
@@ -39,12 +40,12 @@ ENVIRONMENT = settings("ENVIRONMENT", "test")
 HOURLY = "Hourly"
 MESSAGES = messages.RORSCHACH
 MINUTELY = "Minutely"
+MONTHLY = "Monthly"
 TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
 WEEKLY = "Weekly"
 
 # Constants dependent on previously defined constants:
-ALL_EVENT_TYPES = [MINUTELY, HOURLY, DAILY, WEEKLY]
-EVENT_OFFSET_DICT = {MINUTELY: 'minutes', HOURLY: 'hours', DAILY: 'days', WEEKLY: 'weeks'}
+EVENT_AND_OFFSET = {MINUTELY: 'minutes', HOURLY: 'hours', DAILY: 'days', WEEKLY: 'weeks', MONTHLY: 'months'}
 CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(TARGET_ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
@@ -60,17 +61,20 @@ class Rorschach(Watchman):
         Constructor of Rorschach
         """
         super().__init__()
-        self.event = event.get("Type")
+        self.event_frequency = event.get("Type")
+        self.event = ''
 
     def monitor(self):
         """
         Monitors the S3 targets defined in the s3_targets{ENV}.yaml file.
         :return: <list> List of Result objects containing information from the file checks performed.
         """
-        if self._check_invalid_event():
+        self.event, config_target_path, tb = self._parse_event()
+
+        if self._check_invalid_event() or tb:
             return self._create_invalid_event_result()
 
-        s3_targets, tb = self._load_config()
+        s3_targets, tb = self._load_config(config_target_path)
         if tb:
             return self._create_config_not_load_result(tb)
 
@@ -108,15 +112,17 @@ class Rorschach(Watchman):
 
     def _check_invalid_event(self):
         """
-        Method to check that the event passed in from the Lambda has the correct parameters. If there is no "Type"
-        parameter passed in, or the "Type" does not equal any of the allowed event types, then the
-        event parameter is invalid.
+        Method to check that the event frequency passed in from the Lambda has the correct parameters. If there is no
+        event, or it does not equal any of the allowed event types, then the event is invalid. Allowed event types are
+        stored in the ALL_EVENT_TYPES dict.
         :return: <bool> True if the event parameter passed from the Lambda is invalid, false if the event parameter is
                         valid.
         """
-        if not self.event or self.event not in ALL_EVENT_TYPES:
+
+        if not self.event or self.event not in EVENT_AND_OFFSET:
             self.logger.info(MESSAGES.get("failure_event_check").format(self.event))
             return True
+
         self.logger.info(MESSAGES.get("success_event_check"))
 
         return False
@@ -576,7 +582,7 @@ class Rorschach(Watchman):
 
             # Trim contents to include only object within the time offset
             if offset_type in TRIMMABLE_EVENT_TYPES:
-                contents = self._trim_contents(contents, time_offset, self.event)
+                contents = self._trim_contents(contents, time_offset, offset_type)
 
             # Removing whitelisted files from contents:
             if item.get("whitelist"):
@@ -598,7 +604,8 @@ class Rorschach(Watchman):
 
     def _generate_key(self, prefix_format, offset_type, time_offset=1):
         """
-        Method to generate the key for each target based on the event type.
+        Method to generate the key for each target based on the event frequency.
+        Note: timedelta() does not support offset by months so relativedelta() is used
         :param prefix_format: <string> The S3 key prefix format.
         :param offset_type: <string> The event type.
         :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
@@ -607,8 +614,9 @@ class Rorschach(Watchman):
                  <string>: Traceback if an exception was encountered, None otherwise.
         """
         try:
-            check_time = \
-                _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{EVENT_OFFSET_DICT[offset_type]: time_offset})
+            check_time = _datetime.datetime.now(pytz.utc) - \
+                         relativedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
+
             prefix = check_time.strftime(prefix_format)
             return prefix, None
         except Exception as ex:
@@ -618,7 +626,7 @@ class Rorschach(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
-    def _load_config(self):
+    def _load_config(self, config_target_path):
         """
         Method to load the .yaml config file that contains configuration details of each s3 target.
         :return: <dictionary>, <string>
@@ -628,7 +636,10 @@ class Rorschach(Watchman):
         try:
             with open(CONFIG_PATH) as f:
                 s3_targets = yaml.load(f, Loader=yaml.FullLoader)
-            s3_targets = s3_targets.get(self.event)
+
+            for path in config_target_path:
+                s3_targets = s3_targets[path]
+
             return s3_targets, None
         except Exception as ex:
             self.logger.error("ERROR Processing Data!")
@@ -636,6 +647,28 @@ class Rorschach(Watchman):
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
+
+    def _parse_event(self):
+        """
+        This method will parse the data in the event "Type" into the event and a path to access the specified
+        targets. Example event Type: {"Type": {"Weekly": "Mon,10:45}}.
+        :return: <string>: Event
+                <list<string>>: the keys to follow in the config
+                <string>: the traceback if there is an error
+        """
+
+        try:
+            event = list(self.event_frequency.keys())[0]
+            config_target_path = [event]
+            config_target_path.extend(self.event_frequency.get(event).split(","))
+            return event, config_target_path, None
+
+        except Exception as ex:
+            self.logger.error("ERROR Parsing Event")
+            self.logger.info(MESSAGES.get("failure_event_check").format(self.event_frequency))
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, None, tb
 
     def _process_checking(self, s3_targets):
         """
@@ -736,7 +769,7 @@ class Rorschach(Watchman):
         :return: Pruned contents
         """
         end_time = _datetime.datetime.now(pytz.utc)
-        start_time = end_time - _datetime.timedelta(**{EVENT_OFFSET_DICT[event]: offset})
+        start_time = end_time - _datetime.timedelta(**{EVENT_AND_OFFSET[event]: offset})
 
         for file in list(contents):
             if file.get("LastModified") > end_time or file.get("LastModified") < start_time:
