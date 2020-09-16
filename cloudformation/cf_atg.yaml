@@ -314,7 +314,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_silhouette_watcher
         MemorySize: 128
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt SilhouetteLambdaExecutionRole.Arn
         Timeout: 7
         Tags:
           - Key: Owner
@@ -924,6 +924,40 @@ Resources:
                     - 'arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*'
                     - 'arn:aws:s3:::cyber-intel'
                     - 'arn:aws:s3:::cyber-intel/*'
+
+    SilhouetteLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub SilhouetteLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies:
+          - PolicyName: !Sub SilhouetteLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                  Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/analytics/lookalike2/prod/status/*'
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource:
+                    - !Sub
+                      - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
+                      - {Topic: !If [IsProd, cyberintel-lookalike-s3, Watchmen_Test]}
 
     WatchmenLambdaEmrExecutionRole:
       Type: 'AWS::IAM::Role'
