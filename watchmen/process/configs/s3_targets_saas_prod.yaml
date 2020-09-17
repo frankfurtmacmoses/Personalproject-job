@@ -7,7 +7,7 @@ Daily:
     suffix: .parquet
 
   - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/summaries/customer/name_servers/year=%0Y/month=%0m/day=%0d/
+    prefix: dns-logs/customer/summaries/name_servers/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
     whitelist: ['_SUCCESS']
 
