@@ -477,7 +477,7 @@ Resources:
       Type: 'AWS::Events::Rule'
       Properties:
         Description: A daily event that kicks off Silhouette Watchman.
-        ScheduleExpression: cron(0 15 * * ? *)
+        ScheduleExpression: cron(0 17 * * ? *)
         State: !If [ IsProd, ENABLED, DISABLED ]
         Targets:
           - Id: SilhouetteScheduler
