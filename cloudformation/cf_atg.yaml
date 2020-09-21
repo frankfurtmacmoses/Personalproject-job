@@ -921,9 +921,12 @@ Resources:
                   Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
                 - Effect: Allow
                   Action:
+                    -  's3:ListBucket'
+                  Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel'
+                - Effect: Allow
+                  Action:
                     - 's3:GetObject'
                     - 's3:HeadBucket'
-                    - 's3:ListBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/malspam/forevermail/*'
                 - Effect: Allow
                   Action:
