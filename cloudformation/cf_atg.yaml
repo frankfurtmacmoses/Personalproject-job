@@ -254,7 +254,7 @@ Resources:
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_mothman_watcher
         MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
+        Role: !GetAtt MothmanLambdaExecutionRole.Arn
         Timeout: 30
         Tags:
           - Key: Owner
@@ -477,7 +477,7 @@ Resources:
       Type: 'AWS::Events::Rule'
       Properties:
         Description: A daily event that kicks off Silhouette Watchman.
-        ScheduleExpression: cron(0 15 * * ? *)
+        ScheduleExpression: cron(0 17 * * ? *)
         State: !If [ IsProd, ENABLED, DISABLED ]
         Targets:
           - Id: SilhouetteScheduler
@@ -738,10 +738,20 @@ Resources:
                   Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
                 - Effect: Allow
                   Action:
+                    - 's3:ListBucket'
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:s3:::${s3_bucket}'
+                      - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
+                - Effect: Allow
+                  Action:
                     - 's3:GetObject'
                     - 's3:PutObject'
                     - 's3:DeleteObject'
-                  Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/watchmen/jupiter/*'
+                  Resource:
+                    - !Sub
+                      - 'arn:${AWS::Partition}:s3:::${s3_bucket}/watchmen/jupiter/*'
+                      - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
                 - Effect: Allow
                   Action:
                     - 'SNS:Publish'
@@ -886,6 +896,42 @@ Resources:
                     - !Sub
                       - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
                       - {Topic: !If [IsProd, cyberintel-feeds-prod, Watchmen_Test] }
+
+    MothmanLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub MothmanLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        Policies:
+          - PolicyName: !Sub MothmanLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
+                - Effect: Allow
+                  Action:
+                    - 's3:GetObject'
+                    - 's3:HeadBucket'
+                    - 's3:ListBucket'
+                  Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/malspam/forevermail/*'
+                - Effect: Allow
+                  Action:
+                    - 'SNS:Publish'
+                  Resource:
+                    - !Sub
+                      - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
+                      - { Topic: !If [IsProd, cyberintel-malspam-prod, Watchman_Test] }
 
     RorschachExecutionRole:
       Type: 'AWS::IAM::Role'
