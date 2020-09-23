@@ -2,8 +2,6 @@ Table of Contents
 =================
 
    * [Watchmen](#watchmen)
-      * [Project Info](#project-info)
-         * [Reaper Feeds](#reaper-feeds)
       * [Getting Started: Dev Setup](#getting-started-dev-setup)
       * [Testing](#testing)
       * [Watchmen Design Overview](#watchmen-design-overview)
@@ -27,6 +25,14 @@ Table of Contents
          * [Creating a Pull Request](#creating-a-pull-request)
          * [Example Pictures for a Pull Request](#example-pictures-for-a-pull-request)
       * [Deployment](#deployment)
+      * [Modifying a Watchman](#modifying-a-watchman)
+        * [Change a Watchmans Schedule](#change-a-watchmans-schedule)
+        * [Add a New Watchman Schedule](#add-another-schedule-for-a-watchman)
+        * [Add a New Target to a Watchman](#add-more-checks-and-capabilities-to-a-generic-watchman)
+            * [Bernard](#adding-emr-steps-to-bernard)
+            * [Rorschach](#adding-s3-targets-to-rorschach)
+            * [Comedian](#adding-apis-to-comedian)
+            * [Manhattan](#adding-frindles-to-manhattan)
 
 # Watchmen
 The Watchmen project consists of a series of AWS Lambda functions that are configured to
@@ -35,101 +41,6 @@ The team both produces and consumes a variety of data and services that utilize 
 avoid silent failures, signify outages and metric anomalies, and allow members of the team to
 remain updated at all times.
 
-## Project Info
-### Manhattan
-This Watchman currently monitors several feeds that submit straight to Reaper. These feeds
-are broken up into 3 categories:
-**hourly feeds**, **daily feeds**, **weekly feeds**.
-
-NOTE:\
-Current method for monitor feed is querying the Reaper metrics table!
-
-This Watchmen has a config file called **feeds_to_check.json** which contains all the feeds
-being monitored. It is structured like this:
-```
-{
-    "Hourly": [{Hourly_Feeds_info}, ...],
-    "Daily": [{Daily_Feeds_info}, ...],
-    "Weekly": [{Weekly_Feeds_info}, ...],
-}
-```
-For each feed, a minimum value and a maximum value is set, and an alarm will be raised if the metric name returns an 
-associated number outside of this range. If no min or max is needed, simply place 0 for min and sys.maxint for max.
-
-Hourly:
-```
-{
-  "name": "feed_name",
-  "source_name": "source_name",
-  "metric_name": "metric_name",
-  "min": min,
-  "max": max,
-  "needs_metric": bool
-},
-```
-For the list below, you will have to add the actual name that displays in the
-logs at the beginning for `feed_name`.\
-For example if you see:
-```
-zeus-tracker-scraper/zeus-tracker-scraper-prod/ffe50104-5272-4832-bf83-5ae02c6f85f6
-```
-Then, zeus-tracker-scraper is what you would insert into feed_name. Nothing else should be added after the first slash. \
-**IMPORTANT NOTE**: Even if the name is identical, still add it; otherwise, it will not work. You will also notice some 
-feeds have very different names from what's listed in the logs. Please keep this in mind when adding to this list.
-
-Daily:
-
-Daily is the same as hourly, but requires the `hour_submitted` tag. Below is an example of a Daily item:
-```
-{
-  "name": "feed_name",
-  "source_name": "source_name",
-  "metric_name": "metric_name",
-  "min": min,
-  "max": max,
-  "hour_submitted": "09",
-  "needs_metric": bool
-},
-```
-The hour submitted requires a specific hour in which the metric was submitted. For example, if a feed submits daily at 
-09:00 (UTC), then you must place the hour submitted as '09'.\
- **Important to remember the 0 at the front**.
- 
-Weekly:\
-Weekly is the same as Daily, but requires the `days_to_subtract` tag. Below is an example of a Weekly item:
-```
-{
-  "name": "feed_name",
-  "source_name": "source_name",
-  "metric_name": "metric_name",
-  "min": min,
-  "max": max,
-  "hour_submitted": "09",
-  "days_to_subtract": 4,
-  "needs_metric": bool
-}
-```
-
-
-Since the weekly Watchman runs once a week on Friday, in order to get the current date, 
-we have to set the date as an integer value. Currently, it looks like the following:
-```
-Saturday: 6
-Sunday: 5
-Monday: 4
-Tuesday: 3
-Wednesday: 2
-Thursday: 1
-Friday: 0
-```
-Along with that is the hour it was submitted on that day.
-
-To run any of these watchmen individually you will need to add:
-```
-main({'type':<Hourly, Daily, Weekly>', None)
-```
-Choose one of the three above.\
-At the bottom of the script to ensure the added feed does not cause issues.
 ## Getting Started: Dev Setup
 Running a dev-setup script to install the project and libraries
 ```
@@ -696,3 +607,354 @@ aws cloudformation update-stack
    --parameters ParameterKey=Env,ParameterValue=test ParameterKey=BuildsPrefix,ParameterValue=watchmen/builds/{BUILD_ZIP}
    --template-body file://cloudformation.yaml
 ```
+
+## Modifying a Watchman
+
+### Change a Watchman’s Schedule
+
+Ex) Someone wants to change a schedule from daily to monthly. What do they do?
+
+If someone needs to modify a Watchman’s current monitoring schedule, they must go to cloudformation/cf_{AWS_Account}.yaml 
+and find that specific Watchman’s ScheduledEvent. If they are unsure of what that looks like, they should go
+[here](#adding-watchmen-to-cloudformation) and scroll down to `2) Add your Watchmen’s cron job/scheduled event`
+because it is a good template. They should find the “ScheduleExpression” key and change the cron schedule to what they desire. 
+They should use this example [table](#cron-schedule-example-table) for format help.
+
+### Add Another Schedule for a Watchman
+Ex) Someone wants to change a daily schedule to daily AND monthly. What do they do?
+
+If a Watchman’s current monitoring schedule is sufficient but an additional schedule is desired, the Watchman will 
+require another ScheduledEvent in cloudformation/cf_{AWS_Account}.yaml. The code to add this ScheduledEvent can be found 
+[here](#adding-watchmen-to-cloudformation). They should scroll down to `2) Add your Watchmen’s cron job/scheduled event.` 
+When a Watchman has multiple ScheduledEvents, the names of the ScheduledEvents should include their schedule type. For example, 
+WatchmanDailyScheduledEvent or WatchmanMonthlyScheduledEvent state their schedule type. Both ScheduledEvents use the 
+same Lambda function in CloudFormation. They should use this example [table](#cron-schedule-example-table) for cron scheduling help.
+
+### Add more checks and capabilities to a generic Watchman
+**Current Generic Watchmen:**
+- [Bernard](#adding-emr-steps-to-bernard) (EMR Steps Monitor) 
+    - Account: atg-infoblox
+- [Rorschach](#adding-s3-targets-to-rorschach) (S3 Monitor) 
+    - Account: atg-infoblox, saas-infoblox
+- [Comedian](#adding-apis-to-comedian) (Api Quota Tracker)
+    - Account: atg-infoblox
+- [Manhattan](#adding-frindles-to-manhattan) (Frindle Monitor)
+    - Account: atg-infoblox
+    - Note: Only monitors frindles in ECS Cluster cyberint-feed-eaters-prod
+
+#### Adding EMR Steps to Bernard
+**Config File:** watchmen/process/configs/emr_clusters_to_check.json
+
+To add a new EMR cluster for monitoring steps, add a dictionary to the `step_clusters` list in the config file with the name of 
+the cluster. It would look something like this:
+```
+{ 
+    "cluster_name": "your-cluster-name"
+}
+```
+
+#### Adding S3 Targets to Rorschach
+**Config Files:** 
+- watchmen/process/configs/s3_targets_atg_prod.yaml
+- watchmen/process/configs/s3_targets_saas_prod.yaml
+
+To add a new target for Rorschach to monitor, add the `target_name` with the correct tags under the check frequency tag 
+(`Hourly` or `Daily`) then add the file(s) to be checked under an `items` tag. The `target_name` will correspond to the 
+Response object target. If a new target is added, the `target_name` should also be added to 
+`watchmen/common/notifiers-test.json` and `watchmen/common/notifiers-prod.json` with its corresponding SNS topic.
+
+
+**Target Tags**:
+
+- **bucket_name**: \<String> the name of the S3 bucket the file(s) will be in.
+    - Required for all checks.
+- **full_path**: \<String> the exact path to check for single file existence.
+    - Required for single file checks.
+- **min_total_files**: \<Integer> the minimum amount of total objects expected.
+    - Optional for multiple files checks.
+- **min_total_size_kb**: \<Integer> the minimum total file size expected
+    - Optional for single file and multiple files checks.
+- **prefix**: \<String> the S3 prefix the files are in.
+    - Required for multiple files checks.
+- **suffix**: \<String> the expected suffix each file in the S3 bucket and prefix should have.
+    - Optional for multiple files checks.
+- **time_offset**: \<Integer> the amount of time to go back for the existence check. The counter will be whatever the event type is. For example, a time_offset of 2 for Daily events will look at files from 2 days ago.
+    - Optional for single file and multiple files checks.
+- **whitelist**: \<List<String>> whitelisted files that should not be considered while performing the checks.
+    - Optional for multiple files checks.
+    
+A multiple file entry might look like this:
+
+```
+Daily
+    - target_name: DS Summaries
+      items:
+        - bucket_name: cyber-intel
+          prefix: prefix/year=%0Y/month=%0m/day=%0d/
+          suffix: .parquet
+          whitelist: ['_SUCCESS']
+        - bucket_name: cyber-intel
+          prefix: prefix/src=customer/year=%0Y/month=%0m/day=%0d/
+          suffix: .parquet
+          whitelist: ['_SUCCESS']
+
+```
+
+#### Adding API's to Comedian
+**Config File:** watchmen/process/configs/api_targets.yaml
+
+Note: Store new API keys at watchmen/config.yaml with the tag `{target_name}_api_key`
+
+To add a new API to Comedian:
+
+1) Add a new entry to the config file. Below are the tags:
+
+- **target_name**: \<String> The name of the API target.
+    - Required
+- **threshold_start**: \<Integer> The start threshold percentage at the beginning of the month.
+    - Required
+    - Ex: 50
+- **increment**: \<Integer> Percentage to increment the quota threshold daily.
+    - Required
+    - Ex: 2
+- **hash**: \<String> If you will need a signature for your get request, specify the hashing algorithm here.
+    - Optional
+    - Possible Values: sha1, sha256
+- **encode**: \<String> If you will need a signature for your get request, specify how to encode the strings here.
+    - Optional
+    - Ex: utf-8
+- **timestamp**: \<String> If your url or request signature will require a timestamp, enter the stamp format here.
+    - Optional
+    - Note: Must have `''`
+    - Ex: '%Y-%m-%dT%H:%M:%SZ'
+- **head**: \<None> This is a tag to establish get request header data. This is only needed if you need to customize the 
+                     request header.
+    - Optional
+    - Sub Tags:
+        - **{head-tag-name}**: \<String> If there needs to be a special head tag and value pair, add the header tag name as 
+                                     the config tag and the header value as the config value. If an api key is the value,
+                                     then enter `apikey` as the value and the comedian will assign it.
+            - Optional
+            - Possible Values: apikey(will insert the apikey into the header), 
+                               timestamp(will insert the timestamp), 
+                               Any other value you choose
+            - Ex: `MYHeaderTag: ohaheadertag`
+        - **signature**: \<None>If a signature is needed in the request header, provide the information under this tag.
+            - Optional
+            - Sub Tags:
+                - **tag**: \<String> The Header tag name associated with the signature.
+                    - Required
+                - **api_key** (or) **key**: \<String> If the signature requires an api key as the signature key, use `api-key` 
+                                                and enter the api key in the cyberint-watchman config file. If the 
+                                                signature key is not an api key, use `key` and put in the key as the 
+                                                value in this config.
+                    - Required                                       
+                - **msg**: \<None> This is to mark the pieces of the message which will be combined, encoded with the 
+                                 `encode` tag, then signed with the key above for the signature.
+                    - Required
+                    - Sub Tags:
+                        - **timestamp**: \<None> If a timestamp is needed make sure you have already assigned the 
+                                               `timestamp` tag. This tag will automatically enter in the timestamp with 
+                                               the format previously established.
+                            - Optional
+                        - **{attr_name}**: \<String> This will establish the message to be combined. The tag name is 
+                                                   arbitrary and the values will be combined for the signature message.
+                            - Required
+                            - Note: There can be as many of these tags as needed.
+    - Ex:
+        ```
+          head:
+            MYHeaderTag: timestamp
+            signature:
+               tag: thisasignature
+               key: ooosupersecretkey
+               msg:
+                 MSG1: IamFirst
+                 MSG2: IamSecond
+        ```  
+- **url**: \<String> The url to send the request to. If there are arguments in the url, add them in the url like this
+                       `{argument-name}`.
+    - Required
+    - Ex: url.com/{argument-name}
+- **url_arguments**: \<None> If the url has arguments, establish them under this tag with matching names.
+    - Optional
+    - Sub Tags:
+        - **timestamp**: \<None> will add a timestamp into the url argument named timestamp
+            - Optional
+        - **signature**: \<None> Will add a signature into the url argument named signature
+            - Optional
+            - Sub tags: Must be configured in the same way as stated above
+        - **{url-argument-name}**: \<Any> argument value
+            - Optional
+    - Ex:
+        ```
+        url: http://api.domaintools.com/v1/account?api_username={username}&signature={signature}&timestamp={timestamp}
+        url_arguments:
+            username: user
+            signature:
+              api_key:
+              msg:
+                username: user
+                timestamp:
+                uri: uri
+            timestamp:
+        ```
+- **quotas**: \<None> List all quota names to be tracked below in the format `- {quota-name}`
+    - Required
+    - Ex:
+        ```
+        quotas:
+          - whois
+          - whois-history
+          - reverse-ip
+          - reverse-name-server
+          - reverse-whois
+          - domain-search
+          - hosting-history
+          - mark-alert
+          - registrant-alert
+        ```
+
+2) Add the `_get_{target-name}_data()` function. Its purpose will be to perform a get request and format that response.
+   Here is a template for the method:
+   ```
+    def _get_{target-name}_data(self, api):
+        header, tb = self._build_header(api)
+        if tb:
+            return None, tb
+   
+        url, tb = self._build_url(api)
+        if tb:
+            return None, tb
+   
+        try:
+            api_response = requests.get(url=url, headers=header).json()
+            quotas = api_response["path"]["to"]["quotas"]
+        except Exception as ex:
+            self.logger.info("ERROR in VirusTotal GET Request")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+   
+        formatted_data, tb = self._create_data_template(api)
+        if tb:
+            return None, tb
+   
+        api_quotas = api['quotas']
+        for quota in quotas:
+            if quota in api_quotas:
+                #add quota usage and name to the formatted_data dictionary
+        return formatted_data, None
+   ```
+   
+   The return of this method should be in the form:
+   ```
+   {
+            'threshold_start': 26,
+            'increment': 2,
+            'quotas': {'api_requests_monthly': {'used': 311, 'allowed': 1000000000},
+                      'intelligence_downloads_monthly': {'used': 0, 'allowed': 300},
+                      'intelligence_hunting_rules': {'used': 20, 'allowed': 20000},
+                      'intelligence_retrohunt_jobs_monthly': {'used': 0, 'allowed': 5},
+                      'intelligence_searches_monthly': {'used': 21, 'allowed': 300}}}
+   }
+   ```
+#### Adding Frindles to Manhattan
+**Config File:** watchmen/process/configs/feeds_to_check.json
+
+If the frindle is in the right ECS Cluster then add an entry to the config.
+
+This Watchman currently monitors several feeds that submit straight to Reaper. These feeds
+are broken up into 3 categories:
+**hourly feeds**, **daily feeds**, **weekly feeds**.
+
+NOTE:\
+Current method for monitor feed is querying the Reaper metrics table!
+
+This Watchmen has a config file called **feeds_to_check.json** which contains all the feeds
+being monitored. It is structured like this:
+```
+{
+    "Hourly": [{Hourly_Feeds_info}, ...],
+    "Daily": [{Daily_Feeds_info}, ...],
+    "Weekly": [{Weekly_Feeds_info}, ...],
+}
+```
+For each feed, a minimum value and a maximum value is set, and an alarm will be raised if the metric name returns an 
+associated number outside of this range. If no min or max is needed, simply place 0 for min and sys.maxint for max.
+
+Hourly:
+```
+{
+  "name": "feed_name",
+  "source_name": "source_name",
+  "metric_name": "metric_name",
+  "min": min,
+  "max": max,
+  "needs_metric": bool
+},
+```
+For the list below, you will have to add the actual name that displays in the
+logs at the beginning for `feed_name`.\
+For example if you see:
+```
+zeus-tracker-scraper/zeus-tracker-scraper-prod/ffe50104-5272-4832-bf83-5ae02c6f85f6
+```
+Then, zeus-tracker-scraper is what you would insert into feed_name. Nothing else should be added after the first slash. \
+**IMPORTANT NOTE**: Even if the name is identical, still add it; otherwise, it will not work. You will also notice some 
+feeds have very different names from what's listed in the logs. Please keep this in mind when adding to this list.
+
+Daily:
+
+Daily is the same as hourly, but requires the `hour_submitted` tag. Below is an example of a Daily item:
+```
+{
+  "name": "feed_name",
+  "source_name": "source_name",
+  "metric_name": "metric_name",
+  "min": min,
+  "max": max,
+  "hour_submitted": "09",
+  "needs_metric": bool
+},
+```
+The hour submitted requires a specific hour in which the metric was submitted. For example, if a feed submits daily at 
+09:00 (UTC), then you must place the hour submitted as '09'.\
+ **Important to remember the 0 at the front**.
+ 
+Weekly:\
+Weekly is the same as Daily, but requires the `days_to_subtract` tag. Below is an example of a Weekly item:
+```
+{
+  "name": "feed_name",
+  "source_name": "source_name",
+  "metric_name": "metric_name",
+  "min": min,
+  "max": max,
+  "hour_submitted": "09",
+  "days_to_subtract": 4,
+  "needs_metric": bool
+}
+```
+
+
+Since the weekly Watchman runs once a week on Friday, in order to get the current date, 
+we have to set the date as an integer value. Currently, it looks like the following:
+```
+Saturday: 6
+Sunday: 5
+Monday: 4
+Tuesday: 3
+Wednesday: 2
+Thursday: 1
+Friday: 0
+```
+Along with that is the hour it was submitted on that day.
+
+To run any of these watchmen individually you will need to add:
+```
+main({'type':<Hourly, Daily, Weekly>', None)
+```
+Choose one of the three above.\
+At the bottom of the script to ensure the added feed does not cause issues.
