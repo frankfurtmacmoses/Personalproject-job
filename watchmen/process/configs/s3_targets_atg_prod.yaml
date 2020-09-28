@@ -31,3 +31,11 @@ Daily:
     - bucket_name: cyber-intel
       full_path: hancock/georgia_tech/%0Y/%0m/gt_mpdns_%Y%m%d.zip
       time_offset: 1
+
+Weekly:
+- target_name: Smartlisting
+  items:
+    - bucket_name: cyber-intel
+      full_path: whitelist/smartlisting/prod/smartlist/src={var}/year=%Y/smartlist_%Y%m%d_{var}.csv
+      path_vars: [atc, farsight, majestic, umbrella]
+      time_offset: 0.142857 #Runs weekly but will offset by 1 day
