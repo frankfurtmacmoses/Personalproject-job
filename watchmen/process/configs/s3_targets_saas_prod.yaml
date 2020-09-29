@@ -1,23 +1,100 @@
+Hourly:
+
+- target_name: Poseidon Heka Data - LZ
+  items:
+  - bucket_name: ib-dl-lz-ttl-prod
+    prefix: ib-dl-saas-lz-prod/heka/year=%0Y/month=%0m/day=%0d/
+    suffix: .gz
+
+- target_name: Poseidon Heka Data - CZ
+  items:
+  - bucket_name: ib-dl-saas-cz-prod
+    prefix: heka/year=%0Y/month=%0m/day=%0d/
+    suffix: .json.gz
+
 Daily:
 
-- target_name: Poseidon DNS Data
+- target_name: Poseidon DNS Data - LZ
   items:
   - bucket_name: ib-customer-data-usa-va
     prefix: parquet-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
+
+  - bucket_name: ib-customer-data-usa-va
+    prefix: parquet-northstar-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    min_total_files: 0
+    min_total_size_kb: 0
+
+- target_name: Poseidon DNS Data - CZ
+  items:
+  - bucket_name: ib-dl-saas-cz-prod
+    prefix: dns-logs/customer/year=%0Y/month=%0m/day=%0d/storage_id=300224/
+    suffix: .parquet
+
+  - bucket_name: ib-dl-saas-cz-prod
+    prefix: dns-logs/farsight/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    max_items: 100
+
+- target_name: Poseidon DNS Customer Data - RZ
+  items:
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/customer/metadata/year=%0Y/month=%0m/day=%0d/storage_id=300224/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
 
   - bucket_name: ib-dl-saas-rz-prod
     prefix: dns-logs/customer/summaries/name_servers/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
     whitelist: ['_SUCCESS']
 
-- target_name: Poseidon Northstar DNS Data
-  items:
-  - bucket_name: ib-customer-data-usa-va
-    prefix: parquet-northstar-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/customer/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
-    min_total_files: 0
-    min_total_size_kb: 0
+    whitelist: ['_SUCCESS']
+
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/customer/summaries/query_counts/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/customer/summaries/subdomain_counts_by_sld/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/customer/summaries/subdomain_counts_by_source/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+
+- target_name: Poseidon DNS Farsight Data - RZ
+  items:
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/farsight/metadata/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/farsight/summaries/name_servers/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/farsight/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/farsight/summaries/query_counts/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
+    
+  - bucket_name: ib-dl-saas-rz-prod
+    prefix: dns-logs/farsight/summaries/subdomain_counts_by_sld/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    whitelist: ['_SUCCESS']
 
 - target_name: SaaS Apps Customer Data Phase 1 - LZ
   items:
