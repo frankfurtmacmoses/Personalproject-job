@@ -216,6 +216,40 @@ class Rorschach(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
+    def _check_multiple_file_paths(self, item):
+        """
+        Method to create multiple paths based on the path_var tag in s3_targets, then checks those s3 items
+        :param item: <dict>: The current item that is being checked. This item is a member of a "target" which are all
+                             defined in the s3_targets config file.
+        :return: <list>, <list>
+                    <list>: "exception_strings" which contains strings that detail any exceptions encountered.
+                    <list>: "failure_strings" which contains strings that detail any failures encountered.
+        """
+        exception_strings = []
+        failure_strings = []
+
+        path_tag = 'full_path' if item.get("full_path") else 'prefix' if item.get("prefix") else None
+        if not path_tag:
+            exception_strings.append(MESSAGES.get("exception_string_format").format(item, 'Invalid path tag'))
+            return exception_strings, failure_strings
+
+        path = item.get(path_tag)
+
+        check_method = {
+            'full_path': self._check_single_file,
+            'prefix': self._check_multiple_files
+        }
+
+        for path_var in item.get('path_vars'):
+
+            item.update({path_tag: path.format(var=path_var)})
+            file_check_exceptions, file_check_failures = check_method.get(path_tag)(item)
+
+            exception_strings.extend(file_check_exceptions)
+            failure_strings.extend(file_check_failures)
+
+        return exception_strings, failure_strings
+
     def _check_single_file(self, item):
         """
         Method to perform all of the required checks if an item consists of only one file.
@@ -642,8 +676,11 @@ class Rorschach(Watchman):
                     failure_strings.append(MESSAGES.get('failure_bucket_not_found').format(item.get('bucket_name')))
                     continue
 
+                if item.get('path_vars'):
+                    file_check_exceptions, file_check_failures = self._check_multiple_file_paths(item)
+
                 # If an item has the attribute 'full_path', then only one file is being checked.
-                if item.get('full_path'):
+                elif item.get('full_path'):
                     file_check_exceptions, file_check_failures = self._check_single_file(item)
                 else:
                     file_check_exceptions, file_check_failures = self._check_multiple_files(item)

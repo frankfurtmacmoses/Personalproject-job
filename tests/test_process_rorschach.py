@@ -271,7 +271,66 @@ class TestRorschach(unittest.TestCase):
                         "target": "target 4"
                     }
                 ]
-            }
+            },
+            {
+                "target_name": "target 5",
+                "items": [
+                    {
+                        "bucket_name": "success_example",
+                        "full_path": "path/{var}/file.json",
+                        "path_var": ["to"]
+                    }
+                ],
+                "mocks": {"mock_check_multiple_file_paths": ([], [])},
+                "processed_targets": {
+                    "target 5": {
+                        "success": True,
+                        "exception_strings": [],
+                        "failure_strings": []
+                    }
+                },
+                "summary_parameters": [
+                    {
+                        "details": "Example details.",
+                        "disable_notifier": True,
+                        "short_message": MESSAGES.get("success_message"),
+                        "state": Watchman.STATE.get("success"),
+                        "subject": MESSAGES.get("success_subject").format("target 5"),
+                        "success": True,
+                        "target": "target 5"
+                    }
+                ]
+            },
+            {
+                "target_name": "target 6",
+                "items": [
+                    {
+                        "bucket_name": "success_example",
+                        "prefix": "path/{var}/",
+                        "path_var": ["to"]
+                    }
+                ],
+                "mocks": {"mock_check_multiple_file_paths": ([], [])},
+                "processed_targets": {
+                    "target 6": {
+                        "success": True,
+                        "exception_strings": [],
+                        "failure_strings": []
+                    }
+                },
+                "summary_parameters": [
+                    {
+                        "details": "Example details.",
+                        "disable_notifier": True,
+                        "short_message": MESSAGES.get("success_message"),
+                        "state": Watchman.STATE.get("success"),
+                        "subject": MESSAGES.get("success_subject").format("target 6"),
+                        "success": True,
+                        "target": "target 6"
+                    }
+                ]
+            },
+
         ]
         self.example_s3_prefix = "s3://example/test.json"
         self.example_state_cases = {
@@ -508,10 +567,11 @@ class TestRorschach(unittest.TestCase):
         # Test suffix failure:
         bad_suffix_files = "bad_file1.json, bad_file2.json"
         mock_generate_contents.return_value = example_contents_dicts.get("generate_contents_success"), None
-        mock_suffix_check.return_value = bad_suffix_files, None
+        mock_suffix_check.return_value = bad_suffix_files, self.example_traceback
         mock_multiple_files_size_check.return_value = None, None
 
-        expected_exception_strings = []
+        expected_exception_strings = ['Item: {}\n'. format(example_suffix_item) +
+                                      'Exception: ' + self.example_traceback]
         expected_failure_strings = [MESSAGES.get('failure_invalid_suffix').format(example_suffix_item.get('suffix'),
                                                                                   bad_suffix_files)]
 
@@ -522,9 +582,10 @@ class TestRorschach(unittest.TestCase):
         # Test check multiple files failure:
         mock_generate_contents.return_value = example_contents_dicts.get("generate_contents_success"), None
         mock_suffix_check.return_value = None, None
-        mock_multiple_files_size_check.return_value = "File size failure check occurred.", None
+        mock_multiple_files_size_check.return_value = "File size failure check occurred.", self.example_traceback
 
-        expected_exception_strings = []
+        expected_exception_strings = ['Item: {}\n'. format(example_suffix_item) +
+                                      'Exception: ' + self.example_traceback]
         expected_failure_strings = ["File size failure check occurred."]
 
         returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(example_suffix_item)
@@ -609,6 +670,40 @@ class TestRorschach(unittest.TestCase):
         self.assertEqual(expected, returned)
         self.assertTrue(expected_tb in returned_tb)
 
+    @patch('watchmen.process.rorschach.Rorschach._check_multiple_files')
+    @patch('watchmen.process.rorschach.Rorschach._check_single_file')
+    def test_check_multiple_file_paths(self, mock_single_file, mock_multiple_files):
+        rorschach_obj = self._create_rorschach()
+        example_full_path = {
+            "full_path": "example/bad/{var}/test.json",
+            "path_vars": ["path"]
+        }
+        example_prefix = {
+            "prefix": "example/bad/{var}/",
+            "path_vars": ["path"]
+        }
+        tests = [
+            {
+                "item": example_full_path,
+                "path_tag": "full_path",
+                "file_return": (['oof'], ['exceptions']),
+                "expected": (['oof'], ['exceptions'])
+            },
+            {
+                "item": example_prefix,
+                "path_tag": "prefix",
+                "file_return": ([], []),
+                "expected": ([], [])
+
+            }
+        ]
+        for test in tests:
+            mock_single_file.return_value = test.get('file_return')
+            mock_multiple_files.return_value = test.get('file_return')
+            expected = test.get('expected')
+            result = rorschach_obj._check_multiple_file_paths(test.get('item'))
+            self.assertEqual(expected, result)
+
     @patch('watchmen.process.rorschach.Rorschach._generate_key')
     @patch('watchmen.process.rorschach.Rorschach._check_single_file_existence')
     @patch('watchmen.process.rorschach.Rorschach._check_single_file_size')
@@ -644,12 +739,23 @@ class TestRorschach(unittest.TestCase):
         self.assertEqual((expected_exception_strings, expected_failure_strings),
                          (returned_exception_strings, returned_failure_strings))
 
+        # Test for single file existence check exception:
+        mock_generate_key.return_value = self.example_s3_prefix, None
+        mock_check_existence.return_value = False, self.example_traceback
+
+        expected_exception_strings = ['Item: {}\n'. format(example_item) + 'Exception: ' + self.example_traceback]
+        expected_failure_strings = []
+
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(example_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
         # Test for single file size check failure:
         mock_generate_key.return_value = self.example_s3_prefix, None
         mock_check_existence.return_value = True, None
-        mock_check_size.return_value = False, None
+        mock_check_size.return_value = False, self.example_traceback
 
-        expected_exception_strings = []
+        expected_exception_strings = ['Item: {}\n'. format(example_item) + 'Exception: ' + self.example_traceback]
         expected_failure_strings = [MESSAGES.get('failure_single_file_size').format(
             example_item.get("min_total_size_kb"), self.example_s3_prefix)]
 
@@ -908,6 +1014,17 @@ class TestRorschach(unittest.TestCase):
         returned_dict, returned_tb = rorschach_obj._generate_contents(None)
         self.assertEqual(returned_dict, expected_dict)
         self.assertTrue(self.example_traceback in returned_tb)
+
+        # Testing exception:
+        expected_dict = {
+            "contents": None,
+            "count": None,
+            "s3_prefix": None
+        }
+
+        mock_key.return_value = None, self.example_traceback
+        returned_dict, returned_tb = rorschach_obj._generate_contents(item)
+        self.assertEqual(returned_dict, expected_dict)
 
     def test_generate_key(self):
         """
