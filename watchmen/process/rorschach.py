@@ -39,13 +39,15 @@ ENVIRONMENT = settings("ENVIRONMENT", "test")
 TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
 HOURLY = "Hourly"
 MESSAGES = messages.RORSCHACH
+MINUTELY = "Minutely"
 
 # Constants dependent on previously defined constants:
-ALL_EVENT_TYPES = [HOURLY, DAILY]
+ALL_EVENT_TYPES = [HOURLY, DAILY, MINUTELY]
 CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(TARGET_ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
 GENERIC_TARGET = 'Generic S3 {}'.format(TARGET_ACCOUNT)
+TRIMMABLE_EVENT_TYPES = [HOURLY, MINUTELY]
 
 
 class Rorschach(Watchman):
@@ -565,6 +567,10 @@ class Rorschach(Watchman):
             s3_prefix = 's3://' + item['bucket_name'] + '/' + generated_prefix
             contents = list(_s3.generate_pages(generated_prefix, **{'bucket': item['bucket_name']}))
 
+            # Trim contents to include only object within the time offset
+            if self.event in TRIMMABLE_EVENT_TYPES:
+                contents = self._trim_contents(contents, time_offset, self.event)
+
             # Removing whitelisted files from contents:
             if item.get("whitelist"):
                 self._remove_whitelisted_files_from_contents(item.get("whitelist"), contents)
@@ -594,7 +600,7 @@ class Rorschach(Watchman):
                  <string>: Traceback if an exception was encountered, None otherwise.
         """
         try:
-            arg_dict = {'Hourly': 'hours', 'Daily': 'days'}
+            arg_dict = {'Hourly': 'hours', 'Daily': 'days', 'Minutely': 'minutes'}
             check_time = _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{arg_dict[event]: time_offset})
             prefix = check_time.strftime(prefix_format)
             return prefix, None
@@ -711,6 +717,23 @@ class Rorschach(Watchman):
         """
         for file in list(contents):
             if file.get("Key").split('/')[-1] in whitelist:
+                contents.remove(file)
+
+        return contents
+
+    def _trim_contents(self, contents, offset, event):
+        """
+        This just removes contents in the last <offset minutes>.
+        :param offset: <int> offset count to go back
+        :param contents: <[S3 objects]> S3 contents of the path with no filtering
+        :return: Pruned contents
+        """
+        arg_dict = {'Hourly': 'hours', 'Minutely': 'minutes'}
+        end_time = _datetime.datetime.now(pytz.utc)
+        start_time = end_time - _datetime.timedelta(**{arg_dict[event]: offset})
+
+        for file in list(contents):
+            if file.get("LastModified") > end_time or file.get("LastModified") < start_time:
                 contents.remove(file)
 
         return contents
