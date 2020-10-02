@@ -444,6 +444,16 @@ Resources:
           - Id: RorschachHourlyScheduler
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": "Hourly"}'
+    RorschachWeeklyScheduledEvent:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A weekly event that kicks off the Rorschach Watchman
+        ScheduleExpression: cron(45 10 ? * MON *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: RorschachWeeklyScheduler
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": "Weekly"}'
     SilhouetteScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -537,6 +547,13 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
+    InvokeRorschachWeeklyLambdaPermission:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt RorschachWeeklyScheduledEvent.Arn
     InvokeSilhouetteLambdaPermission:
       Type: 'AWS::Lambda::Permission'
       Properties:

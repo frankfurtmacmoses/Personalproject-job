@@ -36,13 +36,14 @@ from watchmen.config import settings
 # Rorschach Constants:
 DAILY = "Daily"
 ENVIRONMENT = settings("ENVIRONMENT", "test")
-TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
 HOURLY = "Hourly"
 MESSAGES = messages.RORSCHACH
 MINUTELY = "Minutely"
+TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
+WEEKLY = "Weekly"
 
 # Constants dependent on previously defined constants:
-ALL_EVENT_TYPES = [HOURLY, DAILY, MINUTELY]
+ALL_EVENT_TYPES = [MINUTELY, HOURLY, DAILY, WEEKLY]
 CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(TARGET_ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
@@ -601,7 +602,7 @@ class Rorschach(Watchman):
                  <string>: Traceback if an exception was encountered, None otherwise.
         """
         try:
-            arg_dict = {'Hourly': 'hours', 'Daily': 'days', 'Minutely': 'minutes'}
+            arg_dict = {MINUTELY: 'minutes', HOURLY: 'hours', DAILY: 'days', WEEKLY: 'weeks'}
             check_time = _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{arg_dict[event]: time_offset})
             prefix = check_time.strftime(prefix_format)
             return prefix, None
