@@ -144,7 +144,7 @@ class Rorschach(Watchman):
 
         # If there are no files (count == 0), then the rest of the checks cannot be performed
         if not count:
-            failure_strings.append(MESSAGES.get('failure_invalid_s3_key').format(s3_prefix))
+            failure_strings.append(MESSAGES.get('failure_no_files').format(s3_prefix))
             return exception_strings, failure_strings
 
         # Check the suffix of all files:
