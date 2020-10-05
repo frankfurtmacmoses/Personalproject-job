@@ -380,7 +380,7 @@ Resources:
       Type: 'AWS::Events::Rule'
       Properties:
         Description: A weekly event that kicks off Crookshanks Watchman.
-        ScheduleExpression: cron(0 10 ? * MON *)
+        ScheduleExpression: cron(45 10 ? * MON *)
         State: !If [ IsProd, ENABLED, DISABLED ]
         Targets:
           - Id: CrookshanksScheduler
