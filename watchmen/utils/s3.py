@@ -538,11 +538,12 @@ def generate_pages(prefix='', **kwargs):
     :return: one page of contents
     """
     bucket = kwargs.get('bucket', BUCKET_DEFAULT)
+    max_items = kwargs.get('max_items', None)
     check_arg_bucket(bucket)
 
     s3_client = get_client()
     paginator = s3_client.get_paginator('list_objects')
-    parameters = {'Bucket': bucket, 'Prefix': prefix, 'Delimiter': ''}
+    parameters = {'Bucket': bucket, 'Prefix': prefix, 'Delimiter': '', 'PaginationConfig':{'MaxItems': max_items}}
     p_iterator = paginator.paginate(**parameters)
 
     for obj in p_iterator.search('Contents'):
