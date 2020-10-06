@@ -72,6 +72,16 @@ Resources:
         - Id: RorschachDailyScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
           Input: '{"Type": "Daily"}'
+  RorschachMinutelyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A minutely event that kicks off daily Rorschach Watchman
+      ScheduleExpression: cron(0/15 * * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
+      Targets:
+        - Id: RorschachDailyScheduler
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+          Input: '{"Type": "Minutely"}'
   InvokeRorschachHourlyLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -86,6 +96,13 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
+  InvokeRorschachMinutelyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachMinutelyScheduledEvent
   RorschachSaasExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
