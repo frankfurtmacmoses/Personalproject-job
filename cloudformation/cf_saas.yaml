@@ -141,4 +141,7 @@ Resources:
                   - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va/parquet-northstar-dns/com.infoblox.300224/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
                   - !If [IsProd, "arn:aws:s3:::ib-dl-saas-rz-prod", "arn:aws:s3:::cyber-intel-saas-test"]
                   - !If [IsProd, "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/summaries/customer/name_servers/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
+                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data", "arn:aws:s3:::cyber-intel-saas-test/*"]
+                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data/NewlyObservedDomains/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
+                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data/NewlyObservedHostname/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
 
