@@ -114,49 +114,15 @@ Daily:
 - target_name: SaaS Apps Customer Data Phase 2 - LZ
   items:
   - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/atcapi/year=%0Y/month=%0m/day=%0d/atcapi_user/roaming_clients/
+    path_vars: [roaming_clients, roaming_client_groups, security_policies]
+    prefix: athena-full-exports/atcapi/year=%0Y/month=%0m/day=%0d/atcapi_user/{var}/
     suffix: .parquet
     min_total_files: 1
     min_total_size_kb: 0
 
   - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/atcapi/year=%0Y/month=%0m/day=%0d/atcapi_user/roaming_client_groups/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
-
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/atcapi/year=%0Y/month=%0m/day=%0d/atcapi_user/security_policies/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
-
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/identity/year=%0Y/month=%0m/day=%0d/public/accounts/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
-
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/entitlement/year=%0Y/month=%0m/day=%0d/public/sfdccsps/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
-
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/entitlement/year=%0Y/month=%0m/day=%0d/public/provision_history/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
-
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/ipam/year=%0Y/month=%0m/day=%0d/public/ip_spaces/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
-
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/hostapp/year=%0Y/month=%0m/day=%0d/public/on_prem_applications/
+    path_vars: [accounts, sfdccsps, provision_history, ip_spaces, on_prem_applications]
+    prefix: athena-full-exports/identity/year=%0Y/month=%0m/day=%0d/public/{var}/
     suffix: .parquet
     min_total_files: 1
     min_total_size_kb: 0
