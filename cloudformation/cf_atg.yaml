@@ -31,6 +31,16 @@ Parameters:
 Conditions:
   IsProd: !Equals [ !Ref Env, prod ]
 Resources:
+
+    SnsTopicStack:
+      Type: 'AWS::CloudFormation::Stack'
+      Properties:
+        Parameters:
+          Env: !Ref Env
+        TemplateURL: !Sub
+          - 'https://s3.amazonaws.com/${s3_bucket}/watchmen/cloudformation/sns_atg.yaml'
+          - s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket']
+
     WatchmenBernardLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
