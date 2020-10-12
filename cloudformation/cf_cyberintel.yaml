@@ -62,6 +62,16 @@ Resources:
         - Id: RorschachDailyScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
           Input: '{"Type": "Daily"}'
+  RorschachHourlyScheduledEvent:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A hourly event that kicks off hourly Rorschach Watchman
+      ScheduleExpression: cron(30 * * * ? *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
+      Targets:
+        - Id: RorschachHourlyScheduler
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+          Input: '{"Type": "Hourly"}'
   InvokeRorschachDailyLambdaPermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -69,6 +79,13 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
+  InvokeRorschachHourlyLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachHourlyScheduledEvent.Arn
   RorschachCyberintelExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -92,12 +109,14 @@ Resources:
                   - 'SNS:Publish'
                 Resource:
                     - !If [IsProd, "arn:aws:sns:us-east-1:488906355115:Ozone_COM_Data", "arn:aws:sns:us-east-1:488906355115:Watchmen_Test"]
+                    - !If [IsProd, "arn:aws:sns:us-east-1:488906355115:zvelo_data_monitor", "arn:aws:sns:us-east-1:488906355115:Watchmen_Test"]
               - Effect: Allow
                 Action:
                   - 's3:Get*'
+                  - 's3:HeadBucket'
                   - 's3:List*'
-                  - 's3:PutObject'
-                  - 's3:DeleteObject'
                 Resource:
                   - 'arn:aws:s3:::cyberintel-ozone'
-
+                  - 'arn:aws:s3:::cyberintel-ozone/*'
+                  - 'arn:aws:s3:::cyberintel-zvelo-feed'
+                  - 'arn:aws:s3:::cyberintel-zvelo-feed/*'

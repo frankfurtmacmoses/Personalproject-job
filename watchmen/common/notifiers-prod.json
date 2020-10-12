@@ -98,5 +98,9 @@
   "Poseidon Northstar DNS Data":{
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:902917483333:Poseidon_Northstar_DNS_Data"
+  },
+  "zVelo Data Monitor":{
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:488906355115:zvelo_data_monitor"
   }
 }
