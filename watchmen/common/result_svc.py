@@ -9,8 +9,7 @@ In the future, sns topics will be in the config.yaml.
 @email: jzhang@infoblox.com
 """
 # python imports
-import json
-import os
+import boto3
 import traceback
 
 # watchmen imports
@@ -21,9 +20,9 @@ from watchmen.utils.extension import convert_to_snake_case, get_class
 from watchmen.utils.logger import get_logger
 
 ENVIRONMENT = settings("ENVIRONMENT", "test")
-FILE_PATH = os.path.dirname(os.path.realpath(__file__))
-JSON_FILE_NAME = 'notifiers-{}.json'.format(ENVIRONMENT)
 LOGGER = get_logger('watchmen.' + __name__)
+NOTIFIER_DICTIONARY_NAME = "SNS"
+NOTIFIER_FILE_NAME = 'notifiers_{}'.format(ENVIRONMENT)
 NOTIFIER_MODEL_PREFIX = 'watchmen.common.'
 
 
@@ -38,6 +37,26 @@ class ResultSvc:
         @param result_list: list of Result Object
         """
         self.result_list = result_list
+    
+    @staticmethod
+    def _build_test_sns_topic():
+        """
+        Retrieves the account test sns topic from config.yaml and builds it out with the account details
+        :return: The local test sns topic
+        """
+        try:
+            profile = boto3.Session().profile_name
+            sns_topic_path = 'result_svc.{}'.format(profile.lower())
+            local_sns_topic = settings(sns_topic_path)
+
+            region = boto3.Session().region_name
+            sts_client = boto3.client('sts')
+            account_id = sts_client.get_caller_identity().get('Account')
+
+            return local_sns_topic.format(region=region, account_id=account_id)
+
+        except Exception as ex:
+            LOGGER.error('Could not get local test Topic! Traceback:\n{}'.format(ex))
 
     def create_lambda_message(self):
         """
@@ -64,7 +83,7 @@ class ResultSvc:
             notifier_model_path = NOTIFIER_MODEL_PREFIX + notifier_model_name
             return get_class(notifier_class_name, notifier_model_path)
         except KeyError:
-            LOGGER.error('Target, {}, not found in {}!'.format(target, JSON_FILE_NAME))
+            LOGGER.error('Target, {}, not found in {}!'.format(target, NOTIFIER_FILE_NAME))
 
     def _get_sns_topic(self, result):
         """
@@ -75,19 +94,22 @@ class ResultSvc:
         notifiers_dict = self._load_notifiers()
         target = result.target
         try:
-            return notifiers_dict[target].get("sns")
+            sns_topic = notifiers_dict[target].get("sns")
+            if not sns_topic and ENVIRONMENT is 'test':
+                return self._build_test_sns_topic()
+
+            return sns_topic
         except KeyError:
-            LOGGER.error('Target, {}, not found in {}!'.format(target, JSON_FILE_NAME))
+            LOGGER.error('Target, {}, not found in {}!'.format(target, NOTIFIER_FILE_NAME))
 
     @staticmethod
     def _load_notifiers():
         """
-        Load json file from JSON_FILE_NAME.
+        Load notifier dictionary from NOTIFIER_FILE_NAME.
         @return: <dict> Dictionary of target names mapping to names of notifiers.
         """
-        json_path = os.path.join(FILE_PATH, JSON_FILE_NAME)
-        with open(json_path, 'r') as file:
-            return json.load(file)
+        notifier_file_path = NOTIFIER_MODEL_PREFIX + NOTIFIER_FILE_NAME
+        return get_class(NOTIFIER_DICTIONARY_NAME, notifier_file_path)
 
     def send_alert(self):
         """

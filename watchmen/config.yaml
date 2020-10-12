@@ -70,6 +70,12 @@ mothman:
   bucket_name: cyber-intel
   path_prefix: malspam/forevermail
 
+result_svc:
+  default: arn:aws:sns:{region}:{account_id}:WatchmenTest
+  atg: arn:aws:sns:{region}:{account_id}:WatchmenTest
+  cyberintel: arn:aws:sns:{region}:{account_id}:WatchmenTest
+  saas: arn:aws:sns:{region}:{account_id}:WatchmenTest
+
 silhouette:
   bucket_name: cyber-intel
   path_prefix: analytics/lookalike2/prod/status/
