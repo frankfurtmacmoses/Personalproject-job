@@ -558,7 +558,7 @@ class TestRorschach(unittest.TestCase):
         mock_generate_contents.return_value = example_contents_dicts.get("no_files_failure"), None
 
         expected_exception_strings = []
-        expected_failure_strings = [MESSAGES.get('failure_invalid_s3_key').format(self.example_s3_prefix)]
+        expected_failure_strings = [MESSAGES.get('failure_no_files').format(self.example_s3_prefix)]
 
         returned_exception_strings, returned_failure_strings = rorschach_obj._check_multiple_files(example_suffix_item)
         self.assertEqual((expected_exception_strings, expected_failure_strings),
@@ -1147,7 +1147,7 @@ class TestRorschach(unittest.TestCase):
 
     def test_remove_whitelisted_files_from_contents(self):
         """
-        test watchmen.process.rorschach :: Rorschach :: _create_generic_result
+        test watchmen.process.rorschach :: Rorschach :: _remove_whitelisted_files_from_contents
         """
         rorschach_obj = self._create_rorschach()
         example_whitelist = ['something.json']

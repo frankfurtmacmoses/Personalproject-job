@@ -206,6 +206,7 @@ RORSCHACH = {
     "failure_message": "FAILURE: At least one S3 file check did not pass, please check the logs for more details!",
     "failure_multiple_file_size": "The size of all files found in {} is {} KB, which is less than expected"
                                   " total file size {} KB.",
+    "failure_no_files": "The following key has NO FILES on S3: {}",
     "failure_single_file_size": "The following file did not meet the {} KB size threshold: {}",
     "failure_subject": "FAILURE: S3 File Checks Failed for {}!",
     "failure_total_objects": "The number of objects found in {} is {}, which is less than expected total objects count:"
