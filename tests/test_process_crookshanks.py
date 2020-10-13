@@ -53,23 +53,20 @@ class TestCrookshanks(unittest.TestCase):
         crookshanks_obj = Crookshanks(event=None, context=None)
         tests = [
             {
-                "validate_value": [True, True, True, True, True],
+                "validate_value": [True, True, True, True],
                 "False": 0
             }, {
-                "validate_value": [False, True, True, True, True],
+                "validate_value": [False, True, True, True],
                 "False": 1
             }, {
-                "validate_value": [False, False, True, True, True],
+                "validate_value": [False, False, True, True],
                 "False": 2
             }, {
-                "validate_value": [False, False, False, True, True],
+                "validate_value": [False, False, False, True],
                 "False": 3
             }, {
-                "validate_value": [False, False, False, False, True],
+                "validate_value": [False, False, False, False],
                 "False": 4
-            }, {
-                "validate_value": [False, False, False, False, False],
-                "False": 5
             }
         ]
         for test in tests:
@@ -87,7 +84,7 @@ class TestCrookshanks(unittest.TestCase):
         expected_scenario = {
                 "failures": [],
                 "exceptions": [{"atc": traceback}, {"farsight": traceback}, {"majestic": traceback},
-                               {"nios": traceback}, {"umbrella": traceback}]
+                               {"umbrella": traceback}]
             }
         crookshanks_obj = Crookshanks(event=None, context=None)
         mock_validate.side_effect = Exception(example_exception_msg)

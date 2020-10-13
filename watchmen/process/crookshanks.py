@@ -3,7 +3,7 @@ Created on May 26th, 2020
 @author: Rita Li
 @email: rili@infoblox.com
 
-This Watchman will complete a weekly file check of the smartlist feeds: ATC, NIOS, Farsight, Umbrella and Majestic.
+This Watchman will complete a weekly file check of the smartlist feeds: ATC, Farsight, Umbrella and Majestic.
 If the file(s) do not exist or an exception occurs, an email notification is sent to identify the failed feeds
 and its prefixes.
 """
@@ -21,7 +21,7 @@ from watchmen.utils.s3 import validate_file_on_s3
 BUCKET = settings("crookshanks.bucket_name", "cyber-intel")
 MESSAGES = messages.CROOKSHANKS
 PREFIX = settings("crookshanks.path_prefix", "whitelist/smartlisting/prod/smartlist/")
-SOURCES = ["atc", "farsight", "majestic", "nios", "umbrella"]
+SOURCES = ["atc", "farsight", "majestic", "umbrella"]
 TARGET = "Smartlisting"
 
 
