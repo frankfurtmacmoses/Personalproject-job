@@ -44,6 +44,7 @@ WEEKLY = "Weekly"
 
 # Constants dependent on previously defined constants:
 ALL_EVENT_TYPES = [MINUTELY, HOURLY, DAILY, WEEKLY]
+EVENT_OFFSET_DICT = {MINUTELY: 'minutes', HOURLY: 'hours', DAILY: 'days', WEEKLY: 'weeks'}
 CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(TARGET_ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
@@ -602,8 +603,8 @@ class Rorschach(Watchman):
                  <string>: Traceback if an exception was encountered, None otherwise.
         """
         try:
-            arg_dict = {MINUTELY: 'minutes', HOURLY: 'hours', DAILY: 'days', WEEKLY: 'weeks'}
-            check_time = _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{arg_dict[event]: time_offset})
+            check_time = \
+                _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{EVENT_OFFSET_DICT[event]: time_offset})
             prefix = check_time.strftime(prefix_format)
             return prefix, None
         except Exception as ex:
@@ -730,9 +731,8 @@ class Rorschach(Watchman):
         :param contents: <[S3 objects]> S3 contents of the path with no filtering
         :return: Pruned contents
         """
-        arg_dict = {'Hourly': 'hours', 'Minutely': 'minutes'}
         end_time = _datetime.datetime.now(pytz.utc)
-        start_time = end_time - _datetime.timedelta(**{arg_dict[event]: offset})
+        start_time = end_time - _datetime.timedelta(**{EVENT_OFFSET_DICT[event]: offset})
 
         for file in list(contents):
             if file.get("LastModified") > end_time or file.get("LastModified") < start_time:
