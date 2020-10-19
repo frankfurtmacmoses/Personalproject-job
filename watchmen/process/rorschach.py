@@ -565,7 +565,8 @@ class Rorschach(Watchman):
                 return contents_dict, tb
 
             s3_prefix = 's3://' + item['bucket_name'] + '/' + generated_prefix
-            contents = list(_s3.generate_pages(generated_prefix, **{'bucket': item['bucket_name']}))
+            contents = list(_s3.generate_pages(generated_prefix, **{'bucket': item['bucket_name'],
+                                                                    'max_items': item.get('max_items')}))
 
             # Trim contents to include only object within the time offset
             if self.event in TRIMMABLE_EVENT_TYPES:
