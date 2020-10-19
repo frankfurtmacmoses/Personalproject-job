@@ -33,5 +33,6 @@ Weekly:
   items:
     - bucket_name: cyber-intel
       full_path: whitelist/smartlisting/prod/smartlist/src={var}/year=%Y/smartlist_%Y%m%d_{var}.csv
+      offset_type: Daily
       path_vars: [atc, farsight, majestic, umbrella]
-      time_offset: 0.142857 #Runs weekly but will offset by 1 day
+      time_offset: 1
