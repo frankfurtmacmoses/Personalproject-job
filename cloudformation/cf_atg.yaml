@@ -89,35 +89,6 @@ Resources:
             Value: watchmen-comedian
           - Key: Env
             Value: !Ref Env
-    WatchmenCrookshanksLambda:
-      Type: 'AWS::Lambda::Function'
-      Properties:
-        FunctionName: !Join ["-", [ !Ref "AWS::StackName", Crookshanks]]
-        Runtime: python3.7
-        Code:
-          S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
-          S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-        Description: Monitors the Smartlisting feeds.
-        Environment:
-          Variables:
-            ENVIRONMENT: !Ref Env
-        Handler: !Sub watchmen.main_${Account}.start_crookshanks_watcher
-        MemorySize: 256
-        Role: !GetAtt CrookshanksLambdaExecutionRole.Arn
-        Timeout: 30
-        Tags:
-          - Key: Owner
-            Value: CyberIntel
-          - Key: Product
-            Value: watchmen
-          - Key: Protected
-            Value: 'TRUE'
-          - Key: Component
-            Value: lambda
-          - Key: Name
-            Value: watchmen-crookshanks
-          - Key: Env
-            Value: !Ref Env
     WatchmenJupiterLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
@@ -329,35 +300,6 @@ Resources:
             Value: watchmen-silhouette
           - Key: Env
             Value: !Ref Env
-    WatchmenSpectreLambda:
-      Type: 'AWS::Lambda::Function'
-      Properties:
-        FunctionName: !Join ["-", [ !Ref "AWS::StackName", Spectre]]
-        Runtime: python3.7
-        Code:
-          S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
-          S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-        Description: Monitors Georgia Tech data coming into S3.
-        Environment:
-          Variables:
-            ENVIRONMENT: !Ref Env
-        Handler: !Sub watchmen.main_${Account}.start_spectre_watcher
-        MemorySize: 256
-        Role: !GetAtt WatchmenLambdaExecutionRole.Arn
-        Timeout: 30
-        Tags:
-          - Key: Owner
-            Value: CyberIntel
-          - Key: Product
-            Value: watchmen
-          - Key: Protected
-            Value: 'TRUE'
-          - Key: Component
-            Value: lambda
-          - Key: Name
-            Value: watchmen-spectre
-          - Key: Env
-            Value: !Ref Env
     BernardScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -376,15 +318,6 @@ Resources:
         Targets:
           - Id: ComedianScheduler
             Arn: !GetAtt WatchmenComedianLambda.Arn
-    CrookshanksScheduledEvent:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A weekly event that kicks off Crookshanks Watchman.
-        ScheduleExpression: cron(45 10 ? * MON *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: CrookshanksScheduler
-            Arn: !GetAtt WatchmenCrookshanksLambda.Arn
     JupiterScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -473,6 +406,16 @@ Resources:
           - Id: RorschachHourlyScheduler
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": "Hourly"}'
+    RorschachWeeklyScheduledEvent:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A weekly event that kicks off the Rorschach Watchman
+        ScheduleExpression: cron(45 10 ? * MON *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: RorschachWeeklyScheduler
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": "Weekly"}'
     SilhouetteScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -482,15 +425,6 @@ Resources:
         Targets:
           - Id: SilhouetteScheduler
             Arn: !GetAtt WatchmenSilhouetteLambda.Arn
-    SpectreScheduledEvent:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A daily event that kicks off Spectre Watchman
-        ScheduleExpression: cron(0 16 * * ? *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: SpectreScheduler
-            Arn: !GetAtt WatchmenSpectreLambda.Arn
     InvokeBernardLambdaPermission:
       Type: 'AWS::Lambda::Permission'
       Properties:
@@ -505,13 +439,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt ComedianScheduledEvent.Arn
-    InvokeCrookshanksLambdaPermission:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenCrookshanksLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt CrookshanksScheduledEvent.Arn
     InvokeJupiterLambdaPermission:
       Type: 'AWS::Lambda::Permission'
       Properties:
@@ -575,6 +502,13 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachDailyScheduledEvent.Arn
+    InvokeRorschachWeeklyLambdaPermission:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt RorschachWeeklyScheduledEvent.Arn
     InvokeSilhouetteLambdaPermission:
       Type: 'AWS::Lambda::Permission'
       Properties:
@@ -582,13 +516,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt SilhouetteScheduledEvent.Arn
-    InvokeSpectreLambdaPermission:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenSpectreLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt SpectreScheduledEvent.Arn
 
     BernardLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -674,45 +601,6 @@ Resources:
                         - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Pager"
                         - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Generic_Quota_Email"
                       - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
-
-    CrookshanksLambdaExecutionRole:
-      Type: 'AWS::IAM::Role'
-      Properties:
-        RoleName: !Sub CrookshanksLambdaExecutionRole-${Env}
-        AssumeRolePolicyDocument:
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action:
-                - 'sts:AssumeRole'
-        ManagedPolicyArns:
-          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        Policies:
-          - PolicyName: !Sub CrookshanksLambdaExecutionRole${Env}
-            PolicyDocument:
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - "kms:Decrypt"
-                  Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
-                - Effect: Allow
-                  Action:
-                    - 's3:GetObject'
-                    - 's3:HeadBucket'
-                    - 's3:ListBucket'
-                  Resource:
-                    - !Sub
-                      - 'arn:${AWS::Partition}:s3:::${s3_bucket}/whitelist/smartlisting/prod/smartlist/*'
-                      - {s3_bucket: !FindInMap [EnvMap, !Ref Env, Bucket]}
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
-                      - { Topic: !If [IsProd, Smartlisting, Watchmen_Test] }
 
     JupiterLambdaExecutionRole:
       Type: 'AWS::IAM::Role'

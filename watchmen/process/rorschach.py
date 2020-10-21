@@ -36,13 +36,15 @@ from watchmen.config import settings
 # Rorschach Constants:
 DAILY = "Daily"
 ENVIRONMENT = settings("ENVIRONMENT", "test")
-TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
 HOURLY = "Hourly"
 MESSAGES = messages.RORSCHACH
 MINUTELY = "Minutely"
+TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
+WEEKLY = "Weekly"
 
 # Constants dependent on previously defined constants:
-ALL_EVENT_TYPES = [HOURLY, DAILY, MINUTELY]
+ALL_EVENT_TYPES = [MINUTELY, HOURLY, DAILY, WEEKLY]
+EVENT_OFFSET_DICT = {MINUTELY: 'minutes', HOURLY: 'hours', DAILY: 'days', WEEKLY: 'weeks'}
 CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(TARGET_ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
@@ -267,7 +269,9 @@ class Rorschach(Watchman):
 
         # Generating properly formatted S3 key:
         time_offset = item.get("time_offset", 1)
-        s3_key, tb = self._generate_key(full_path, self.event, time_offset)
+
+        offset_type = item.get('offset_type') if item.get('offset_type') else self.event
+        s3_key, tb = self._generate_key(full_path, offset_type, time_offset)
 
         if tb:
             exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
@@ -559,7 +563,9 @@ class Rorschach(Watchman):
 
         try:
             time_offset = item.get("time_offset", 1)
-            generated_prefix, tb = self._generate_key(item['prefix'], self.event, time_offset)
+
+            offset_type = item.get('offset_type') if item.get('offset_type') else self.event
+            generated_prefix, tb = self._generate_key(item['prefix'], offset_type, time_offset)
 
             if tb:
                 return contents_dict, tb
@@ -569,7 +575,7 @@ class Rorschach(Watchman):
                                                                     'max_items': item.get('max_items')}))
 
             # Trim contents to include only object within the time offset
-            if self.event in TRIMMABLE_EVENT_TYPES:
+            if offset_type in TRIMMABLE_EVENT_TYPES:
                 contents = self._trim_contents(contents, time_offset, self.event)
 
             # Removing whitelisted files from contents:
@@ -590,19 +596,19 @@ class Rorschach(Watchman):
             tb = traceback.format_exc()
             return contents_dict, tb
 
-    def _generate_key(self, prefix_format, event, time_offset=1):
+    def _generate_key(self, prefix_format, offset_type, time_offset=1):
         """
         Method to generate the key for each target based on the event type.
         :param prefix_format: <string> The S3 key prefix format.
-        :param event: <string> The event type.
+        :param offset_type: <string> The event type.
         :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
         :return: <string>, <string>
                  <string>: The properly formatted S3 key with the correct date based off the time_offset.
                  <string>: Traceback if an exception was encountered, None otherwise.
         """
         try:
-            arg_dict = {'Hourly': 'hours', 'Daily': 'days', 'Minutely': 'minutes'}
-            check_time = _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{arg_dict[event]: time_offset})
+            check_time = \
+                _datetime.datetime.now(pytz.utc) - _datetime.timedelta(**{EVENT_OFFSET_DICT[offset_type]: time_offset})
             prefix = check_time.strftime(prefix_format)
             return prefix, None
         except Exception as ex:
@@ -729,9 +735,8 @@ class Rorschach(Watchman):
         :param contents: <[S3 objects]> S3 contents of the path with no filtering
         :return: Pruned contents
         """
-        arg_dict = {'Hourly': 'hours', 'Minutely': 'minutes'}
         end_time = _datetime.datetime.now(pytz.utc)
-        start_time = end_time - _datetime.timedelta(**{arg_dict[event]: offset})
+        start_time = end_time - _datetime.timedelta(**{EVENT_OFFSET_DICT[event]: offset})
 
         for file in list(contents):
             if file.get("LastModified") > end_time or file.get("LastModified") < start_time:
