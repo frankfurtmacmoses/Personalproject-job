@@ -543,7 +543,7 @@ def generate_pages(prefix='', **kwargs):
 
     s3_client = get_client()
     paginator = s3_client.get_paginator('list_objects')
-    parameters = {'Bucket': bucket, 'Prefix': prefix, 'Delimiter': '', 'PaginationConfig':{'MaxItems': max_items}}
+    parameters = {'Bucket': bucket, 'Prefix': prefix, 'Delimiter': '', 'PaginationConfig': {'MaxItems': max_items}}
     p_iterator = paginator.paginate(**parameters)
 
     for obj in p_iterator.search('Contents'):

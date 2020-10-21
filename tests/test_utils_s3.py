@@ -812,8 +812,12 @@ class TestS3(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(res)
         self.mock_client.get_paginator.assert_called_with('list_objects')
+
+        mock_params_called_with = \
+            {'Bucket': 'mocked_bucket', 'Delimiter': '', 'PaginationConfig': {'MaxItems': None}, 'Prefix': 'test'}
         self.mock_paginator.paginate.assert_called_with(
-            **self.mock_params_test_dirs)
+            **mock_params_called_with)
+
         self.mock_iterator.search.assert_called_with('Contents')
 
     @mock_s3
