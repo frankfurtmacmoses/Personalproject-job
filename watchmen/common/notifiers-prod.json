@@ -37,7 +37,7 @@
   },
   "Georgia Tech S3": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Hancock"
+    "sns": "arn:aws:sns:us-east-1:405093580753:GT_pDNS"
   },
   "Lookalike2 Algorithm S3": {
     "notifier": "SnsNotifier",
