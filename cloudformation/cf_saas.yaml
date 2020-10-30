@@ -130,18 +130,51 @@ Resources:
                     - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Generic_S3_Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
               - Effect: Allow
                 Action:
-                  - 's3:GetObject'
-                  - 's3:HeadBucket'
                   - 's3:ListBucket'
                 Resource:
-                  - !If [IsProd, "arn:aws:s3:::ib-cyberint-prod-deploys", "arn:aws:s3:::cyber-intel-saas-test"]
-                  - !If [IsProd, "arn:aws:s3:::ib-cyberint-prod-deploys/watchmen/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va", "arn:aws:s3:::cyber-intel-saas-test"]
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va/parquet-dns/com.infoblox.300224/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va/parquet-northstar-dns/com.infoblox.300224/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::ib-dl-saas-rz-prod", "arn:aws:s3:::cyber-intel-saas-test"]
-                  - !If [IsProd, "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/summaries/customer/name_servers/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data/NewlyObservedDomains/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data/NewlyObservedHostname/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
+                  Fn::If:
+                    - IsProd
+                    - - "arn:aws:s3:::deteque-new-observable-data"
+                      - "arn:aws:s3:::ib-customer-data-usa-va"
+                      - "arn:aws:s3:::ib-cyberint-prod-deploys"
+                      - "arn:aws:s3:::ib-dl-lz-ttl-prod"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod"
+                      - "arn:aws:s3:::ib-dl-saas-lz-dev-tmp"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod"
+                    - "arn:aws:s3:::cyber-intel-saas-test"
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:HeadBucket'
+                Resource:
+                  Fn::If:
+                    - IsProd
+                    - - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedDomains/*"
+                      - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedHostname/*"
+                      - "arn:aws:s3:::ib-customer-data-usa-va/parquet-dns/com.infoblox.300224/*"
+                      - "arn:aws:s3:::ib-customer-data-usa-va/parquet-northstar-dns/com.infoblox.300224/*"
+                      - "arn:aws:s3:::ib-cyberint-prod-deploys/watchmen/*"
+                      - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/heka/*"
+                      - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/prometheus/metrics-prd-1/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/heka/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/dns-logs/customer/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/dns-logs/farsight/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/saas-customer-data/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/athena-full-exports/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/prometheus/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-dev-tmp/saas-customer-data/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod/athena-full-exports/atcapi/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod/athena-full-exports/identity/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/summaries/customer/name_servers/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/metadata/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/summaries/qtype_answer_counts/qtype=1/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/summaries/subdomain_counts_by_sld/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/summaries/subdomain_counts_by_source/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/metadata/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/name_servers/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/qtype_answer_counts/qtype=1/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/query_counts/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/subdomain_counts_by_sld/*"
+                    - "arn:aws:s3:::cyber-intel-saas-test/*"
 
