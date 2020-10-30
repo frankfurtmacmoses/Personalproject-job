@@ -151,7 +151,7 @@ class Metropolis(Watchman):
         for row in sources:
             process_name = row.get("process")
             should_check_against_threshold = True
-            if row.get('moving_mean') is None:
+            if not row.get('moving_mean'):
                 # get the live data for the process incase 'moving mean' is not present.
                 should_check_against_threshold, tb = self._get_live_target_data(row)
             if should_check_against_threshold:
