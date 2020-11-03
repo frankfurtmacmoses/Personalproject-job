@@ -22,6 +22,12 @@ Hourly:
 
 Daily:
 
+- target_name: Mercator Data - RZ
+  items:
+  - bucket_name: ib-dl-it-rz-prod
+    full_path: Mercator/mercator000.parquet
+    min_total_size_kb: 21000
+
 - target_name: Poseidon DNS Data - LZ
   items:
   - bucket_name: ib-customer-data-usa-va
@@ -104,6 +110,13 @@ Daily:
     suffix: .parquet
     whitelist: ['_SUCCESS']
 
+- target_name: Prometheus - CZ
+  items:
+  - bucket_name: ib-dl-saas-cz-prod
+    prefix: prometheus/year=%0Y/month=%0m/day=%0d/
+    suffix: .parquet
+    min_total_files: 0
+
 - target_name: SaaS Apps Customer Data Phase 1 - LZ
   items:
   - bucket_name: ib-dl-saas-lz-dev-tmp
@@ -121,8 +134,26 @@ Daily:
     min_total_size_kb: 0
 
   - bucket_name: ib-dl-saas-lz-prod
-    path_vars: [accounts, sfdccsps, provision_history, ip_spaces, on_prem_applications]
-    prefix: athena-full-exports/identity/year=%0Y/month=%0m/day=%0d/public/{var}/
+    prefix: athena-full-exports/identity/year=%0Y/month=%0m/day=%0d/public/accounts/
+    suffix: .parquet
+    min_total_files: 1
+    min_total_size_kb: 0
+
+  - bucket_name: ib-dl-saas-lz-prod
+    path_vars: [sfdccsps, provision_history]
+    prefix: athena-full-exports/entitlement/year=%0Y/month=%0m/day=%0d/public/{var}/
+    suffix: .parquet
+    min_total_files: 1
+    min_total_size_kb: 0
+
+  - bucket_name: ib-dl-saas-lz-prod
+    prefix: athena-full-exports/ipam/year=%0Y/month=%0m/day=%0d/public/ip_spaces/
+    suffix: .parquet
+    min_total_files: 1
+    min_total_size_kb: 0
+
+  - bucket_name: ib-dl-saas-lz-prod
+    prefix: athena-full-exports/hostapp/year=%0Y/month=%0m/day=%0d/public/on_prem_applications/
     suffix: .parquet
     min_total_files: 1
     min_total_size_kb: 0
@@ -141,12 +172,6 @@ Daily:
     suffix: .csv
     min_total_files: 3
 
-- target_name: Prometheus - CZ
-  items:
-  - bucket_name: ib-dl-saas-cz-prod
-    prefix: prometheus/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    min_total_files: 0
 
 Minutely:
 
