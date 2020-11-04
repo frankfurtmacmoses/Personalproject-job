@@ -59,27 +59,13 @@ Daily:
     whitelist: ['_SUCCESS']
 
   - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/customer/summaries/name_servers/year=%0Y/month=%0m/day=%0d/
+    path_vars: [name_servers, query_counts, subdomain_counts_by_sld, subdomain_counts_by_source]
+    prefix: dns-logs/customer/summaries/{var}/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
     whitelist: ['_SUCCESS']
 
   - bucket_name: ib-dl-saas-rz-prod
     prefix: dns-logs/customer/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
-
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/customer/summaries/query_counts/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
-
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/customer/summaries/subdomain_counts_by_sld/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
-
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/customer/summaries/subdomain_counts_by_source/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
     whitelist: ['_SUCCESS']
 
@@ -91,22 +77,13 @@ Daily:
     whitelist: ['_SUCCESS']
 
   - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/farsight/summaries/name_servers/year=%0Y/month=%0m/day=%0d/
+    path_vars: [name_servers, query_counts, subdomain_counts_by_sld]
+    prefix: dns-logs/farsight/summaries/{var}/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
     whitelist: ['_SUCCESS']
 
   - bucket_name: ib-dl-saas-rz-prod
     prefix: dns-logs/farsight/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
-
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/farsight/summaries/query_counts/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
-    
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/farsight/summaries/subdomain_counts_by_sld/year=%0Y/month=%0m/day=%0d/
     suffix: .parquet
     whitelist: ['_SUCCESS']
 
