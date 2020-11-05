@@ -42,6 +42,10 @@ Resources:
       Description: Monitors s3 targets hourly and daily.
       Environment:
         Variables:
+          SNS_DATALAKEZONEMONITORS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DataLakeZoneMonitors, !Ref 'AWS::NoValue']
+          SNS_GENERICS3SAAS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Saas, !Ref 'AWS::NoValue']
+          SNS_NEWLYOBSERVEDDATA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.NewlyObservedData, !Ref 'AWS::NoValue']
+          SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
           ENVIRONMENT: !Ref Env
           ACCOUNT: !Ref Account
           TARGET_ACCOUNT: saas   # This is necessary in order to find the correct targets file. Definitely hacky.
@@ -135,9 +139,10 @@ Resources:
                 Action:
                   - 'SNS:Publish'
                 Resource:
-                    - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Poseidon_Northstar_DNS_Data", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
-                    - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Poseidon_DNS_Data", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
-                    - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Generic_S3_Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
+                  - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DataLakeZoneMonitors, !Ref 'AWS::NoValue']
+                  - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Saas, !Ref 'AWS::NoValue']
+                  - !If [IsProd, !GetAtt SnsTopicStack.Outputs.NewlyObservedData, !Ref 'AWS::NoValue']
+                  - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
               - Effect: Allow
                 Action:
                   - 's3:ListBucket'
