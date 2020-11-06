@@ -27,6 +27,7 @@ DOCKER_DENV := $(wildcard /.dockerenv)
 DOCKER_PATH := $(shell which docker)
 
 BUILD_ENV ?= test
+CLOUD_FORMATION := cloudformation
 CONFIG_DIR := configs
 COVERAGE_DIR := htmlcov
 COVERAGE_REPORT := $(COVERAGE_DIR)/index.html
@@ -38,6 +39,8 @@ PROCESS := process
 PROJECT := watchmen
 S3_PROD_BUCKET := cyber-intel
 S3_TEST_BUCKET := cyber-intel-test
+SNS_ATG_PATH := $(CLOUD_FORMATION)/sns/atg.yaml
+SNS_ATG_S3_PATH := $(CLOUD_FORMATION)/sns_atg.yaml
 SYSTOOLS := find rm python tee xargs zip
 
 USE_PYTHON3 := true
@@ -377,11 +380,15 @@ build-test-only:
 
 deploy-atg-test: clean
 	@echo
+	aws s3 cp $(SNS_ATG_PATH) s3://$(S3_TEST_BUCKET)/$(PROJECT)/$(SNS_ATG_S3_PATH)
+	@echo
 	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-test FEATURE=watchmen DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
 deploy-atg-prod: clean
+	@echo
+	aws s3 cp $(SNS_ATG_PATH) s3://$(S3_PROD_BUCKET)/$(PROJECT)/$(SNS_ATG_S3_PATH)
 	@echo
 	BUILD_ENV=prod ACCOUNT=atg BUCKET=cyber-intel FEATURE=watchmen DEPLOY_FILE=cf_atg.yaml $(MAKE_DEPLOY)
 	@echo

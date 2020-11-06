@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "This template is for SNS topics in atg"
+Parameters:
+  Env:
+    Description: Environment to be deployed.
+    Type: String
+Conditions:
+  IsProd: !Equals [ !Ref Env, "prod" ]
+  IsTest: !Equals [ !Ref Env, "test" ]
+Resources:
+  DomainCountsMetricsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: DomainCountsMetrics
+      TopicName: DomainCountsMetrics
+      Subscription:
+        - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+
+  DSSummariesTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: DSSummaries
+      TopicName: DSSummaries
+      Subscription:
+        - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+
+  GenericS3AtgTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: RorschachGenericS3Atg
+      TopicName: RorschachGenericS3Atg
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
+
+  GeorgiaTechpDNSTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: GeorgiaTechpDNS
+      TopicName: GeorgiaTechpDNS
+      Subscription:
+        - Endpoint: aciarochi@infoblox.com
+          Protocol: email
+
+  SmartListingTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: SmartListingS3
+      TopicName: SmartListingS3
+      Subscription:
+        - Endpoint: rili@infoblox.com
+          Protocol: email
+        - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+        - Endpoint: rburton@infoblox.com
+          Protocol: email
+
+  WatchmenTestTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsTest
+    Properties:
+      DisplayName: WatchmenTest
+      TopicName: WatchmenTest
+      Subscription:
+        - Endpoint: vermaa@infoblox.com
+          Protocol: email
+        - Endpoint: phecksel@infoblox.com
+          Protocol: email
+        - Endpoint: garciam@infoblox.com
+          Protocol: email
+        - Endpoint: kramos@infoblox.com
+          Protocol: email
+        - Endpoint: rnagesh@infoblox.com
+          Protocol: email
+        - Endpoint: dhl@infoblox.com
+          Protocol: email
+
+Outputs:
+
+  DomainCountsMetrics:
+    Condition: IsProd
+    Value: !Ref DomainCountsMetricsTopic
+
+  DSSummaries:
+    Condition: IsProd
+    Value: !Ref DSSummariesTopic
+
+  GenericS3Atg:
+    Condition: IsProd
+    Value: !Ref GenericS3AtgTopic
+
+  GeorgiaTechpDNS:
+    Condition: IsProd
+    Value: !Ref GeorgiaTechpDNSTopic
+
+  SmartListingS3:
+    Condition: IsProd
+    Value: !Ref SmartListingTopic
+
+  WatchmenTest:
+    Condition: IsTest
+    Value: !Ref WatchmenTestTopic

@@ -1,11 +1,13 @@
-{
+from watchmen.config import settings
+
+SNS = {
   "Cyber-Intel Endpoints": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Sockeye"
   },
-  "Domain Counts Metrics":{
+  "Domain Counts Metrics": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Domain_Counts_Metrics"
+    "sns": settings("sns.domaincountsmetrics")
   },
   "DomainTools Email": {
     "notifier": "SnsNotifier",
@@ -17,7 +19,7 @@
   },
   "DS Summaries": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:DS_Summaries"
+    "sns": settings("sns.dssummaries")
   },
   "EMR Cluster Status": {
     "notifier": "SnsNotifier",
@@ -37,7 +39,7 @@
   },
   "Georgia Tech S3": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:GT_pDNS"
+    "sns": settings("sns.georgiatechpdns")
   },
   "Lookalike2 Algorithm S3": {
     "notifier": "SnsNotifier",
@@ -47,7 +49,7 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Metrics_and_KPI"
   },
-  "Newly Observed Data":{
+  "Newly Observed Data": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
   },
@@ -59,47 +61,47 @@
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
   },
-  "Reaper Metrics":{
+  "Reaper Metrics": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Reaper_Metrics"
   },
-  "Slowdrip Metrics":{
+  "Slowdrip Metrics": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Slowdrip_Metrics"
   },
-   "Smartlisting":{
+  "Smartlisting": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Smartlisting"
-   },
-  "VirusTotal Email":{
+    "sns": settings("sns.smartlistings3")
+  },
+  "VirusTotal Email": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Email"
   },
-  "VirusTotal Pager":{
+  "VirusTotal Pager": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Pager"
   },
-  "Generic S3 atg":{
-  "notifier": "SnsNotifier",
-  "sns": "arn:aws:sns:us-east-1:405093580753:Generic_S3_atg"
+  "Generic S3 atg": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.generics3atg")
   },
-  "Ozone .com Data":{
+  "Ozone .com Data": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:488906355115:Ozone_COM_Data"
   },
-  "Generic S3 saas":{
+  "Generic S3 saas": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:902917483333:Generic_S3_Rorschach"
   },
-  "Poseidon DNS Data":{
+  "Poseidon DNS Data": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:902917483333:Poseidon_DNS_Data"
   },
-  "Poseidon Northstar DNS Data":{
+  "Poseidon Northstar DNS Data": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:902917483333:Poseidon_Northstar_DNS_Data"
   },
-  "zVelo Data Monitor":{
+  "zVelo Data Monitor": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:488906355115:zvelo_data_monitor"
   }
