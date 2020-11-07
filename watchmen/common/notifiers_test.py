@@ -45,17 +45,53 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
+  "Mercator Data - RZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
   "Metrics and KPI": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
   "Newly Observed Data": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "Pager Duty": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "Poseidon DNS Customer Data - RZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "Poseidon DNS Data - CZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "Poseidon DNS Data - LZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "Poseidon Heka Data - CZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "Poseidon Heka Data - LZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "Poseidon DNS Farsight Data - RZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "Prometheus - CZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "Prometheus - LZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
   },
   "Reaper Feeds": {
     "notifier": "SnsNotifier",
@@ -64,6 +100,22 @@ SNS = {
   "Reaper Metrics": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+  },
+  "SaaS Apps Customer Data Phase 1 - CZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "SaaS Apps Customer Data Phase 2 - CZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "SaaS Apps Customer Data Phase 1 - LZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+  "SaaS Apps Customer Data Phase 2 - LZ": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
   },
   "Slowdrip Metrics": {
     "notifier": "SnsNotifier",
@@ -91,7 +143,7 @@ SNS = {
   },
   "Generic S3 saas": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "Poseidon DNS Data": {
     "notifier": "SnsNotifier",
