@@ -38,9 +38,13 @@ MANHATTAN := manhattan
 PROCESS := process
 PROJECT := watchmen
 S3_PROD_BUCKET := cyber-intel
+S3_SAAS_BUCKET := ib-cyberint-prod-deploys
+S3_SAAS_TEST_BUCKET := cyber-intel-saas-test
 S3_TEST_BUCKET := cyber-intel-test
 SNS_ATG_PATH := $(CLOUD_FORMATION)/sns/atg.yaml
 SNS_ATG_S3_PATH := $(CLOUD_FORMATION)/sns_atg.yaml
+SNS_SAAS_PATH := $(CLOUD_FORMATION)/sns/saas.yaml
+SNS_SAAS_S3_PATH := $(CLOUD_FORMATION)/sns_saas.yaml
 SYSTOOLS := find rm python tee xargs zip
 
 USE_PYTHON3 := true
@@ -408,11 +412,15 @@ deploy-cyberintel-prod: clean
 
 deploy-saas-test: clean
 	@echo
+	aws s3 cp $(SNS_SAAS_PATH) s3://$(S3_SAAS_TEST_BUCKET)/$(PROJECT)/$(SNS_SAAS_S3_PATH)
+	@echo
 	BUILD_ENV=test ACCOUNT=atg BUCKET=cyber-intel-saas-test FEATURE=watchmen-saas DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE :$@"
 
 deploy-saas-prod: clean
+	@echo
+	aws s3 cp $(SNS_SAAS_PATH) s3://$(S3_SAAS_BUCKET)/$(PROJECT)/$(SNS_SAAS_S3_PATH)
 	@echo
 	BUILD_ENV=prod ACCOUNT=saas BUCKET=ib-cyberint-prod-deploys FEATURE=watchmen DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
 	@echo
