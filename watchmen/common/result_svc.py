@@ -37,7 +37,7 @@ class ResultSvc:
         @param result_list: list of Result Object
         """
         self.result_list = result_list
-    
+
     @staticmethod
     def _build_test_sns_topic():
         """
