@@ -757,13 +757,11 @@ Resources:
                   Action:
                     - 'SNS:Publish'
                   Resource:
-                    Fn::If:
-                      - IsProd
-                      - - !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Slowdrip_Metrics"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Reaper_Metrics"
-                        - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Metrics_and_KPI'
-                      - !GetAtt SnsTopicStack.Outputs.WatchmenTest
+                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics, !Ref 'AWS::NoValue']
+                    - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
+                    - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Slowdrip_Metrics"
+                    - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Reaper_Metrics"
+                    - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Metrics_and_KPI'
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -855,7 +853,7 @@ Resources:
               Action:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         Policies:
           - PolicyName: !Sub RorschachExecutionRole-${Env}
             PolicyDocument:
@@ -869,14 +867,12 @@ Resources:
                   Action:
                     - 'SNS:Publish'
                   Resource:
-                    - Fn::If:
-                        - IsProd
-                        - - !GetAtt SnsTopicStack.Outputs.DSSummaries
-                          - !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics
-                          - !GetAtt SnsTopicStack.Outputs.FarsightData
-                          - !GetAtt SnsTopicStack.Outputs.GenericS3Atg
-                          - !GetAtt SnsTopicStack.Outputs.SmartListFeeds
-                        - !GetAtt SnsTopicStack.Outputs.WatchmenTest
+                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DSSummaries, !Ref 'AWS::NoValue']
+                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics, !Ref 'AWS::NoValue']
+                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GeorgiaTechpDNS, !Ref 'AWS::NoValue']
+                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
+                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.SmartListingS3, !Ref 'AWS::NoValue']
+                    - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
                 - Effect: Allow
                   Action:
                     - 's3:GetObject'
