@@ -38,7 +38,6 @@ Resources:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
 
-
   GeorgiaTechpDNSTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
