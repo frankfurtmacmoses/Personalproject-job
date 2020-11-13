@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: "Watchmen monitors the cyberintel account for issues and outages."
+Description: "Watchmen monitors the cyberintel aws account for issues and outages."
 Mappings:
   EnvMap:
     test:
@@ -35,7 +35,7 @@ Resources:
           ENVIRONMENT: !Ref Env
           ACCOUNT: !Ref Account
           TARGET_ACCOUNT: cyberintel   # This is necessary in order to find the correct targets file. Definitely hacky.
-      Handler: watchmen.main_${Account}.start_rorschach_watcher
+      Handler: watchmen.main_cyberintel.start_rorschach_watcher
       MemorySize: 256
       Role: !GetAtt RorschachCyberintelExecutionRole.Arn
       Timeout: 300
