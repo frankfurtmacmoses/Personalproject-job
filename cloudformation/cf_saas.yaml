@@ -21,6 +21,16 @@ Parameters:
 Conditions:
   IsProd: !Equals [ !Ref Env, prod ]
 Resources:
+
+  SnsTopicStack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      Parameters:
+        Env: !Ref Env
+      TemplateURL: !Sub
+        - 'https://s3.amazonaws.com/${s3_bucket}/watchmen/cloudformation/sns_saas.yaml'
+        - s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket']
+  
   WatchmenRorschachLambda:
     Type: 'AWS::Lambda::Function'
     Properties:
@@ -32,6 +42,10 @@ Resources:
       Description: Monitors s3 targets hourly and daily.
       Environment:
         Variables:
+          SNS_DATALAKEZONEMONITORS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DataLakeZoneMonitors, !Ref 'AWS::NoValue']
+          SNS_GENERICS3SAAS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Saas, !Ref 'AWS::NoValue']
+          SNS_NEWLYOBSERVEDDATA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.NewlyObservedData, !Ref 'AWS::NoValue']
+          SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
           ENVIRONMENT: !Ref Env
           ACCOUNT: !Ref Account
           TARGET_ACCOUNT: saas   # This is necessary in order to find the correct targets file. Definitely hacky.
@@ -75,11 +89,11 @@ Resources:
   RorschachMinutelyScheduledEvent:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: A minutely event that kicks off daily Rorschach Watchman
+      Description: A minutely event that kicks off the Rorschach Watchman every 15 minutes
       ScheduleExpression: cron(0/15 * * * ? *)
       State: !If [ IsProd, ENABLED, DISABLED ]
       Targets:
-        - Id: RorschachDailyScheduler
+        - Id: RorschachMinutelyScheduler
           Arn: !GetAtt WatchmenRorschachLambda.Arn
           Input: '{"Type": "Minutely"}'
   InvokeRorschachHourlyLambdaPermission:
@@ -102,7 +116,7 @@ Resources:
       FunctionName: !GetAtt WatchmenRorschachLambda.Arn
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
-      SourceArn: !GetAtt RorschachMinutelyScheduledEvent
+      SourceArn: !GetAtt RorschachMinutelyScheduledEvent.Arn
   RorschachSaasExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -125,23 +139,57 @@ Resources:
                 Action:
                   - 'SNS:Publish'
                 Resource:
-                    - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Poseidon_Northstar_DNS_Data", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
-                    - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Poseidon_DNS_Data", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
-                    - !If [IsProd, "arn:aws:sns:us-east-1:902917483333:Generic_S3_Rorschach", "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"]
+                  - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DataLakeZoneMonitors, !Ref 'AWS::NoValue']
+                  - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Saas, !Ref 'AWS::NoValue']
+                  - !If [IsProd, !GetAtt SnsTopicStack.Outputs.NewlyObservedData, !Ref 'AWS::NoValue']
+                  - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
+              - Effect: Allow
+                Action:
+                  - 's3:ListBucket'
+                Resource:
+                  Fn::If:
+                    - IsProd
+                    - - "arn:aws:s3:::deteque-new-observable-data"
+                      - "arn:aws:s3:::ib-customer-data-usa-va"
+                      - "arn:aws:s3:::ib-cyberint-prod-deploys"
+                      - "arn:aws:s3:::ib-dl-lz-ttl-prod"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod"
+                      - "arn:aws:s3:::ib-dl-saas-lz-dev-tmp"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod"
+                    - "arn:aws:s3:::cyber-intel-saas-test"
               - Effect: Allow
                 Action:
                   - 's3:GetObject'
                   - 's3:HeadBucket'
-                  - 's3:ListBucket'
                 Resource:
-                  - !If [IsProd, "arn:aws:s3:::ib-cyberint-prod-deploys", "arn:aws:s3:::cyber-intel-saas-test"]
-                  - !If [IsProd, "arn:aws:s3:::ib-cyberint-prod-deploys/watchmen/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va", "arn:aws:s3:::cyber-intel-saas-test"]
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va/parquet-dns/com.infoblox.300224/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::ib-customer-data-usa-va/parquet-northstar-dns/com.infoblox.300224/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::ib-dl-saas-rz-prod", "arn:aws:s3:::cyber-intel-saas-test"]
-                  - !If [IsProd, "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/summaries/customer/name_servers/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data/NewlyObservedDomains/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
-                  - !If [IsProd, "arn:aws:s3:::deteque-new-observable-data/NewlyObservedHostname/*", "arn:aws:s3:::cyber-intel-saas-test/*"]
+                  Fn::If:
+                    - IsProd
+                    - - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedDomains/*"
+                      - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedHostname/*"
+                      - "arn:aws:s3:::ib-customer-data-usa-va/parquet-dns/com.infoblox.300224/*"
+                      - "arn:aws:s3:::ib-customer-data-usa-va/parquet-northstar-dns/com.infoblox.300224/*"
+                      - "arn:aws:s3:::ib-cyberint-prod-deploys/watchmen/*"
+                      - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/heka/*"
+                      - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/prometheus/metrics-prd-1/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/heka/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/dns-logs/customer/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/dns-logs/farsight/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/saas-customer-data/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/athena-full-exports/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/prometheus/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-dev-tmp/saas-customer-data/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod/athena-full-exports/atcapi/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod/athena-full-exports/identity/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/summaries/customer/name_servers/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/metadata/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/summaries/qtype_answer_counts/qtype=1/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/summaries/subdomain_counts_by_sld/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/summaries/subdomain_counts_by_source/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/metadata/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/name_servers/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/qtype_answer_counts/qtype=1/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/query_counts/*"
+                      - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/subdomain_counts_by_sld/*"
+                    - "arn:aws:s3:::cyber-intel-saas-test/*"
 

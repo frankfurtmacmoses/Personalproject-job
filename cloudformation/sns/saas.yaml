@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: "This template is for SNS topics in saas"
+Parameters:
+  Env:
+    Description: Environment to be deployed.
+    Type: String
+Conditions:
+  IsProd: !Equals [ !Ref Env, "prod" ]
+  IsTest: !Equals [ !Ref Env, "test" ]
+Resources:
+
+  DataLakeZoneMonitorsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: DataLakeZoneMonitors
+      TopicName: DataLakeZoneMonitors
+      Subscription:
+        - Endpoint: data-eng@infoblox.com
+          Protocol: email
+
+  GenericS3SaasTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: RorschachGenericS3Saas
+      TopicName: RorschachGenericS3Saas
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
+  NewlyObservedDataTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: NewlyObservedData
+      TopicName: NewlyObservedData
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
+  WatchmenTestTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsTest
+    Properties:
+      DisplayName: WatchmenTestSaas
+      TopicName: WatchmenTestSaas
+      Subscription:
+        - Endpoint: kramos@infoblox.com
+          Protocol: email
+        - Endpoint: dhanshew@infoblox.com
+          Protocol: email
+
+Outputs:
+
+  DataLakeZoneMonitors:
+    Condition: IsProd
+    Value: !Ref DataLakeZoneMonitorsTopic
+
+  GenericS3Saas:
+    Condition: IsProd
+    Value: !Ref GenericS3SaasTopic
+
+  NewlyObservedData:
+    Condition: IsProd
+    Value: !Ref NewlyObservedDataTopic
+
+  WatchmenTest:
+    Condition: IsTest
+    Value: !Ref WatchmenTestTopic
