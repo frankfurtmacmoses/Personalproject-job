@@ -147,11 +147,11 @@ SNS = {
   },
   "Poseidon DNS Data": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "Poseidon Northstar DNS Data": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "zVelo Data Monitor": {
     "notifier": "SnsNotifier",
