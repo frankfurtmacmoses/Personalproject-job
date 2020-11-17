@@ -3,10 +3,11 @@ Daily:
     items:
     - bucket_name: cyberintel-ozone
       full_path: data/%0Y%0m%0d/zone/%0Y%0m%0d.com.zone.gz
+      
 Hourly:
 - target_name: zVelo Data Monitor
   items:
   - bucket_name: cyberintel-zvelo-feed
-  - prefix: /year=%0Y/month=%0m/day=%0d/
-  - suffix: .txt
-  - time_offset: 1
+    prefix: /year=%0Y/month=%0m/day=%0d/
+    suffix: .txt
+    time_offset: 1

@@ -148,5 +148,9 @@ SNS = {
   "zVelo Data Monitor": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:488906355115:zvelo_data_monitor"
+  },
+  "Generic S3 cyberintel": {
+    "notifier": "SnsNotifier",
+    "sns": "arn:aws:sns:us-east-1:488906355115:Generic_S3_cyberintel"
   }
 }
