@@ -27,7 +27,7 @@ class TestResultSvc(unittest.TestCase):
             "target2":
                 "notifier2"
         }
-        self.test_sns_topic = "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+        self.test_sns_topic = "arn:aws:sns:us-east-1:405093580753:WatchmenTest"
         self.test_exception_msg = "some exception"
         pass
 
@@ -127,7 +127,7 @@ class TestResultSvc(unittest.TestCase):
             target = 'Smartlisting'
 
         test_result = EnvironmentVarAlt
-        expected = 'arn:aws:sns:us-east-1:405093580753:WatchmenTest'
+        expected = self.test_sns_topic
         returned = result_svc_obj._get_sns_topic(test_result)
         self.assertEqual(expected, returned)
 
