@@ -27,6 +27,16 @@ Resources:
       Subscription:
         - Endpoint: ldarocha@infoblox.com
           Protocol: email
+  
+  FarsightDataTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: FarsightData
+      TopicName: FarsightData
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
 
   GenericS3AtgTopic:
     Type: 'AWS::SNS::Topic'
@@ -91,7 +101,11 @@ Outputs:
   DSSummaries:
     Condition: IsProd
     Value: !Ref DSSummariesTopic
-
+  
+  FarsightData:
+    Condition: IsProd
+    Value: !Ref FarsightDataTopic
+  
   GenericS3Atg:
     Condition: IsProd
     Value: !Ref GenericS3AtgTopic

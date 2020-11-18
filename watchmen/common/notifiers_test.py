@@ -27,7 +27,7 @@ SNS = {
   },
   "Farsight Data": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "ForeverMail": {
     "notifier": "SnsNotifier",
