@@ -422,7 +422,7 @@ deploy-saas-prod: clean
 	@echo
 	aws s3 cp $(SNS_SAAS_PATH) s3://$(S3_SAAS_BUCKET)/$(PROJECT)/$(SNS_SAAS_S3_PATH)
 	@echo
-	BUILD_ENV=prod ACCOUNT=saas BUCKET=ib-cyberint-prod-deploys FEATURE=watchmen DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
+	DRY_RUN_ONLY=true BUILD_ENV=prod ACCOUNT=saas BUCKET=ib-cyberint-prod-deploys FEATURE=watchmen DEPLOY_FILE=cf_saas.yaml $(MAKE_DEPLOY)
 	@echo
 	@echo "- DONE: $@"
 
