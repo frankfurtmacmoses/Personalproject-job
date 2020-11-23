@@ -99,23 +99,11 @@ class TestResultSvc(unittest.TestCase):
         returned = result_svc_obj._get_notifier(test_result)
         self.assertEqual(expected, returned)
 
-    @patch('watchmen.common.result_svc.get_class')
-    def test_get_sns_topic(self, mock_class):
+    def test_get_sns_topic(self):
         """
         test watchmen.common.result_svc :: ResultSvc :: _get_sns_topic
         """
-        SNS = {
-            "Newly Observed Data": {
-                "notifier": "SnsNotifier",
-                "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
-            },
-            "Smartlisting": {
-                "notifier": "SnsNotifier",
-                "sns": "arn:aws:sns:us-east-1:405093580753:WatchmenTest"
-            }
-        }
         result_svc_obj = ResultSvc(self.test_result_list)
-        mock_class.return_value = SNS
 
         class TestResult:
             target = 'Newly Observed Data'
