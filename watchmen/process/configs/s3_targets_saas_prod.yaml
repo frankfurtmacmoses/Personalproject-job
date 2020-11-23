@@ -117,8 +117,7 @@ Daily:
     min_total_size_kb: 0
 
   - bucket_name: ib-dl-saas-lz-prod
-    path_vars: [sfdccsps, provision_history]
-    prefix: athena-full-exports/entitlement/year=%0Y/month=%0m/day=%0d/public/{var}/
+    prefix: athena-full-exports/entitlement/year=%0Y/month=%0m/day=%0d/public/provision_history/
     suffix: .parquet
     min_total_files: 1
     min_total_size_kb: 0
@@ -138,16 +137,18 @@ Daily:
 - target_name: SaaS Apps Customer Data Phase 1 - CZ
   items:
   - bucket_name: ib-dl-saas-cz-prod
-    prefix: saas-customer-data/year=%0Y/month=%0m/day=%0d/
+    path_vars: [b1ddi_report, b1td_report]
+    prefix: saas-customer-data/{var}/year=%0Y/month=%0m/day=%0d/
     suffix: .csv
-    min_total_files: 2
+    min_total_files: 1
 
 - target_name: SaaS Apps Customer Data Phase 2 - CZ
   items:
   - bucket_name: ib-dl-saas-cz-prod
-    prefix: athena-full-exports/year=%0Y/month=%0m/day=%0d/
+    path_vars: [b1ddi_report_phase2, b1td_report_phase2, entitlements_report_phase2]
+    prefix: athena-full-exports/{var}/year=%0Y/month=%0m/day=%0d/
     suffix: .csv
-    min_total_files: 3
+    min_total_files: 1
 
 
 Minutely:
