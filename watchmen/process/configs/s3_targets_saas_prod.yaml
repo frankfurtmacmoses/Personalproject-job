@@ -14,11 +14,11 @@ Hourly:
 
 - target_name: Newly Observed Data
   items:
-  - bucket_name: deteque-new-observable-data
-    full_path: NewlyObserved{var}/%Y/%-m/%-d/ZMQ_Output_%Y_%-m_%-d_%-H_
-    path_vars: [Domains, Hostname]
-    suffix: .txt
-
+    - bucket_name: deteque-new-observable-data
+      prefix: NewlyObserved{var}/%Y/%-m/%-d/
+      path_vars: [Domains, Hostname]
+      suffix: .txt
+      min_total_files: 60
 
 Daily:
 
