@@ -158,7 +158,8 @@ Resources:
                       - "arn:aws:s3:::ib-dl-saas-lz-prod"
                       - "arn:aws:s3:::ib-dl-saas-rz-prod"
                       - "arn:aws:s3:::ib-dl-it-rz-prod"
-                    - "arn:aws:s3:::cyber-intel-saas-test"
+                    - - "arn:aws:s3:::cyber-intel-saas-test"
+                      - "arn:aws:s3:::deteque-new-observable-data"
               - Effect: Allow
                 Action:
                   - 's3:GetObject'
@@ -193,4 +194,6 @@ Resources:
                       - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/query_counts/*"
                       - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/farsight/summaries/subdomain_counts_by_sld/*"
                       - "arn:aws:s3:::ib-dl-it-rz-prod/Mercator/*"
-                    - "arn:aws:s3:::cyber-intel-saas-test/*"
+                    - - "arn:aws:s3:::cyber-intel-saas-test/*"
+                      - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedDomains/*"
+                      - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedHostname/*"
