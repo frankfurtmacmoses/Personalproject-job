@@ -140,6 +140,7 @@ Daily:
     path_vars: [b1ddi_report, b1td_report]
     prefix: saas-customer-data/{var}/year=%0Y/month=%0m/day=%0d/
     suffix: .csv
+    time_offset: 2
     min_total_files: 1
 
 - target_name: SaaS Apps Customer Data Phase 2 - CZ
@@ -148,6 +149,7 @@ Daily:
     path_vars: [b1ddi_report_phase2, b1td_report_phase2, entitlements_report_phase2]
     prefix: athena-full-exports/{var}/year=%0Y/month=%0m/day=%0d/
     suffix: .csv
+    time_offset: 2
     min_total_files: 1
 
 
@@ -160,4 +162,3 @@ Minutely:
       suffix: .json.gz
       time_offset: 30
       min_total_files: 210
-
