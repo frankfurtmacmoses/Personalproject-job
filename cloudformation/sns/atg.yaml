@@ -30,7 +30,17 @@ Resources:
       Subscription:
         - Endpoint: ldarocha@infoblox.com
           Protocol: email
-  
+
+  EMRClusterStatusTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: EMRClusters
+      TopicName: !Sub ${SNSPrefix}EMRClusters
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
   FarsightDataTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -116,6 +126,10 @@ Outputs:
   DSSummaries:
     Condition: IsProd
     Value: !Ref DSSummariesTopic
+
+  EMRClusterStatus:
+    Condition: IsProd
+    Value: !Ref EMRClusterStatusTopic
   
   FarsightData:
     Condition: IsProd

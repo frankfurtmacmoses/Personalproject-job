@@ -23,7 +23,7 @@ SNS = {
   },
   "EMR Cluster Status": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:EMR_Clusters"
+    "sns": settings("sns.emrclusterstatus")
   },
   "Farsight Data": {
     "notifier": "SnsNotifier",

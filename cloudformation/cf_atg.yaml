@@ -58,6 +58,8 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_EMRCLUSTERSTATUS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.EMRClusterStatus, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_bernard_watcher
         MemorySize: 256
         Role: !GetAtt BernardLambdaExecutionRole.Arn
@@ -586,6 +588,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
            - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+           - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub BernardLambdaExecutionRole${Env}
             PolicyDocument:
@@ -614,13 +617,6 @@ Resources:
                     - "elasticmapreduce:ListClusters"
                   Resource:
                     - "*"
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
-                      - {Topic: !If [IsProd, EMR_Clusters, Watchmen_Test] }
 
     ComedianLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
