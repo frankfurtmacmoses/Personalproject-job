@@ -4,6 +4,9 @@ Parameters:
   Env:
     Description: Environment to be deployed.
     Type: String
+  SNSPrefix:
+    Description: SNS Topic name prefix
+    Type: String
 Conditions:
   IsProd: !Equals [ !Ref Env, "prod" ]
   IsTest: !Equals [ !Ref Env, "test" ]
@@ -13,7 +16,7 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: DomainCountsMetrics
-      TopicName: DomainCountsMetrics
+      TopicName: !Sub ${SNSPrefix}DomainCountsMetrics
       Subscription:
         - Endpoint: ldarocha@infoblox.com
           Protocol: email
@@ -23,7 +26,7 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: DSSummaries
-      TopicName: DSSummaries
+      TopicName: !Sub ${SNSPrefix}DSSummaries
       Subscription:
         - Endpoint: ldarocha@infoblox.com
           Protocol: email
@@ -33,7 +36,7 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: FarsightData
-      TopicName: FarsightData
+      TopicName: !Sub ${SNSPrefix}FarsightData
       Subscription:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
@@ -43,7 +46,7 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: RorschachGenericS3Atg
-      TopicName: RorschachGenericS3Atg
+      TopicName: !Sub ${SNSPrefix}RorschachGenericS3Atg
       Subscription:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
@@ -53,7 +56,7 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: GeorgiaTechpDNS
-      TopicName: GeorgiaTechpDNS
+      TopicName: !Sub ${SNSPrefix}GeorgiaTechpDNS
       Subscription:
         - Endpoint: aciarochi@infoblox.com
           Protocol: email
@@ -63,7 +66,7 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: SmartListingS3
-      TopicName: SmartListingS3
+      TopicName: !Sub ${SNSPrefix}SmartListingS3
       Subscription:
         - Endpoint: rili@infoblox.com
           Protocol: email
@@ -89,7 +92,7 @@ Resources:
     Condition: IsTest
     Properties:
       DisplayName: WatchmenTest
-      TopicName: WatchmenTest
+      TopicName: !Sub ${SNSPrefix}Test
       Subscription:
         - Endpoint: vermaa@infoblox.com
           Protocol: email
