@@ -21,6 +21,23 @@ Resources:
         - Endpoint: ldarocha@infoblox.com
           Protocol: email
 
+  DomainToolsQuotaTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: DomainToolsQuota
+      TopicName: !Sub ${SNSPrefix}DomainToolsQuota
+
+  DomainToolsQuotaPagerTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: DomainToolsQuotaPager
+      TopicName: !Sub ${SNSPrefix}DomainToolsQuotaPager
+      Subscription:
+        - Endpoint: syathiraju@infoblox.com
+          Protocol: email
+
   DSSummariesTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -61,6 +78,16 @@ Resources:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
 
+  GenericQuotaTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: GenericQuotaCheck
+      TopicName: !Sub ${SNSPrefix}GenericQuota
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
   GeorgiaTechpDNSTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -97,6 +124,31 @@ Resources:
         - Endpoint: plaudanski@infoblox.com
           Protocol: email
 
+  VirusTotalQuotaTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: VirusTotalQuota
+      TopicName: !Sub ${SNSPrefix}VirusTotalQuota
+      Subscription:
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+        - Endpoint: nsundvall@infoblox.com
+          Protocol: email
+        - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+        - Endpoint: epatterson@infoblox.com
+          Protocol: email
+        - Endpoint: kramos@infoblox.com
+          Protocol: email
+
+  VirusTotalQuotaPagerTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: VirusTotalQuotaPager
+      TopicName: !Sub ${SNSPrefix}VirusTotalQuotaPager
+
   WatchmenTestTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsTest
@@ -123,6 +175,14 @@ Outputs:
     Condition: IsProd
     Value: !Ref DomainCountsMetricsTopic
 
+  DomainToolsQuota:
+    Condition: IsProd
+    Value: !Ref DomainToolsQuotaTopic
+
+  DomainToolsQuotaPager:
+    Condition: IsProd
+    Value: !Ref DomainToolsQuotaPagerTopic
+
   DSSummaries:
     Condition: IsProd
     Value: !Ref DSSummariesTopic
@@ -139,6 +199,10 @@ Outputs:
     Condition: IsProd
     Value: !Ref GenericS3AtgTopic
 
+  GenericQuota:
+    Condition: IsProd
+    Value: !Ref GenericQuotaTopic
+
   GeorgiaTechpDNS:
     Condition: IsProd
     Value: !Ref GeorgiaTechpDNSTopic
@@ -150,6 +214,14 @@ Outputs:
   ThreatWaveS3:
     Condition: IsProd
     Value: !Ref ThreatwaveTopic
+
+  VirusTotalQuota:
+    Condition: IsProd
+    Value: !Ref VirusTotalQuotaTopic
+
+  VirusTotalQuotaPager:
+    Condition: IsProd
+    Value: !Ref VirusTotalQuotaPagerTopic
 
   WatchmenTest:
     Condition: IsTest

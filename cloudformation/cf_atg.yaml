@@ -89,6 +89,12 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_DOMAINTOOLSQUOTA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainToolsQuota, !Ref 'AWS::NoValue']
+            SNS_DOMAINTOOLSQUOTAPAGER: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainToolsQuotaPager, !Ref 'AWS::NoValue']
+            SNS_GENERICQUOTA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericQuota, !Ref 'AWS::NoValue']
+            SNS_VIRUSTOTALQUOTA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.VirusTotalQuota, !Ref 'AWS::NoValue']
+            SNS_VIRUSTOTALQUOTAPAGER: !If [IsProd, !GetAtt SnsTopicStack.Outputs.VirusTotalQuotaPager, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_comedian_watcher
         MemorySize: 256
         Role: !GetAtt ComedianLambdaExecutionRole.Arn
@@ -632,6 +638,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub ComedianLambdaExecutionRole${Env}
             PolicyDocument:
@@ -640,18 +647,6 @@ Resources:
                   Action:
                     - "kms:Decrypt"
                   Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    Fn::If:
-                      - IsProd
-                      - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Email"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Pager"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Email"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Pager"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Generic_Quota_Email"
-                      - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
 
     JupiterLambdaExecutionRole:
       Type: 'AWS::IAM::Role'

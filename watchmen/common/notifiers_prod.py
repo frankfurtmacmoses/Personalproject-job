@@ -11,11 +11,11 @@ SNS = {
   },
   "DomainTools Email": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:DomainTools_Quota_Email"
+    "sns": settings("sns.domaintoolsquota")
   },
   "DomainTools Pager": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:DomainTools_Quota_Pager"
+    "sns": settings("sns.domaintoolsquotapager")
   },
   "DS Summaries": {
     "notifier": "SnsNotifier",
@@ -35,7 +35,7 @@ SNS = {
   },
   "Generic Quota Email": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Generic_Quota_Email"
+    "sns": settings('sns.genericquota')
   },
   "Georgia Tech S3": {
     "notifier": "SnsNotifier",
@@ -127,11 +127,11 @@ SNS = {
   },
   "VirusTotal Email": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Email"
+    "sns": settings("sns.virustotalquota")
   },
   "VirusTotal Pager": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Pager"
+    "sns": settings("sns.virustotalquotapager")
   },
   "Generic S3 atg": {
     "notifier": "SnsNotifier",
