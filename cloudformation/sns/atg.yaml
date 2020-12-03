@@ -112,6 +112,16 @@ Resources:
         - Endpoint: rburton@infoblox.com
           Protocol: email
 
+  SockeyeTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: Sockeye
+      TopicName: !Sub ${SNSPrefix}Sockeye
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
   ThreatwaveTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -123,6 +133,7 @@ Resources:
           Protocol: email
         - Endpoint: plaudanski@infoblox.com
           Protocol: email
+
 
   VirusTotalQuotaTopic:
     Type: 'AWS::SNS::Topic'
@@ -210,6 +221,10 @@ Outputs:
   SmartListingS3:
     Condition: IsProd
     Value: !Ref SmartListingTopic
+
+  Sockeye:
+    Condition: IsProd
+    Value: !Ref SockeyeTopic
 
   ThreatWaveS3:
     Condition: IsProd

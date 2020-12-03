@@ -3,7 +3,7 @@ from watchmen.config import settings
 SNS = {
   "Cyber-Intel Endpoints": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Sockeye"
+    "sns": settings("sns.sockeye")
   },
   "Domain Counts Metrics": {
     "notifier": "SnsNotifier",
