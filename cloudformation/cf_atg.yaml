@@ -161,6 +161,9 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_REAPERFEEDS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperFeeds, !Ref 'AWS::NoValue']
+            SNS_REAPERFEEDSPAGER: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperFeedsPager, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_manhattan_watcher
         MemorySize: 256
         Role: !GetAtt ManhattanLambdaExecutionRole.Arn
@@ -704,6 +707,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub ManhattanLambdaExecutionRole${Env}
             PolicyDocument:
@@ -739,15 +743,6 @@ Resources:
                     - !Sub
                       - 'arn:aws:s3:::${s3_bucket}/watchmen/manhattan/feeds_to_check.json'
                       - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    Fn::If:
-                      - IsProd
-                      - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cyberintel-feeds-prod"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:PagerDuty"
-                      - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
 
     MetropolisLambdaExecutionRole:
       Type: 'AWS::IAM::Role'

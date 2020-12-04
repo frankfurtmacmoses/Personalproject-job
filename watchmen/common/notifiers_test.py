@@ -59,7 +59,7 @@ SNS = {
   },
   "Pager Duty": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "Poseidon DNS Customer Data - RZ": {
     "notifier": "SnsNotifier",
@@ -95,7 +95,7 @@ SNS = {
   },
   "Reaper Feeds": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "Reaper Metrics": {
     "notifier": "SnsNotifier",

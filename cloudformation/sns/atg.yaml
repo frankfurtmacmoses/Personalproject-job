@@ -98,6 +98,28 @@ Resources:
         - Endpoint: aciarochi@infoblox.com
           Protocol: email
 
+  ReaperFeedsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ReaperFeeds
+      TopicName: !Sub ${SNSPrefix}ReaperFeeds
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+
+  ReaperFeedsPagerTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ReaperFeedsPager
+      TopicName: !Sub ${SNSPrefix}ReaperFeedsPager
+      Subscription:
+        - Endpoint: +13603598760
+          Protocol: sms
+
   SmartListingTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -217,6 +239,14 @@ Outputs:
   GeorgiaTechpDNS:
     Condition: IsProd
     Value: !Ref GeorgiaTechpDNSTopic
+
+  ReaperFeeds:
+    Condition: IsProd
+    Value: !Ref ReaperFeedsTopic
+
+  ReaperFeedsPager:
+    Condition: IsProd
+    Value: !Ref ReaperFeedsPagerTopic
 
   SmartListingS3:
     Condition: IsProd
