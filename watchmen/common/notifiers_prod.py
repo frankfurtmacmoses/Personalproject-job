@@ -31,7 +31,7 @@ SNS = {
   },
   "ForeverMail": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-malspam-prod"
+    "sns": settings('sns.forevermail')
   },
   "Generic Quota Email": {
     "notifier": "SnsNotifier",

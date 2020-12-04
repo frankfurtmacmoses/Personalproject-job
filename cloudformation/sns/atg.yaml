@@ -68,6 +68,22 @@ Resources:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
 
+  ForeverMailTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ForeverMail
+      TopicName: !Sub ${SNSPrefix}ForeverMail
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: epatterson@infoblox.com
+          Protocol: email
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+        - Endpoint: plaudanski@infoblox.com
+          Protocol: email
+
   GenericS3AtgTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -258,7 +274,11 @@ Outputs:
   FarsightData:
     Condition: IsProd
     Value: !Ref FarsightDataTopic
-  
+
+  ForeverMail:
+    Condition: IsProd
+    Value: !Ref ForeverMailTopic
+
   GenericS3Atg:
     Condition: IsProd
     Value: !Ref GenericS3AtgTopic

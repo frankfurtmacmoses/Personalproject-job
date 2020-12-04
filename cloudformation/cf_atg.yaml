@@ -258,6 +258,8 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_FOREVERMAIL: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ForeverMail, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_mothman_watcher
         MemorySize: 256
         Role: !GetAtt MothmanLambdaExecutionRole.Arn
@@ -825,6 +827,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub MothmanLambdaExecutionRole${Env}
             PolicyDocument:
@@ -842,13 +845,6 @@ Resources:
                     - 's3:GetObject'
                     - 's3:HeadBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/malspam/forevermail/*'
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
-                      - { Topic: !If [IsProd, cyberintel-malspam-prod, Watchman_Test] }
 
     RorschachExecutionRole:
       Type: 'AWS::IAM::Role'
