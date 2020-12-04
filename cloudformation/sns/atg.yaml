@@ -114,6 +114,18 @@ Resources:
         - Endpoint: aciarochi@infoblox.com
           Protocol: email
 
+  Lookalike2AlgorithmS3Topic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: Lookalike2AlgorithmS3
+      TopicName: !Sub ${SNSPrefix}Lookalike2AlgorithmS3
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: vtymchenko@infoblox.com
+          Protocol: email
+
   MetricsAndKPITopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -290,6 +302,10 @@ Outputs:
   GeorgiaTechpDNS:
     Condition: IsProd
     Value: !Ref GeorgiaTechpDNSTopic
+
+  Lookalike2AlgorithmS3:
+    Condition: IsProd
+    Value: !Ref Lookalike2AlgorithmS3Topic
 
   MetricsAndKPI:
     Condition: IsProd

@@ -43,7 +43,7 @@ SNS = {
   },
   "Lookalike2 Algorithm S3": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
+    "sns": settings("sns.watchmentest")
   },
   "Mercator Data - RZ": {
     "notifier": "SnsNotifier",
