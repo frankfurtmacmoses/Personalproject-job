@@ -226,6 +226,8 @@ Resources:
         Description: Monitors NOH/D Feed hourly.
         Environment:
           Variables:
+            SNS_REAPERFEEDS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperFeeds, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_moloch_watcher
         MemorySize: 256
@@ -791,6 +793,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub MolochLambdaExecutionRole${Env}
             PolicyDocument:
@@ -807,13 +810,6 @@ Resources:
                   Resource:
                     - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedDomains/*'
                     - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedHostname/*'
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
-                      - {Topic: !If [IsProd, cyberintel-feeds-prod, Watchmen_Test] }
 
     MothmanLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
