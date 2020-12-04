@@ -192,6 +192,9 @@ Resources:
         Description: Monitors metrics and KPI change detection on S3.
         Environment:
           Variables:
+            SNS_METRICSANDKPI: !If [IsProd, !GetAtt SnsTopicStack.Outputs.MetricsAndKPI, !Ref 'AWS::NoValue']
+            SNS_REAPERMETRICS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperMetrics, !Ref 'AWS::NoValue']
+            SNS_SLOWDRIPMETRICS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.SlowdripMetrics, !Ref 'AWS::NoValue']
             SNS_DOMAINCOUNTSMETRICS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
             ENVIRONMENT: !Ref Env
@@ -758,6 +761,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub MetropolisLambdaExecutionRole${Env}
             PolicyDocument:
@@ -772,15 +776,6 @@ Resources:
                     - 's3:HeadBucket'
                     - 's3:ListBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/analytics/change_detection/prod/*'
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
-                    - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Slowdrip_Metrics"
-                    - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Reaper_Metrics"
-                    - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Metrics_and_KPI'
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'

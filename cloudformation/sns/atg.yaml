@@ -98,6 +98,20 @@ Resources:
         - Endpoint: aciarochi@infoblox.com
           Protocol: email
 
+  MetricsAndKPITopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: MetricsAndKPI
+      TopicName: !Sub ${SNSPrefix}MetricsAndKPI
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: aurban@infoblox.com
+          Protocol: email
+        - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+
   ReaperFeedsTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -119,6 +133,23 @@ Resources:
       Subscription:
         - Endpoint: +13603598760
           Protocol: sms
+
+  ReaperMetricsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ReaperMetrics
+      TopicName: !Sub ${SNSPrefix}ReaperMetrics
+      Subscription:
+        - Endpoint: garciam@infoblox.com
+          Protocol: email
+
+  SlowdripMetricsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: SlowdripMetrics
+      TopicName: !Sub ${SNSPrefix}SlowdripMetrics
 
   SmartListingTopic:
     Type: 'AWS::SNS::Topic'
@@ -240,6 +271,10 @@ Outputs:
     Condition: IsProd
     Value: !Ref GeorgiaTechpDNSTopic
 
+  MetricsAndKPI:
+    Condition: IsProd
+    Value: !Ref MetricsAndKPITopic
+
   ReaperFeeds:
     Condition: IsProd
     Value: !Ref ReaperFeedsTopic
@@ -247,6 +282,14 @@ Outputs:
   ReaperFeedsPager:
     Condition: IsProd
     Value: !Ref ReaperFeedsPagerTopic
+
+  ReaperMetrics:
+    Condition: IsProd
+    Value: !Ref ReaperMetricsTopic
+
+  SlowdripMetrics:
+    Condition: IsProd
+    Value: !Ref SlowdripMetricsTopic
 
   SmartListingS3:
     Condition: IsProd

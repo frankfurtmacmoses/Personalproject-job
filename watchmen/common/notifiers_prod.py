@@ -51,7 +51,7 @@ SNS = {
   },
   "Metrics and KPI": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Metrics_and_KPI"
+    "sns": settings("sns.metricsandkpi")
   },
   "Newly Observed Data": {
     "notifier": "SnsNotifier",
@@ -99,7 +99,7 @@ SNS = {
   },
   "Reaper Metrics": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Reaper_Metrics"
+    "sns": settings("sns.reapermetrics")
   },
   "SaaS Apps Customer Data Phase 1 - CZ": {
     "notifier": "SnsNotifier",
@@ -119,7 +119,7 @@ SNS = {
   },
   "Slowdrip Metrics": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Slowdrip_Metrics"
+    "sns": settings("sns.slowdripmetrics")
   },
   "Smartlisting": {
     "notifier": "SnsNotifier",
