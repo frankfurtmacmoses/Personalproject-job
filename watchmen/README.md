@@ -278,9 +278,93 @@ If you need to make an additional configuration file for your watchmen, place th
 watchmen/process/configs.
 
 ### Adding new SNS Topics
-If your Watchman uses new SNS topics, make sure to add the target name with the SNS topic to `notifiers-prod.json`.
-Add just your target name with the SNS topic `arn:aws:sns:us-east-1:405093580753:Watchmen_Test` to `notifiers-test.json`
-The target name is the name which you pass into the target attribute when you create a response object.
+
+**Note:** If your account or watchmen does not use CloudFormation for its sns topics. You will create the topic
+through the aws console and then add it to `notifiers-prod.json` and `notifiers-test.json` with the 
+explicit ARN from AWS console.
+
+If you are in ATG or SAAS you will have to add an entry to `cloudformation/sns/atg.yaml` or 
+`cloudformation/sns/saas.yaml`. Each SNS topic will have the format:
+
+```
+<Topic-Name>Topic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: <Topic-Name>
+      TopicName: Watchmen_<Topic-Name>
+      Subscription:
+        - Endpoint: <Subscriber>
+          Protocol: <Subscription-Type>
+ 
+```
+Competed Example:
+```
+SockeyeTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: Sockeye
+      TopicName: Watchmen_Sockeye
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+```
+
+You will then add these SNS topics to the sns stacks `Outputs` with the format:
+
+```
+<Topic-Name>:
+    Condition: IsProd
+    Value: !Ref <Topic-Name>Topic
+```
+Completed Example:
+```
+DomainCountsMetrics:
+    Condition: IsProd
+    Value: !Ref DomainCountsMetricsTopic
+```
+
+After adding the new topics to the sns stacks output you will add the sns topic to the Watchmen's lambda
+environment variables. This will be in `cf_atg.yaml` or `cf_saas.yaml`. Each variable will look something like this:
+```
+SNS_<Topic-Name-all-caps)>: !If [IsProd, !GetAtt SnsTopicStack.Outputs.<Topic-Name>, !Ref 'AWS::NoValue']
+```
+Completed Example:
+```
+SNS_EMRCLUSTERSTATUS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.EMRClusterStatus, !Ref 'AWS::NoValue']
+```
+After the sns topic has been added as an environment variable, you will add the topic to `notifiers-prod.json` and 
+`notifiers-test.json`. 
+
+In `notifiers-prod.json` it will look like this:
+```
+"<Topic-Name-From-Result-Object>": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.<CF-Topic-Name-Lower-Case>")
+  },
+```
+Completed Example:
+```
+"Domain Counts Metrics": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.domaincountsmetrics")
+  },
+```
+
+In `notifiers-test.json` it will look like this:
+```
+"<Topic-Name-From-Result-Object>": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
+```
+
+**Adding SNS Topics Checklist:**
+- Added topic to `cloudformation/sns/atg.yaml` or `cloudformation/sns/saas.yaml` and to the stacks
+`Outputs`
+- Added topic to the Lambda's environment variables.
+- Added topic to `notifiers-prod.json` and `notifiers-test.json`. 
 
 ### Adding Messages to messages.py
 The messages for the Watchmen you are developing should be put in messages.py and must be
