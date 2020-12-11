@@ -109,7 +109,7 @@ class TestResultSvc(unittest.TestCase):
             target = 'Newly Observed Data'
 
         test_result = TestResult()
-        expected = self.test_sns_topic
+        expected = result_svc_obj._build_test_sns_topic()
         returned = result_svc_obj._get_sns_topic(test_result)
         self.assertEqual(expected, returned)
 
@@ -126,7 +126,7 @@ class TestResultSvc(unittest.TestCase):
             target = 'Smartlisting'
 
         test_result = EnvironmentVarAlt
-        expected = self.test_sns_topic
+        expected = result_svc_obj._build_test_sns_topic()
         returned = result_svc_obj._get_sns_topic(test_result)
         self.assertEqual(expected, returned)
 
