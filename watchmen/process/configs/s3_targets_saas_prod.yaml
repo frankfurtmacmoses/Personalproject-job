@@ -1,160 +1,160 @@
 Hourly:
+  '00':
+    - target_name: Poseidon Heka Data - LZ
+      items:
+      - bucket_name: ib-dl-lz-ttl-prod
+        prefix: ib-dl-saas-lz-prod/heka/year=%0Y/month=%0m/day=%0d/
+        suffix: .gz
 
-- target_name: Poseidon Heka Data - LZ
-  items:
-  - bucket_name: ib-dl-lz-ttl-prod
-    prefix: ib-dl-saas-lz-prod/heka/year=%0Y/month=%0m/day=%0d/
-    suffix: .gz
+    - target_name: Poseidon Heka Data - CZ
+      items:
+      - bucket_name: ib-dl-saas-cz-prod
+        prefix: heka/year=%0Y/month=%0m/day=%0d/
+        suffix: .json.gz
 
-- target_name: Poseidon Heka Data - CZ
-  items:
-  - bucket_name: ib-dl-saas-cz-prod
-    prefix: heka/year=%0Y/month=%0m/day=%0d/
-    suffix: .json.gz
+    - target_name: Prometheus - LZ
+      items:
+      - bucket_name: ib-dl-lz-ttl-prod
+        prefix: ib-dl-saas-lz-prod/prometheus/metrics-prd-1/year=%0Y/month=%0m/day=%0d/
+        suffix: .json.gz
+        min_total_files: 300
 
-- target_name: Prometheus - LZ
-  items:
-  - bucket_name: ib-dl-lz-ttl-prod
-    prefix: ib-dl-saas-lz-prod/prometheus/metrics-prd-1/year=%0Y/month=%0m/day=%0d/
-    suffix: .json.gz
-    min_total_files: 300
-
-- target_name: Newly Observed Data
-  items:
-    - bucket_name: deteque-new-observable-data
-      prefix: NewlyObserved{var}/%Y/%-m/%-d/
-      path_vars: [Domains, Hostname]
-      suffix: .txt
-      min_total_files: 60
+    - target_name: Newly Observed Data
+      items:
+        - bucket_name: deteque-new-observable-data
+          prefix: NewlyObserved{var}/%Y/%-m/%-d/
+          path_vars: [Domains, Hostname]
+          suffix: .txt
+          min_total_files: 60
 
 Daily:
+  '15:00':
+    - target_name: Mercator Data - RZ
+      items:
+      - bucket_name: ib-dl-it-rz-prod
+        full_path: Mercator/mercator000.parquet
+        min_total_size_kb: 21000
 
-- target_name: Mercator Data - RZ
-  items:
-  - bucket_name: ib-dl-it-rz-prod
-    full_path: Mercator/mercator000.parquet
-    min_total_size_kb: 21000
+    - target_name: Poseidon DNS Data - LZ
+      items:
+      - bucket_name: ib-customer-data-usa-va
+        prefix: parquet-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
 
-- target_name: Poseidon DNS Data - LZ
-  items:
-  - bucket_name: ib-customer-data-usa-va
-    prefix: parquet-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
+      - bucket_name: ib-customer-data-usa-va
+        prefix: parquet-northstar-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        min_total_files: 0
+        min_total_size_kb: 0
 
-  - bucket_name: ib-customer-data-usa-va
-    prefix: parquet-northstar-dns/com.infoblox.300224/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    min_total_files: 0
-    min_total_size_kb: 0
+    - target_name: Poseidon DNS Data - CZ
+      items:
+      - bucket_name: ib-dl-saas-cz-prod
+        prefix: dns-logs/customer/year=%0Y/month=%0m/day=%0d/storage_id=300224/
+        suffix: .parquet
 
-- target_name: Poseidon DNS Data - CZ
-  items:
-  - bucket_name: ib-dl-saas-cz-prod
-    prefix: dns-logs/customer/year=%0Y/month=%0m/day=%0d/storage_id=300224/
-    suffix: .parquet
+      - bucket_name: ib-dl-saas-cz-prod
+        prefix: dns-logs/farsight/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        max_items: 100
 
-  - bucket_name: ib-dl-saas-cz-prod
-    prefix: dns-logs/farsight/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    max_items: 100
+    - target_name: Poseidon DNS Customer Data - RZ
+      items:
+      - bucket_name: ib-dl-saas-rz-prod
+        prefix: dns-logs/customer/metadata/year=%0Y/month=%0m/day=%0d/storage_id=300224/
+        suffix: .parquet
+        whitelist: ['_SUCCESS']
 
-- target_name: Poseidon DNS Customer Data - RZ
-  items:
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/customer/metadata/year=%0Y/month=%0m/day=%0d/storage_id=300224/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
+      - bucket_name: ib-dl-saas-rz-prod
+        path_vars: [name_servers, query_counts, subdomain_counts_by_sld, subdomain_counts_by_source]
+        prefix: dns-logs/customer/summaries/{var}/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        whitelist: ['_SUCCESS']
 
-  - bucket_name: ib-dl-saas-rz-prod
-    path_vars: [name_servers, query_counts, subdomain_counts_by_sld, subdomain_counts_by_source]
-    prefix: dns-logs/customer/summaries/{var}/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
+      - bucket_name: ib-dl-saas-rz-prod
+        prefix: dns-logs/customer/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        whitelist: ['_SUCCESS']
 
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/customer/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
+    - target_name: Poseidon DNS Farsight Data - RZ
+      items:
+      - bucket_name: ib-dl-saas-rz-prod
+        prefix: dns-logs/farsight/metadata/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        whitelist: ['_SUCCESS']
 
-- target_name: Poseidon DNS Farsight Data - RZ
-  items:
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/farsight/metadata/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
+      - bucket_name: ib-dl-saas-rz-prod
+        path_vars: [name_servers, query_counts, subdomain_counts_by_sld]
+        prefix: dns-logs/farsight/summaries/{var}/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        whitelist: ['_SUCCESS']
 
-  - bucket_name: ib-dl-saas-rz-prod
-    path_vars: [name_servers, query_counts, subdomain_counts_by_sld]
-    prefix: dns-logs/farsight/summaries/{var}/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
+      - bucket_name: ib-dl-saas-rz-prod
+        prefix: dns-logs/farsight/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        whitelist: ['_SUCCESS']
 
-  - bucket_name: ib-dl-saas-rz-prod
-    prefix: dns-logs/farsight/summaries/qtype_answer_counts/qtype=1/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    whitelist: ['_SUCCESS']
+    - target_name: Prometheus - CZ
+      items:
+      - bucket_name: ib-dl-saas-cz-prod
+        prefix: prometheus/year=%0Y/month=%0m/day=%0d/
+        suffix: .parquet
+        min_total_files: 0
 
-- target_name: Prometheus - CZ
-  items:
-  - bucket_name: ib-dl-saas-cz-prod
-    prefix: prometheus/year=%0Y/month=%0m/day=%0d/
-    suffix: .parquet
-    min_total_files: 0
+    - target_name: SaaS Apps Customer Data Phase 1 - LZ
+      items:
+      - bucket_name: ib-dl-saas-lz-dev-tmp
+        prefix: saas-customer-data/year=%0Y/month=%0m/day=%0d/
+        suffix: .json
+        min_total_files: 2
 
-- target_name: SaaS Apps Customer Data Phase 1 - LZ
-  items:
-  - bucket_name: ib-dl-saas-lz-dev-tmp
-    prefix: saas-customer-data/year=%0Y/month=%0m/day=%0d/
-    suffix: .json
-    min_total_files: 2
+    - target_name: SaaS Apps Customer Data Phase 2 - LZ
+      items:
+      - bucket_name: ib-dl-saas-lz-prod
+        path_vars: [roaming_clients, roaming_client_groups, security_policies]
+        prefix: athena-full-exports/atcapi/year=%0Y/month=%0m/day=%0d/atcapi_user/{var}/
+        suffix: .parquet
+        min_total_files: 1
+        min_total_size_kb: 0
 
-- target_name: SaaS Apps Customer Data Phase 2 - LZ
-  items:
-  - bucket_name: ib-dl-saas-lz-prod
-    path_vars: [roaming_clients, roaming_client_groups, security_policies]
-    prefix: athena-full-exports/atcapi/year=%0Y/month=%0m/day=%0d/atcapi_user/{var}/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
+      - bucket_name: ib-dl-saas-lz-prod
+        prefix: athena-full-exports/identity/year=%0Y/month=%0m/day=%0d/public/accounts/
+        suffix: .parquet
+        min_total_files: 1
+        min_total_size_kb: 0
 
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/identity/year=%0Y/month=%0m/day=%0d/public/accounts/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
+      - bucket_name: ib-dl-saas-lz-prod
+        prefix: athena-full-exports/entitlement/year=%0Y/month=%0m/day=%0d/public/provision_history/
+        suffix: .parquet
+        min_total_files: 1
+        min_total_size_kb: 0
 
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/entitlement/year=%0Y/month=%0m/day=%0d/public/provision_history/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
+      - bucket_name: ib-dl-saas-lz-prod
+        prefix: athena-full-exports/ipam/year=%0Y/month=%0m/day=%0d/public/ip_spaces/
+        suffix: .parquet
+        min_total_files: 1
+        min_total_size_kb: 0
 
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/ipam/year=%0Y/month=%0m/day=%0d/public/ip_spaces/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
+      - bucket_name: ib-dl-saas-lz-prod
+        prefix: athena-full-exports/hostapp/year=%0Y/month=%0m/day=%0d/public/on_prem_applications/
+        suffix: .parquet
+        min_total_files: 1
+        min_total_size_kb: 0
 
-  - bucket_name: ib-dl-saas-lz-prod
-    prefix: athena-full-exports/hostapp/year=%0Y/month=%0m/day=%0d/public/on_prem_applications/
-    suffix: .parquet
-    min_total_files: 1
-    min_total_size_kb: 0
+    - target_name: SaaS Apps Customer Data Phase 1 - CZ
+      items:
+      - bucket_name: ib-dl-saas-cz-prod
+        path_vars: [b1ddi_report, b1td_report]
+        prefix: saas-customer-data/{var}/year=%0Y/month=%0m/day=%0d/
+        suffix: .csv
+        time_offset: 2
+        min_total_files: 1
 
-- target_name: SaaS Apps Customer Data Phase 1 - CZ
-  items:
-  - bucket_name: ib-dl-saas-cz-prod
-    path_vars: [b1ddi_report, b1td_report]
-    prefix: saas-customer-data/{var}/year=%0Y/month=%0m/day=%0d/
-    suffix: .csv
-    time_offset: 2
-    min_total_files: 1
-
-- target_name: SaaS Apps Customer Data Phase 2 - CZ
-  items:
-  - bucket_name: ib-dl-saas-cz-prod
-    path_vars: [b1ddi_report_phase2, b1td_report_phase2, entitlements_report_phase2]
-    prefix: athena-full-exports/{var}/year=%0Y/month=%0m/day=%0d/
-    suffix: .csv
-    time_offset: 2
-    min_total_files: 1
+    - target_name: SaaS Apps Customer Data Phase 2 - CZ
+      items:
+      - bucket_name: ib-dl-saas-cz-prod
+        path_vars: [b1ddi_report_phase2, b1td_report_phase2, entitlements_report_phase2]
+        prefix: athena-full-exports/{var}/year=%0Y/month=%0m/day=%0d/
+        suffix: .csv
+        time_offset: 2
+        min_total_files: 1

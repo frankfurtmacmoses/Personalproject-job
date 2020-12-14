@@ -656,12 +656,19 @@ the cluster. It would look something like this:
 #### Adding S3 Targets to Rorschach
 **Config Files:** 
 - watchmen/process/configs/s3_targets_atg_prod.yaml
+- watchmen/process/configs/s3_targets_atg_test.yaml
 - watchmen/process/configs/s3_targets_saas_prod.yaml
+- watchmen/process/configs/s3_targets_saas_test.yaml
+- watchmen/process/configs/s3_targets_cyberintel_prod.yaml
+- watchmen/process/configs/s3_targets_cyberintel_test.yaml
 
-To add a new target for Rorschach to monitor, add the `target_name` with the correct tags under the check frequency tag 
-(`Hourly` or `Daily`) then add the file(s) to be checked under an `items` tag. The `target_name` will correspond to the 
+To add a new target for Rorschach to monitor, add the `target_name` with the target tags in a section of the config 
+that corresponds the to time you would like your target to be checked at. **(All times are in UTC)** Then add the file(s) to be checked under 
+an `items` tag in the config section. The `target_name` will correspond to the 
 Response object target. If a new target is added, the `target_name` should also be added to 
 `watchmen/common/notifiers-test.json` and `watchmen/common/notifiers-prod.json` with its corresponding SNS topic.
+
+Note: Make sure your target is in the config that corresponds to the correct account.
 
 
 **Target Tags**:
@@ -687,18 +694,128 @@ A multiple file entry might look like this:
 
 ```
 Daily
-    - target_name: DS Summaries
-      items:
-        - bucket_name: cyber-intel
-          prefix: prefix/year=%0Y/month=%0m/day=%0d/
-          suffix: .parquet
-          whitelist: ['_SUCCESS']
-        - bucket_name: cyber-intel
-          prefix: prefix/src=customer/year=%0Y/month=%0m/day=%0d/
-          suffix: .parquet
-          whitelist: ['_SUCCESS']
+    '15:00':
+        - target_name: DS Summaries
+          items:
+            - bucket_name: cyber-intel
+              prefix: prefix/year=%0Y/month=%0m/day=%0d/
+              suffix: .parquet
+              whitelist: ['_SUCCESS']
+            - bucket_name: cyber-intel
+              prefix: prefix/src=customer/year=%0Y/month=%0m/day=%0d/
+              suffix: .parquet
+              whitelist: ['_SUCCESS']
 
 ```
+
+
+**If the config does not contain the time at which your target need to be checked:**
+- create a new scheduled event and event type
+- create a new entry in the target config that corresponds to your new event
+- add your target to the new config section
+
+
+**Scheduled Event Formatting**
+
+New event types will be in the format: \
+`{"check_frequency": "[highest_time_unit(Non-hr/min)]..[lowest(Non-hr/min)],hr:min"}`
+
+The event type should mimic the cron job of the Scheduled event.
+- hr:min should be in the format HH:MM
+- Make sure to separate time units (excluding hr/min) with `,`. This will tell rorschach the path to use
+to traverse the config 
+
+Example event types:
+- `{"Hourly": "00"}` with `cron(0 * * * ? *)`
+- `{"Daily": "15:00"}` with `cron(0 15 * * ? *)`
+- `{"Weekly": "Mon,10:45"}` with `cron(45 10 ? * MON *)`
+
+Scheduled Event Format:
+
+```
+Rorschach<check-frequency>ScheduledEvent<new-event>:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: <Description>
+        ScheduleExpression: cron(<time-to-run-check>)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: Rorschach<check-frequency>Scheduler<new-event>
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": {"<check-frequency>": "<new-event>"}}'
+```
+Ex:
+```
+RorschachWeeklyScheduledEventMon1045:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A weekly event that kicks off the Rorschach Watchman
+        ScheduleExpression: cron(45 10 ? * MON *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: RorschachWeeklySchedulerMon1045
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": {"Weekly": "Mon,10:45"}}'
+
+```
+
+You will also have to add an invoke permission for your new scheduled event of this format:
+
+```
+InvokeRorschach<check-frequency>LambdaPermission<new-event>":
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt Rorschach<check-frequency>ScheduledEvent<new-event>.Arn
+```
+
+Ex for the scheduled event above:
+
+```
+InvokeRorschachWeeklyLambdaPermissionMon1045:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt RorschachWeeklyScheduledEventMon1045.Arn
+```
+
+
+**Config Format**
+
+The config should be formatted:
+```
+<check-frequency>:
+    <highest-time-unit(non-hr/min)>:
+        <lowest-time-unit(non-hr/min)>:
+            '<hh:mm>':
+                (targets)
+```
+
+Example config:
+```
+Hourly:
+  '00':
+    (targets)
+
+Daily:
+  '00:00':
+    (targets)
+  '15:00':
+    (targets)
+
+Weekly:
+  Mon:
+    '10:45':
+        (targets)
+  Tue:
+    '10:45':
+        (targets)
+```
+
 
 #### Adding API's to Comedian
 **Config File:** watchmen/process/configs/api_targets.yaml

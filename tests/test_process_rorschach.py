@@ -1,6 +1,8 @@
 import datetime
 import pytz
 import unittest
+
+from dateutil.relativedelta import relativedelta
 from mock import mock_open, patch
 
 from watchmen import const
@@ -11,8 +13,9 @@ from watchmen.process.rorschach import Rorschach, MESSAGES, CONFIG_NAME
 class TestRorschach(unittest.TestCase):
 
     def setUp(self):
-        self.example_event_daily = {'Type': 'Daily'}
-        self.example_event_hourly = {'Type': 'Hourly'}
+        self.example_event_daily = {'Type': {'Daily': '15:00'}}
+        self.example_event_hourly = {'Type': {'Hourly': '00'}}
+        self.example_event_weekly = {'Type': {'Weekly': 'Mon,10:45'}}
         self.example_invalid_events = [
             {'Type': 'hourly'},
             {'Type': 'daily'},
@@ -51,24 +54,26 @@ class TestRorschach(unittest.TestCase):
             'target': 'Generic S3 atg'
         }
         self.example_config_file = {
-            "Daily": [
-                {
-                    "target_name": "target1",
-                    "items": [
-                        {
-                            "bucket_name": "bucket",
-                            "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
-                            "suffix": ".parquet",
-                            "min_total_size_kb": 50
-                        },
-                        {
-                            "bucket_name": "bucket",
-                            "prefix": "random/path/year=%0Y/month=%0m/day=%0d/",
-                            "suffix": ".json",
-                        }
-                    ]
-                }
-            ]
+            "Daily": {
+                '00': [
+                    {
+                        "target_name": "target1",
+                        "items": [
+                            {
+                                "bucket_name": "bucket",
+                                "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
+                                "suffix": ".parquet",
+                                "min_total_size_kb": 50
+                            },
+                            {
+                                "bucket_name": "bucket",
+                                "prefix": "random/path/year=%0Y/month=%0m/day=%0d/",
+                                "suffix": ".json",
+                            }
+                        ]
+                    }
+                ]
+            }
         }
         self.example_contents = [{
             'Key': 'some/path/to/something.parquet',
@@ -87,7 +92,6 @@ class TestRorschach(unittest.TestCase):
             'Size': 0,
             'LastModified': datetime.datetime(2020, 5, 20, 0, 23, 29)
         }]
-        self.example_event_daily = {'Type': 'Daily'}
         self.example_generic_results = {
             "failures_and_exceptions": {
                 'details': MESSAGES.get("failure_exception_message"),
@@ -487,31 +491,26 @@ class TestRorschach(unittest.TestCase):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_invalid_event
         """
-        example_event_hourly = {'Type': 'Hourly'}
-        invalid_event_examples = [
-            {'Type': 'hourly'},
-            {'Type': 'daily'},
-            {'type': 'Hourly'},
-            {'type': 'Daily'},
-            {'': ''},
-            {}
+        tests = [
+            {'event': 'monthly', 'expected': True},
+            {'event': "weekly", 'expected': True},
+            {'event': "daily", 'expected': True},
+            {'event': "hourly", 'expected': True},
+            {'event': "minutely", 'expected': True},
+            {'event': "", 'expected': True},
+            {'event': "Monthly", 'expected': False},
+            {'event': "Weekly", 'expected': False},
+            {'event': "Daily", 'expected': False},
+            {'event': "Hourly", 'expected': False},
+            {'event': "Minutely", 'expected': False}
         ]
 
-        valid_event_tests = [
-            example_event_hourly,
-            self.example_event_daily
-        ]
-
-        for valid_event in valid_event_tests:
-            rorschach_obj = Rorschach(event=valid_event, context=None)
+        rorschach_obj = self._create_rorschach()
+        for test in tests:
+            rorschach_obj.event = test.get('event')
             returned = rorschach_obj._check_invalid_event()
-            self.assertFalse(returned)
-
-        # Method should return true whenever the event passed in is invalid:
-        for invalid_event in invalid_event_examples:
-            rorschach_obj = Rorschach(event=invalid_event, context=None)
-            returned = rorschach_obj._check_invalid_event()
-            self.assertTrue(returned)
+            expected = test.get('expected')
+            self.assertEqual(expected, returned)
 
     @patch('watchmen.process.rorschach.Rorschach._generate_contents')
     @patch('watchmen.process.rorschach.Rorschach._check_file_suffix')
@@ -640,7 +639,7 @@ class TestRorschach(unittest.TestCase):
         examples = [
             {
                 "contents": self.example_contents,
-                "item": self.example_config_file.get('Daily')[0].get('items')[0],
+                "item": self.example_config_file['Daily']['00'][0].get('items')[0],
                 "expected": "{}\n\n".format(MESSAGES.get('failure_file_empty').format(
                     self.example_contents[3]['Key'])) + MESSAGES.get('failure_multiple_file_size').format(
                     self.example_s3_prefix, 0.3, 50),
@@ -648,7 +647,7 @@ class TestRorschach(unittest.TestCase):
             },
             {
                 "contents": example_successful_contents,
-                "item": self.example_config_file.get('Daily')[0].get('items')[1],
+                "item": self.example_config_file['Daily']['00'][0].get('items')[1],
                 "expected": "",
                 "expected_tb": None
             }
@@ -988,7 +987,7 @@ class TestRorschach(unittest.TestCase):
         test watchmen.process.rorschach :: Rorschach :: _generate_contents
         """
         rorschach_obj = self._create_rorschach()
-        item = self.example_config_file.get('Daily')[0].get('items')[0]
+        item = self.example_config_file['Daily']['00'][0].get('items')[0]
 
         # Test successful _generate_contents call
         mock_key.return_value = 'some/path/to/', None
@@ -1036,14 +1035,22 @@ class TestRorschach(unittest.TestCase):
 
         # Test successful key generation with default time_offset:
         expected, expected_tb = check_time_example.strftime(prefix_format_example), None
-        returned, returned_tb = rorschach_obj._generate_key(prefix_format_example, self.example_event_daily.get('Type'))
+        event_frequency = list(self.example_event_daily.get('Type').keys())[0]
+        returned, returned_tb = rorschach_obj._generate_key(prefix_format_example, event_frequency)
         self.assertEqual((expected, expected_tb), (returned, returned_tb))
 
         # Test successful key generation with specified time_offset:
         check_time_example = datetime.datetime.now(pytz.utc) - datetime.timedelta(**{'days': 3})
         expected, expected_tb = check_time_example.strftime(prefix_format_example), None
+        event_frequency = list(self.example_event_daily.get('Type').keys())[0]
         returned, returned_tb = rorschach_obj._generate_key(prefix_format_example,
-                                                            self.example_event_daily.get('Type'), 3)
+                                                            event_frequency, 3)
+        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Test successful key generation with month time_offset:
+        check_time_example = datetime.datetime.now(pytz.utc) - relativedelta(**{'months': 1})
+        expected, expected_tb = check_time_example.strftime(prefix_format_example), None
+        returned, returned_tb = rorschach_obj._generate_key(prefix_format_example, "Monthly")
         self.assertEqual((expected, expected_tb), (returned, returned_tb))
 
         # Test exception while generating key:
@@ -1064,14 +1071,14 @@ class TestRorschach(unittest.TestCase):
 
             # Testing successful load of config file:
             mock_file.return_value = self.example_config_file
-            expected = self.example_config_file.get('Daily')
-            returned, returned_tb = rorschach_obj._load_config()
+            expected = self.example_config_file['Daily']['00']
+            returned, returned_tb = rorschach_obj._load_config(['Daily', '00'])
             self.assertEqual((expected, None), (returned, returned_tb))
 
             # Testing exception while loading config file:
             mock_file.return_value = None
             mock_open.side_effect = Exception
-            returned, returned_msg = rorschach_obj._load_config()
+            returned, returned_msg = rorschach_obj._load_config('')
             self.assertEqual(None, returned)
             self.assertTrue(Exception, returned_msg)
 
@@ -1126,6 +1133,38 @@ class TestRorschach(unittest.TestCase):
         returned['dt_created'] = '2020-12-15T00:00:00+00:00'
         self.assertEqual(returned, self.expected_invalid_config_file_result)
 
+    @patch('watchmen.process.rorschach.traceback.format_exc')
+    def test_parse_event(self, mock_tb):
+        """
+        test watchmen.process.rorschach :: Rorschach :: _get_config_path
+        """
+
+        tests = [
+            {
+                'event': self.example_event_daily,
+                'expected': ('Daily', ['Daily', '15:00'], None),
+                'tb': None
+            },
+            {
+                'event': self.example_event_weekly,
+                'expected': ('Weekly', ['Weekly', 'Mon', '10:45'], None),
+                'tb': None
+            },
+            {
+                'event': {'Type': ''},
+                'expected': (None, None, self.example_traceback),
+                'tb': self.example_traceback
+            }
+        ]
+
+        for test in tests:
+            mock_tb.return_value = test.get('tb')
+            event = test.get("event")
+            expected = test.get("expected")
+            test_rorschach = Rorschach(context=None, event=event)
+            result = test_rorschach._parse_event()
+            self.assertEqual(expected, result)
+
     @patch('watchmen.process.rorschach._s3.check_bucket')
     @patch('watchmen.process.rorschach.Rorschach._check_single_file')
     @patch('watchmen.process.rorschach.Rorschach._check_multiple_files')
@@ -1167,3 +1206,29 @@ class TestRorschach(unittest.TestCase):
 
         returned = rorschach_obj._remove_whitelisted_files_from_contents(example_whitelist, self.example_contents)
         self.assertEqual(returned, expected_returned_contents)
+
+    def test_trim_contents(self):
+
+        example_return_hourly = [{
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': (datetime.datetime.now(pytz.utc) -
+                             datetime.timedelta(**{'hours': 0.5})).replace(second=0, microsecond=0)
+        }]
+
+        example_contents = [{
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': (datetime.datetime.now(pytz.utc) -
+                             datetime.timedelta(**{'days': 3})).replace(second=0, microsecond=0)
+        }, {
+            'Key': 'some/path/to/something.parquet',
+            'Size': 100,
+            'LastModified': (datetime.datetime.now(pytz.utc) -
+                             datetime.timedelta(**{'hours': 0.5})).replace(second=0, microsecond=0)
+        }]
+
+        rorschach_obj = self._create_rorschach()
+        returned = rorschach_obj._trim_contents(example_contents, 1, "Hourly")
+        returned[0]['LastModified'] = returned[0]['LastModified'].replace(second=0, microsecond=0)
+        self.assertEqual(example_return_hourly, returned)
