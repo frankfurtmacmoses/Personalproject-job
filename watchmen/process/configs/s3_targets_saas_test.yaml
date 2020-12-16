@@ -1,11 +1,12 @@
 Hourly:
-- target_name: Newly Observed Data
-  items:
-    - bucket_name: deteque-new-observable-data
-      prefix: NewlyObserved{var}/%Y/%-m/%-d/
-      path_vars: [Domains, Hostname]
-      suffix: .txt
-      min_total_files: 60
+  '00':
+    - target_name: Newly Observed Data
+      items:
+        - bucket_name: deteque-new-observable-data
+          prefix: NewlyObserved{var}/%Y/%-m/%-d/
+          path_vars: [Domains, Hostname]
+          suffix: .txt
+          min_total_files: 60
 
 Daily:
   '15:00':
