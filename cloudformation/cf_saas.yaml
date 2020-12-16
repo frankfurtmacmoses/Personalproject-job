@@ -85,7 +85,7 @@ Resources:
       Targets:
         - Id: RorschachDailyScheduler1500
           Arn: !GetAtt WatchmenRorschachLambda.Arn
-          Input: '{"Type": "Daily"}'
+          Input: '{"Type": {"Daily": "15:00"}}'
   InvokeRorschachHourlyLambdaPermission00:
     Type: 'AWS::Lambda::Permission'
     Properties:
