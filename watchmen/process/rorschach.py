@@ -772,7 +772,7 @@ class Rorschach(Watchman):
         # We want to make sure we're checking the desired range. For example, if this is triggered at 10:30
         # and set to check back 1 hour, we want to look at 9:30-10:30, not 9:30:08-10:30:08
         end_time = _datetime.datetime.now(pytz.utc).replace(second=0, microsecond=0)
-        start_time = end_time - _datetime.timedelta(**{EVENT_OFFSET_DICT[event]: offset})
+        start_time = end_time - _datetime.timedelta(**{EVENT_AND_OFFSET[event]: offset})
 
         for file in list(contents):
             if file.get("LastModified") > end_time or file.get("LastModified") < start_time:
