@@ -7,6 +7,7 @@ Hourly:
         suffix: .parquet
         # Hacky offset due to changes in Farsight processing. The monitoring process needs to be moved to where Farsight data will live from now on.
         time_offset: 24
+        max_items: 100
 
 Daily:
   '15:00':
