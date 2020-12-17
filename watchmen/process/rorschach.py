@@ -52,6 +52,8 @@ CONFIG_PATH = os.path.join(
 GENERIC_TARGET = 'Generic S3 {}'.format(TARGET_ACCOUNT)
 TRIMMABLE_EVENT_TYPES = [HOURLY, MINUTELY]
 
+DEFAULT_MAX_FILES_TO_CHECK = 1500
+
 
 class Rorschach(Watchman):
 
@@ -577,8 +579,12 @@ class Rorschach(Watchman):
                 return contents_dict, tb
 
             s3_prefix = 's3://' + item['bucket_name'] + '/' + generated_prefix
-            contents = list(_s3.generate_pages(generated_prefix, **{'bucket': item['bucket_name'],
-                                                                    'max_items': item.get('max_items')}))
+            contents = list(
+                _s3.generate_pages(
+                    generated_prefix,
+                    **{'bucket': item['bucket_name'], 'max_items': item.get('max_items', DEFAULT_MAX_FILES_TO_CHECK)}
+                )
+            )
 
             # Trim contents to include only object within the time offset
             if offset_type in TRIMMABLE_EVENT_TYPES:
