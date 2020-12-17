@@ -5,12 +5,14 @@ Hourly:
       - bucket_name: ib-dl-lz-ttl-prod
         prefix: ib-dl-saas-lz-prod/heka/year=%0Y/month=%0m/day=%0d/
         suffix: .gz
+        time_offset: 4
 
     - target_name: Poseidon Heka Data - CZ
       items:
       - bucket_name: ib-dl-saas-cz-prod
         prefix: heka/year=%0Y/month=%0m/day=%0d/
         suffix: .json.gz
+        time_offset: 4
 
     - target_name: Prometheus - LZ
       items:
