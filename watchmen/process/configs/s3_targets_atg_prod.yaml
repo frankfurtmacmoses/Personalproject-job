@@ -42,3 +42,13 @@ Weekly:
             offset_type: Daily
             path_vars: [atc, farsight, majestic, umbrella]
             time_offset: 1
+
+Minutely:
+  '00'
+    - target_name: Threatwave
+      items:
+        - bucket_name: cyber-intel-threatwave
+          prefix : '%0Y/%0m/%0d/'
+          suffix : .gz
+          time_offset : 10
+          min_total_files : 1
