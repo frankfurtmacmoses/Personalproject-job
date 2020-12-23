@@ -160,5 +160,9 @@ SNS = {
   "Generic S3 cyberintel": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:488906355115:Watchmen_Test"
+  },
+  "Threatwave": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
   }
 }

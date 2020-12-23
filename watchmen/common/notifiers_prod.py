@@ -152,5 +152,9 @@ SNS = {
   "Generic S3 cyberintel": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:488906355115:Generic_S3_cyberintel"
+  },
+  "Threatwave": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.threatwaves3")
   }
 }
