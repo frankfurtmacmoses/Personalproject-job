@@ -72,6 +72,18 @@ Resources:
         - Endpoint: rburton@infoblox.com
           Protocol: email
 
+  ThreatwaveTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ThreatWaveS3
+      TopicName: ThreatWaveS3
+      Subscription:
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+        - Endpoint: plaudanski@infoblox.com
+          Protocol: email
+
   WatchmenTestTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsTest
@@ -117,6 +129,10 @@ Outputs:
   SmartListingS3:
     Condition: IsProd
     Value: !Ref SmartListingTopic
+
+  ThreatwaveS3:
+    Condition: IsProd
+    Value: !Ref ThreatwaveTopic
 
   WatchmenTest:
     Condition: IsTest
