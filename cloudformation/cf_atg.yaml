@@ -440,7 +440,7 @@ Resources:
       Type: 'AWS::Events::Rule'
       Properties:
         Description: A Miutely event that kicks off the Rorschach Watchman every 10 minutes
-        ScheduleExpression: cron(*/10 * * * *)
+        ScheduleExpression: cron(0/10 * * * ? *)
         State: !If [ IsProd, ENABLED, DISABLED ]
         Targets:
           - Id: RorschachMinuteyScheduler10
