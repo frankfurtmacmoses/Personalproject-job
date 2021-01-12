@@ -269,6 +269,7 @@ Resources:
             SNS_GEORGIATECHPDNS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GeorgiaTechpDNS, !Ref 'AWS::NoValue']
             SNS_GENERICS3ATG: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
             SNS_SMARTLISTINGS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.SmartListingS3, !Ref 'AWS::NoValue']
+            SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
             ENVIRONMENT: !Ref Env
             ACCOUNT: !Ref Account
@@ -435,6 +436,16 @@ Resources:
           - Id: RorschachWeeklySchedulerMon1045
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Weekly": "Mon,10:45"}}'
+    RorschachMinutelyScheduledEvent10:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A Miutely event that kicks off the Rorschach Watchman every 10 minutes
+        ScheduleExpression: cron(*/10 * * * *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: RorschachMinuteyScheduler10
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": {"Minutely": "00"}}'
     SilhouetteScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -528,6 +539,14 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachWeeklyScheduledEventMon1045.Arn
+    InvokeRorschachMinutelyLambdaPermission10:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt RorschachMinutelyScheduledEvent10.Arn
+
     InvokeSilhouetteLambdaPermission:
       Type: 'AWS::Lambda::Permission'
       Properties:
@@ -874,6 +893,7 @@ Resources:
                     - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GeorgiaTechpDNS, !Ref 'AWS::NoValue']
                     - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
                     - !If [IsProd, !GetAtt SnsTopicStack.Outputs.SmartListingS3, !Ref 'AWS::NoValue']
+                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
                     - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
                 - Effect: Allow
                   Action:
@@ -885,6 +905,8 @@ Resources:
                     - 'arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*'
                     - 'arn:aws:s3:::cyber-intel'
                     - 'arn:aws:s3:::cyber-intel/*'
+                    - 'arn:aws:s3:::cyber-intel-threatwave'
+                    - 'arn:aws:s3:::cyber-intel-threatwave/*'
                     - !Sub
                       - 'arn:aws:s3:::${s3_bucket}'
                       - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
