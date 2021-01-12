@@ -44,7 +44,7 @@ Weekly:
             time_offset: 1
 
 Minutely:
-  '00'
+  '00':
     - target_name: Threatwave
       items:
         - bucket_name: cyber-intel-threatwave
