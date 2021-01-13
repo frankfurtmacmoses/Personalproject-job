@@ -27,7 +27,8 @@ Hourly:
           prefix: NewlyObserved{var}/%Y/%-m/%-d/
           path_vars: [Domains, Hostname]
           suffix: .txt
-          min_total_files: 60
+          # We have a small timing issue that occurs somewhat regularly within the hour, this value is one less for now
+          min_total_files: 59
 
 Daily:
   '15:00':
