@@ -29,7 +29,7 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "ForeverMail": {
+  "Malspam MTA": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:405093580753:Watchmen_Test"
   },
