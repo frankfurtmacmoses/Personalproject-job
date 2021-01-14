@@ -68,7 +68,8 @@ moloch:
 
 mothman:
   bucket_name: cyber-intel
-  path_prefix: malspam/forevermail
+  path_prefix: malspam
+  mail_sources: forevermail,uscert
 
 silhouette:
   bucket_name: cyber-intel
