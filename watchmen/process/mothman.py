@@ -1,7 +1,7 @@
 """
 Created on November 11, 2019
 
-This Watchman monitors the forevermail S3 folder in the cyber-intel AWS account to ensure a file is uploaded every 10
+This Watchman monitors the Malspam MTA S3 files in the cyber-intel S3 bucket to ensure a file is uploaded every 10
 minutes. If a file is not found or the file size remains the same for 2 files in a row, an SNS alert will be sent. There
 is an exception to this rule; the first file of the day "0000.tar.gz" is not uploaded and this is not an error.
 
@@ -21,8 +21,8 @@ from watchmen.utils.s3 import get_key, check_unequal_files
 BUCKET_NAME = settings("mothman.bucket_name")
 MESSAGES = messages.MOTHMAN
 PATH_PREFIX = settings("mothman.path_prefix")
-S3_DATA_FILE = PATH_PREFIX + "/{}/{}/{}/{}/{}.tar.gz"
-TARGET = "ForeverMail"
+S3_DATA_FILE = PATH_PREFIX + "/{}/{}/{}/{}/{}/{}.tar.gz"
+TARGET = "Malspam MTA"
 TEST_PREFIX = settings("mothman.test_prefix")
 
 
@@ -33,22 +33,34 @@ class Mothman(Watchman):
         super().__init__()
 
     def monitor(self) -> [Result]:
-        file_info = self._create_path_info()
-        file_check_info = self._check_s3_files(file_info)
-        success = file_check_info.get("success")
-        details = file_check_info.get("details")
+        files_info = self._create_paths_info()
+        files_check_info = self._check_s3_files(files_info)
 
-        parameters = self._create_result_parameters(success, details)
+        parameters = self._create_result_parameters(files_check_info)
         result = self._create_result(parameters)
         return [result]
 
-    def _check_s3_files(self, file_info):
+    def _check_s3_files(self, files_info):
         """
-        Checks the ForeverMail S3 files to ensure files are being uploaded as expected. The "0000.tar.gz" file does not
+        Checks the MTA S3 files to ensure files are being uploaded as expected.
+        :param files_info: A list of  dictionaries containing the file paths for two S3 files, along with their
+                           hour_minute attributes.
+        :return: A list of dictionaries containing information about the result of the file checks. This information
+        includes the boolean "success" which indicates if the S3 files are being uploaded as expected and the string
+        "details" which contains information about the file checks.
+        """
+        files_check_info = []
+        for file_info in files_info:
+            files_check_info.append(self._check_s3_file(file_info))
+        return files_check_info
+
+    def _check_s3_file(self, file_info):
+        """
+        Checks the MTA S3 files to ensure files are being uploaded as expected. The "0000.tar.gz" file does not
         exist, which is not an error. If the latest_file exists and there is any problem retrieving the previous_file,
         information indicating a success is returned because the previous execution of Mothman should have caught the
         problem and sent a notification. This prevents Mothman from sending redundant alerts.
-        :param file_info: Dictionary containing the file paths for two S3 files, along with their hour_minute
+        :param file_info: A dictionary containing the file paths for two S3 files, along with their hour_minute
                           attributes.
         :return: Dictionary containing information about the result of the file checks. This information includes the
         boolean "success" which indicates if the S3 files are being uploaded as expected and the string "details" which
@@ -64,7 +76,6 @@ class Mothman(Watchman):
         latest_hour_minute = file_info.get("latest_hour_minute")
         previous_file_path = file_info.get("previous_file_path")
         previous_hour_minute = file_info.get("previous_hour_minute")
-
         try:
             if latest_hour_minute == "0000":
                 details = MESSAGES.get("success_latest_hm").format(latest_file_path)
@@ -122,50 +133,57 @@ class Mothman(Watchman):
 
         return time_info
 
-    def _create_path_info(self):
+    def _create_paths_info(self):
         """
-        Creates a dictionary containing the file paths of the two S3 files to be checked, along with the hour_minute
-        attribute of each file. The reason for having a separate hour_minute is to be able to check for when one of the
-        files is "0000.tar.gz" in _check_s3_files.
-        :return: dictionary containing all required file path information to check files in S3.
+        Creates a list of dictionaries containing the file paths of the two S3 files to be checked, along with the
+        hour_minute attribute of each file. The reason for having a separate hour_minute is to be able to check for
+        when one of the files is "0000.tar.gz" in _check_s3_files.
+        :return: list of dictionaries containing all required file path information to check files in S3.
 
         Example:
-        {
-            "latest_file_path": ""malspam/forevermail/2019/11/08/00/0020.tar.gz"",
-            "latest_hour_minute": "0020",
-            "previous_file_path": ""malspam/forevermail/2019/11/08/00/0010.tar.gz"",
-            "previous_hour_minute": "0010"
-        }
+        [
+            {
+                "latest_file_path": ""malspam/forevermail/2019/11/08/00/0020.tar.gz"",
+                "latest_hour_minute": "0020",
+                "previous_file_path": ""malspam/forevermail/2019/11/08/00/0010.tar.gz"",
+                "previous_hour_minute": "0010"
+            },
+            {
+                "latest_file_path": ""malspam/uscert/2019/11/08/00/0020.tar.gz"",
+                "latest_hour_minute": "0020",
+                "previous_file_path": ""malspam/uscert/2019/11/08/00/0010.tar.gz"",
+                "previous_hour_minute": "0010"
+            },
+        ]
         """
-        path_info = {
-            "latest_file_path": "",
-            "latest_hour_minute": "",
-            "previous_file_path": "",
-            "previous_hour_minute": ""
-        }
+        sources = settings("mothman.mail_sources").split(',')
+        paths_info = []
+        for source in sources:
+            path_info = {}
+            previous_time, latest_time = self._get_times_to_check()
+            previous_time_dict = self._convert_datetime_to_dict(previous_time)
+            latest_time_dict = self._convert_datetime_to_dict(latest_time)
 
-        previous_time, latest_time = self._get_times_to_check()
-        previous_time_dict = self._convert_datetime_to_dict(previous_time)
-        latest_time_dict = self._convert_datetime_to_dict(latest_time)
+            previous_hour_minute = previous_time_dict.get("hour") + previous_time_dict.get("minute")
+            path_info["previous_hour_minute"] = previous_hour_minute
 
-        previous_hour_minute = previous_time_dict.get("hour") + previous_time_dict.get("minute")
-        path_info["previous_hour_minute"] = previous_hour_minute
+            latest_hour_minute = latest_time_dict.get("hour") + latest_time_dict.get("minute")
+            path_info["latest_hour_minute"] = latest_hour_minute
 
-        latest_hour_minute = latest_time_dict.get("hour") + latest_time_dict.get("minute")
-        path_info["latest_hour_minute"] = latest_hour_minute
-
-        path_info["previous_file_path"] = S3_DATA_FILE.format(previous_time_dict.get("year"),
-                                                              previous_time_dict.get("month"),
-                                                              previous_time_dict.get("day"),
-                                                              previous_time_dict.get("hour"),
-                                                              previous_hour_minute)
-        path_info["latest_file_path"] = S3_DATA_FILE.format(latest_time_dict.get("year"),
-                                                            latest_time_dict.get("month"),
-                                                            latest_time_dict.get("day"),
-                                                            latest_time_dict.get("hour"),
-                                                            latest_hour_minute)
-
-        return path_info
+            path_info["previous_file_path"] = S3_DATA_FILE.format(source,
+                                                                  previous_time_dict.get("year"),
+                                                                  previous_time_dict.get("month"),
+                                                                  previous_time_dict.get("day"),
+                                                                  previous_time_dict.get("hour"),
+                                                                  previous_hour_minute)
+            path_info["latest_file_path"] = S3_DATA_FILE.format(source,
+                                                                latest_time_dict.get("year"),
+                                                                latest_time_dict.get("month"),
+                                                                latest_time_dict.get("day"),
+                                                                latest_time_dict.get("hour"),
+                                                                latest_hour_minute)
+            paths_info.append(path_info)
+        return paths_info
 
     def _create_result(self, parameters):
         """
@@ -186,45 +204,29 @@ class Mothman(Watchman):
         )
         return result
 
-    def _create_result_parameters(self, success, details):
+    def _create_result_parameters(self, files_check_info):
         """
         Creates a dictionary of Result object attributes corresponding to the result of the file checks.
-        :param success: Boolean indicating success of the file checks. True if successful, False if unsuccessful,
-                        None if exception.
-        :param details: String containing details of the file check.
+        :param files_check_info: A list of dictionaries containing success and details of file checks
         :return: A dictionary containing "details", "disable_notifier", "short_message", "state", "subject",
                 "success", and "target".
         """
-        parameter_chart = {
-            None: {
-                "details": details,
-                "disable_notifier": False,
-                "short_message": MESSAGES.get("exception_subject"),
-                "state": Watchman.STATE.get("exception"),
-                "subject": MESSAGES.get("exception_subject"),
-                "success": False,
-                "target": TARGET
-            },
-            True: {
-                "details": details,
-                "disable_notifier": True,
-                "short_message": MESSAGES.get("success_short_message"),
-                "state": Watchman.STATE.get("success"),
-                "subject": MESSAGES.get("success_subject"),
-                "success": True,
-                "target": TARGET
-            },
-            False: {
-                "details": details,
-                "disable_notifier": False,
-                "short_message": MESSAGES.get("failure_short_message"),
-                "state": Watchman.STATE.get("failure"),
-                "subject": MESSAGES.get("failure_subject"),
-                "success": False,
-                "target": TARGET
-            },
+        parameters = {
+            "details": "",
+            "disable_notifier": True,
+            "short_message": MESSAGES.get("success_short_message"),
+            "state": Watchman.STATE.get("success"),
+            "subject": MESSAGES.get("success_subject"),
+            "success": True,
+            "target": TARGET,
         }
-        parameters = parameter_chart.get(success)
+        for file_check_info in files_check_info:
+            if not file_check_info["success"]:
+                parameters["disable_notifier"] = False
+                parameters["success"] = False
+                parameters["short_message"] = MESSAGES.get("failure_short_message")
+                parameters["subject"] = MESSAGES.get("failure_subject")
+            parameters["details"] += file_check_info["details"] + '\n\n'
         return parameters
 
     def _get_times_to_check(self):

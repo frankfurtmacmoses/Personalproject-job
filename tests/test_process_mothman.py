@@ -12,51 +12,60 @@ class TestMothman(unittest.TestCase):
     def setUp(self):
         self.details = "Example details returned from _check_s3_files"
         self.file_info_examples = {
-            "generic_example": {
-                "latest_file_path": "latest_file_s3_path",
-                "latest_hour_minute": "1450",
-                "previous_file_path": "previous_file_s3_path",
-                "previous_hour_minute": "1440"
-            },
-            "latest_file_0000": {
-                "latest_file_path": "latest_file_s3_path",
-                "latest_hour_minute": "0000",
-                "previous_file_path": "previous_file_s3_path",
-                "previous_hour_minute": "2350"
-            },
-            "latest_file_dne": {
-                "latest_file_path": "bad_path",
-                "latest_hour_minute": "1450",
-                "previous_file_path": "previous_file_s3_path",
-                "previous_hour_minute": "1440"
-            },
-            "previous_file_0000": {
-                "latest_file_path": "latest_file",
-                "latest_hour_minute": "0010",
-                "previous_file_path": "previous_file_s3_path",
-                "previous_hour_minute": "0000"
-            },
-            "previous_file_dne": {
-                "latest_file_path": "latest_file_s3_path",
-                "latest_hour_minute": "1450",
-                "previous_file_path": "bad_path",
-                "previous_hour_minute": "1440"
-            }
-
+            "generic_example": [
+                {
+                    "latest_file_path": "latest_file_s3_path",
+                    "latest_hour_minute": "1450",
+                    "previous_file_path": "previous_file_s3_path",
+                    "previous_hour_minute": "1440"
+                }
+            ],
+            "latest_file_0000": [
+                {
+                    "latest_file_path": "latest_file_s3_path",
+                    "latest_hour_minute": "0000",
+                    "previous_file_path": "previous_file_s3_path",
+                    "previous_hour_minute": "2350"
+                }
+            ],
+            "latest_file_dne": [
+                {
+                    "latest_file_path": "bad_path",
+                    "latest_hour_minute": "1450",
+                    "previous_file_path": "previous_file_s3_path",
+                    "previous_hour_minute": "1440"
+                }
+            ],
+            "previous_file_0000": [
+                {
+                    "latest_file_path": "latest_file",
+                    "latest_hour_minute": "0010",
+                    "previous_file_path": "previous_file_s3_path",
+                    "previous_hour_minute": "0000"
+                }
+            ],
+            "previous_file_dne": [
+                {
+                    "latest_file_path": "latest_file_s3_path",
+                    "latest_hour_minute": "1450",
+                    "previous_file_path": "bad_path",
+                    "previous_hour_minute": "1440"
+                }
+            ]
         }
         self.latest_time = "2019-12-15-12-20"
         self.parameters = {
-            "details": self.details,
+            "details": self.details + '\n\n',
             "disable_notifier": True,
             "short_message": MESSAGES.get("success_short_message"),
             "state": "SUCCESS",
             "subject": MESSAGES.get("success_subject"),
             "success": True,
-            "target": "ForeverMail"
+            "target": "Malspam MTA"
         }
         self.previous_time = "2019-12-15-12-10"
         self.result_dict = {
-            "details": self.details,
+            "details": self.details + '\n\n',
             "disable_notifier": True,
             "dt_created": "2018-12-18T00:00:00+00:00",
             "short_message": MESSAGES.get("success_short_message"),
@@ -66,7 +75,7 @@ class TestMothman(unittest.TestCase):
             "state": "SUCCESS",
             "subject": MESSAGES.get("success_subject"),
             "success": True,
-            "target": "ForeverMail",
+            "target": "Malspam MTA",
         }
 
     @staticmethod
@@ -80,80 +89,102 @@ class TestMothman(unittest.TestCase):
     @patch('watchmen.process.mothman.get_key')
     @patch('watchmen.process.mothman.check_unequal_files')
     def test_check_s3_files(self, mock_check_unequal, mock_get_key):
-        monitor_tests = [
+        tests = [
             {
-                "check_unequal_mock": None,
-                "expected_details": MESSAGES.get("success_latest_hm").format(self.file_info_examples.
-                                                                             get("latest_file_0000").
-                                                                             get("latest_file_path")),
-                "expected_success": True,
-                "file_info": self.file_info_examples.get("latest_file_0000"),
-                "get_key_mock": ["existing_object", "existing_object"]
+                "check_unequal_files": [True, True],
+                "get_key": ["existing_object", "existing_object", "existing_object", "existing_object"],
+                "files_info": [
+                    {
+                        "latest_file_path": "latest_file_s3_path",
+                        "latest_hour_minute": "0010",
+                        "previous_file_path": "previous_file_s3_path",
+                        "previous_hour_minute": "0000"
+                    },
+                    {
+                        "latest_file_path": "latest_file_s3_path",
+                        "latest_hour_minute": "0020",
+                        "previous_file_path": "previous_file_s3_path",
+                        "previous_hour_minute": "0010"
+                    },
+                ],
+                "expected": [
+                    {
+                        "success": True,
+                        "details": MESSAGES.get("success_previous_hm")
+                    },
+                    {
+                        "success": True,
+                        "details": MESSAGES.get("success_unequal_files").format(
+                            "latest_file_s3_path", "previous_file_s3_path"
+                        )
+                    }
+                ]
             },
             {
-                "check_unequal_mock": None,
-                "expected_details": MESSAGES.get("failure_latest_file_dne").format(self.file_info_examples.
-                                                                                   get("latest_file_dne").
-                                                                                   get("latest_file_path")),
-                "expected_success": False,
-                "file_info": self.file_info_examples.get("latest_file_dne"),
-                "get_key_mock": [None, "existing_object"]
+                "check_unequal_files": [False, True],
+                "get_key": ["existing_object", "existing_object", None, "existing_object"],
+                "files_info": [
+                    {
+                        "latest_file_path": "latest_file_s3_path",
+                        "latest_hour_minute": "0020",
+                        "previous_file_path": "previous_file_s3_path",
+                        "previous_hour_minute": "0010"
+                    },
+                    {
+                        "latest_file_path": "latest_file_s3_path",
+                        "latest_hour_minute": "0020",
+                        "previous_file_path": "previous_file_s3_path",
+                        "previous_hour_minute": "0010"
+                    },
+                ],
+                "expected": [
+                    {
+                        "success": False,
+                        "details": MESSAGES.get("failure_equal_files").format(
+                            "latest_file_s3_path", "previous_file_s3_path"
+                        )
+                    },
+                    {
+                        "success": False,
+                        "details": MESSAGES.get("failure_latest_file_dne").format("latest_file_s3_path")
+                    }
+                ]
             },
             {
-                "check_unequal_mock": None,
-                "expected_details": MESSAGES.get("success_previous_hm"),
-                "expected_success": True,
-                "file_info": self.file_info_examples.get("previous_file_0000"),
-                "get_key_mock": ["existing_object", "existing_object"]
-            },
-            {
-                "check_unequal_mock": None,
-                "expected_details": MESSAGES.get("success_previous_file_dne").format(self.file_info_examples.
-                                                                                     get("previous_file_dne").
-                                                                                     get("previous_file_path")),
-                "expected_success": True,
-                "file_info": self.file_info_examples.get("previous_file_dne"),
-                "get_key_mock": ["existing_object", None]
-            },
-            {
-                "check_unequal_mock": True,
-                "expected_details": MESSAGES.get("success_unequal_files").format(self.file_info_examples.
-                                                                                 get("generic_example").
-                                                                                 get("latest_file_path"),
-                                                                                 self.file_info_examples.
-                                                                                 get("generic_example").
-                                                                                 get("previous_file_path")),
-                "expected_success": True,
-                "file_info": self.file_info_examples.get("generic_example"),
-                "get_key_mock": ["existing_object", "existing_object"]
-            },
-            {
-                "check_unequal_mock": False,
-                "expected_details": MESSAGES.get("failure_equal_files").format(self.file_info_examples.
-                                                                               get("generic_example").
-                                                                               get("latest_file_path"),
-                                                                               self.file_info_examples.
-                                                                               get("generic_example").
-                                                                               get("previous_file_path")),
-                "expected_success": False,
-                "file_info": self.file_info_examples.get("generic_example"),
-                "get_key_mock": ["existing_object", "existing_object"]
+                "check_unequal_files": [False, True],
+                "get_key": ["existing_object", None, "existing_object", "existing_object"],
+                "files_info": [
+                    {
+                        "latest_file_path": "latest_file_s3_path",
+                        "latest_hour_minute": "0000",
+                        "previous_file_path": "previous_file_s3_path",
+                        "previous_hour_minute": "2350"
+                    },
+                    {
+                        "latest_file_path": "latest_file_s3_path",
+                        "latest_hour_minute": "0020",
+                        "previous_file_path": "previous_file_s3_path",
+                        "previous_hour_minute": "0010"
+                    },
+                ],
+                "expected": [
+                    {
+                        "success": True,
+                        "details": MESSAGES.get("success_latest_hm").format("latest_file_s3_path")
+                    },
+                    {
+                        "success": True,
+                        "details": MESSAGES.get("success_previous_file_dne").format("previous_file_s3_path")
+                    }
+                ]
             },
         ]
-
-        for test in monitor_tests:
-            check_unequal_mock = test.get("check_unequal_mock")
-            expected_details = test.get("expected_details")
-            expected_success = test.get("expected_success")
-            file_info = test.get("file_info")
-            get_key_mock = test.get("get_key_mock")
-            mock_get_key.side_effect = get_key_mock
-            mock_check_unequal.return_value = check_unequal_mock
-
+        for test in tests:
             mothman_obj = self._create_mothman_obj()
-            file_check_info = mothman_obj._check_s3_files(file_info)
-            self.assertEqual(expected_details, file_check_info.get("details"))
-            self.assertEqual(expected_success, file_check_info.get("success"))
+            mock_check_unequal.side_effect = test['check_unequal_files']
+            mock_get_key.side_effect = test['get_key']
+            returned = mothman_obj._check_s3_files(test['files_info'])
+            self.assertEqual(test['expected'], returned)
 
     @patch('watchmen.process.mothman.get_key')
     @patch('watchmen.process.mothman.traceback.format_exc')
@@ -162,13 +193,11 @@ class TestMothman(unittest.TestCase):
         mock_get_key.side_effect = Exception()
         mock_traceback.return_value = traceback
         mothman_obj = self._create_mothman_obj()
-
-        expected_success = None
-        expected_details = MESSAGES.get("exception_details").format(traceback)
+        expected = [
+            {"success": None, "details": MESSAGES.get("exception_details").format(traceback)}
+        ]
         file_check_info = mothman_obj._check_s3_files(self.file_info_examples.get("generic_example"))
-
-        self.assertEqual(expected_details, file_check_info.get("details"))
-        self.assertEqual(expected_success, file_check_info.get("success"))
+        self.assertEqual(expected, file_check_info)
 
     def test_convert_datetime_to_dict(self):
         datetime_string = "2019-12-15-05-05"
@@ -188,36 +217,54 @@ class TestMothman(unittest.TestCase):
 
     @patch('watchmen.process.mothman.Mothman._get_times_to_check')
     def test_create_path_info(self, mock_get_times):
-        path_info = {
-            "latest_file_path": "malspam/forevermail/2019/12/15/12/1220.tar.gz",
-            "latest_hour_minute": "1220",
-            "previous_file_path": "malspam/forevermail/2019/12/15/12/1210.tar.gz",
-            "previous_hour_minute": "1210"
-        }
+        tests = [
+            {
+                'expected': [
+                    {
+                        "latest_file_path": "malspam/forevermail/2019/12/15/12/1220.tar.gz",
+                        "latest_hour_minute": "1220",
+                        "previous_file_path": "malspam/forevermail/2019/12/15/12/1210.tar.gz",
+                        "previous_hour_minute": "1210"
+                    },
+                    {
+                        "latest_file_path": "malspam/uscert/2019/12/15/12/1220.tar.gz",
+                        "latest_hour_minute": "1220",
+                        "previous_file_path": "malspam/uscert/2019/12/15/12/1210.tar.gz",
+                        "previous_hour_minute": "1210"
+                    }
+                ]
+            }
+        ]
         mock_get_times.return_value = self.previous_time, self.latest_time
         mothman_obj = self._create_mothman_obj()
-
-        expected = path_info
-        returned = mothman_obj._create_path_info()
-
-        self.assertEqual(expected, returned)
+        for test in tests:
+            returned = mothman_obj._create_paths_info()
+            self.assertEqual(test['expected'], returned)
 
     def test_create_result(self):
+        tests = [
+            {
+                'expected': self.result_dict,
+                'dt_created': "2018-12-18T00:00:00+00:00"
+            }
+        ]
         mothman_obj = self._create_mothman_obj()
-
-        expected = self.result_dict
-        returned = mothman_obj._create_result(self.parameters).to_dict()
-        returned["dt_created"] = "2018-12-18T00:00:00+00:00"
-
-        self.assertEqual(expected, returned)
+        for test in tests:
+            returned = mothman_obj._create_result(self.parameters).to_dict()
+            returned['dt_created'] = test['dt_created']
+            self.assertEqual(test['expected'], returned)
 
     def test_create_result_parameters(self):
+        tests = [
+            {
+                'expected': self.parameters,
+                'files_check_info': [{"success": True, "details": self.details}]
+            }
+        ]
         mothman_obj = self._create_mothman_obj()
-
-        expected = self.parameters
-        returned = mothman_obj._create_result_parameters(True, self.details)
-
-        self.assertEqual(expected, returned)
+        for test in tests:
+            returned = mothman_obj._create_result_parameters(test['files_check_info'])
+            self.assertEqual(test['expected'], returned)
 
     @patch('watchmen.process.mothman.datetime')
     def test_get_times_to_check(self, mock_datetime):
@@ -229,15 +276,23 @@ class TestMothman(unittest.TestCase):
 
         self.assertEqual(expected, returned)
 
-    @patch('watchmen.process.mothman.Mothman._create_path_info')
+    @patch('watchmen.process.mothman.Mothman._create_paths_info')
     @patch('watchmen.process.mothman.Mothman._check_s3_files')
     def test_monitor(self, mock_check_s3, mock_create_path):
-        mock_create_path.return_value = self.file_info_examples.get("generic_example")
-        mock_check_s3.return_value = {"success": True, "tb": None, "details": self.details}
+        tests = [
+            {
+                'files_info': self.file_info_examples.get("generic_example"),
+                's3_checks': [
+                    {"success": True, "tb": None, "details": self.details},
+                ],
+                'expected': self.result_dict,
+                'dt_created': "2018-12-18T00:00:00+00:00"
+            }
+        ]
         mothman_obj = self._create_mothman_obj()
-
-        expected = self.result_dict
-        returned = mothman_obj.monitor()[0].to_dict()
-        returned["dt_created"] = "2018-12-18T00:00:00+00:00"
-
-        self.assertEqual(expected, returned)
+        for test in tests:
+            mock_create_path.return_value = test['files_info']
+            mock_check_s3.return_value = test['s3_checks']
+            returned = mothman_obj.monitor()[0].to_dict()
+            returned['dt_created'] = test['dt_created']
+            self.assertEqual(test['expected'], returned)
