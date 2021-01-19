@@ -130,7 +130,7 @@ Outputs:
     Condition: IsProd
     Value: !Ref SmartListingTopic
 
-  ThreatwaveS3:
+  ThreatWaveS3:
     Condition: IsProd
     Value: !Ref ThreatwaveTopic
 
