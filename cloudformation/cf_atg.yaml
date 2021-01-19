@@ -28,6 +28,10 @@ Parameters:
     Description: The AWS KMS key ID
     Type: String
     Default: 336e1b0b-39da-44ad-b565-e6fe51a1b810
+  SNSPrefix:
+    Description: SNS Topic name prefix
+    Type: String
+    Default: Watchmen_
 Conditions:
   IsProd: !Equals [ !Ref Env, prod ]
 Resources:
@@ -37,6 +41,7 @@ Resources:
       Properties:
         Parameters:
           Env: !Ref Env
+          SNSPrefix: !Ref SNSPrefix
         TemplateURL: !Sub
           - 'https://s3.amazonaws.com/${s3_bucket}/watchmen/cloudformation/sns_atg.yaml'
           - s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket']
@@ -53,6 +58,8 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_EMRCLUSTERSTATUS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.EMRClusterStatus, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_bernard_watcher
         MemorySize: 256
         Role: !GetAtt BernardLambdaExecutionRole.Arn
@@ -82,6 +89,12 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_DOMAINTOOLSQUOTA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainToolsQuota, !Ref 'AWS::NoValue']
+            SNS_DOMAINTOOLSQUOTAPAGER: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainToolsQuotaPager, !Ref 'AWS::NoValue']
+            SNS_GENERICQUOTA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericQuota, !Ref 'AWS::NoValue']
+            SNS_VIRUSTOTALQUOTA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.VirusTotalQuota, !Ref 'AWS::NoValue']
+            SNS_VIRUSTOTALQUOTAPAGER: !If [IsProd, !GetAtt SnsTopicStack.Outputs.VirusTotalQuotaPager, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_comedian_watcher
         MemorySize: 256
         Role: !GetAtt ComedianLambdaExecutionRole.Arn
@@ -111,6 +124,8 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_SOCKEYE: !If [IsProd, !GetAtt SnsTopicStack.Outputs.Sockeye, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_jupiter_watcher
         MemorySize: 256
         Role: !GetAtt JupiterLambdaExecutionRole.Arn
@@ -146,6 +161,9 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_REAPERFEEDS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperFeeds, !Ref 'AWS::NoValue']
+            SNS_REAPERFEEDSPAGER: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperFeedsPager, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_manhattan_watcher
         MemorySize: 256
         Role: !GetAtt ManhattanLambdaExecutionRole.Arn
@@ -174,6 +192,9 @@ Resources:
         Description: Monitors metrics and KPI change detection on S3.
         Environment:
           Variables:
+            SNS_METRICSANDKPI: !If [IsProd, !GetAtt SnsTopicStack.Outputs.MetricsAndKPI, !Ref 'AWS::NoValue']
+            SNS_REAPERMETRICS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperMetrics, !Ref 'AWS::NoValue']
+            SNS_SLOWDRIPMETRICS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.SlowdripMetrics, !Ref 'AWS::NoValue']
             SNS_DOMAINCOUNTSMETRICS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
             ENVIRONMENT: !Ref Env
@@ -205,6 +226,8 @@ Resources:
         Description: Monitors NOH/D Feed hourly.
         Environment:
           Variables:
+            SNS_REAPERFEEDS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperFeeds, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
             ENVIRONMENT: !Ref Env
         Handler: !Sub watchmen.main_${Account}.start_moloch_watcher
         MemorySize: 256
@@ -235,6 +258,8 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_FOREVERMAIL: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ForeverMail, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_mothman_watcher
         MemorySize: 256
         Role: !GetAtt MothmanLambdaExecutionRole.Arn
@@ -303,6 +328,8 @@ Resources:
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
+            SNS_LOOKALIKE2ALGORITHMS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.Lookalike2AlgorithmS3, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
         Handler: !Sub watchmen.main_${Account}.start_silhouette_watcher
         MemorySize: 128
         Role: !GetAtt SilhouetteLambdaExecutionRole.Arn
@@ -555,6 +582,18 @@ Resources:
         Principal: events.amazonaws.com
         SourceArn: !GetAtt SilhouetteScheduledEvent.Arn
 
+    SNSPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'SNS:Publish'
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSPrefix}*'
+
     BernardLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
       Properties:
@@ -569,6 +608,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
            - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+           - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub BernardLambdaExecutionRole${Env}
             PolicyDocument:
@@ -597,13 +637,6 @@ Resources:
                     - "elasticmapreduce:ListClusters"
                   Resource:
                     - "*"
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
-                      - {Topic: !If [IsProd, EMR_Clusters, Watchmen_Test] }
 
     ComedianLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -619,6 +652,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub ComedianLambdaExecutionRole${Env}
             PolicyDocument:
@@ -627,18 +661,6 @@ Resources:
                   Action:
                     - "kms:Decrypt"
                   Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    Fn::If:
-                      - IsProd
-                      - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Email"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:VirusTotal_Quota_Pager"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Email"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:DomainTools_Quota_Pager"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Generic_Quota_Email"
-                      - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
 
     JupiterLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -654,6 +676,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub JupiterLambdaExecutionRole${Env}
             PolicyDocument:
@@ -678,13 +701,6 @@ Resources:
                     - !Sub
                       - 'arn:${AWS::Partition}:s3:::${s3_bucket}/watchmen/jupiter/*'
                       - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
-                      - {Topic: !If [IsProd, Sockeye, Watchmen_Test] }
 
     ManhattanLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -700,6 +716,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub ManhattanLambdaExecutionRole${Env}
             PolicyDocument:
@@ -735,15 +752,6 @@ Resources:
                     - !Sub
                       - 'arn:aws:s3:::${s3_bucket}/watchmen/manhattan/feeds_to_check.json'
                       - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    Fn::If:
-                      - IsProd
-                      - - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:cyberintel-feeds-prod"
-                        - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:PagerDuty"
-                      - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Watchmen_Test'
 
     MetropolisLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -759,6 +767,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub MetropolisLambdaExecutionRole${Env}
             PolicyDocument:
@@ -773,15 +782,6 @@ Resources:
                     - 's3:HeadBucket'
                     - 's3:ListBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/analytics/change_detection/prod/*'
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
-                    - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Slowdrip_Metrics"
-                    - !Sub "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Reaper_Metrics"
-                    - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:Metrics_and_KPI'
 
     MolochLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -797,6 +797,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub MolochLambdaExecutionRole${Env}
             PolicyDocument:
@@ -813,13 +814,6 @@ Resources:
                   Resource:
                     - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedDomains/*'
                     - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedHostname/*'
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}'
-                      - {Topic: !If [IsProd, cyberintel-feeds-prod, Watchmen_Test] }
 
     MothmanLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -835,6 +829,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub MothmanLambdaExecutionRole${Env}
             PolicyDocument:
@@ -852,13 +847,6 @@ Resources:
                     - 's3:GetObject'
                     - 's3:HeadBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/malspam/forevermail/*'
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
-                      - { Topic: !If [IsProd, cyberintel-malspam-prod, Watchman_Test] }
 
     RorschachExecutionRole:
       Type: 'AWS::IAM::Role'
@@ -874,6 +862,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub RorschachExecutionRole-${Env}
             PolicyDocument:
@@ -883,18 +872,6 @@ Resources:
                     - "kms:Decrypt"
                   Resource:
                     - "arn:aws:kms:us-east-1:405093580753:key/336e1b0b-39da-44ad-b565-e6fe51a1b810"
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DSSummaries, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.DomainCountsMetrics, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.FarsightData, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GeorgiaTechpDNS, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.SmartListingS3, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
-                    - !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
                 - Effect: Allow
                   Action:
                     - 's3:GetObject'
@@ -928,6 +905,7 @@ Resources:
                 - 'sts:AssumeRole'
         ManagedPolicyArns:
           - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
         Policies:
           - PolicyName: !Sub SilhouetteLambdaExecutionRole${Env}
             PolicyDocument:
@@ -940,13 +918,6 @@ Resources:
                   Action:
                     - 's3:GetObject'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/analytics/lookalike2/prod/status/*'
-                - Effect: Allow
-                  Action:
-                    - 'SNS:Publish'
-                  Resource:
-                    - !Sub
-                      - "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${Topic}"
-                      - {Topic: !If [IsProd, cyberintel-lookalike-s3, Watchmen_Test]}
 
     WatchmenLambdaEmrExecutionRole:
       Type: 'AWS::IAM::Role'

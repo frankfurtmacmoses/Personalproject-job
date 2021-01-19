@@ -72,7 +72,7 @@ mothman:
 
 result_svc:
   default: arn:aws:sns:{region}:{account_id}:WatchmenTest
-  atg: arn:aws:sns:{region}:{account_id}:WatchmenTest
+  atg: arn:aws:sns:{region}:{account_id}:Watchmen_Test
   cyberintel: arn:aws:sns:{region}:{account_id}:WatchmenTest
   saas: arn:aws:sns:{region}:{account_id}:WatchmenTest
 

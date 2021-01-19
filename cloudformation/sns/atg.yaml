@@ -4,6 +4,9 @@ Parameters:
   Env:
     Description: Environment to be deployed.
     Type: String
+  SNSPrefix:
+    Description: SNS Topic name prefix
+    Type: String
 Conditions:
   IsProd: !Equals [ !Ref Env, "prod" ]
   IsTest: !Equals [ !Ref Env, "test" ]
@@ -13,9 +16,26 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: DomainCountsMetrics
-      TopicName: DomainCountsMetrics
+      TopicName: !Sub ${SNSPrefix}DomainCountsMetrics
       Subscription:
         - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+
+  DomainToolsQuotaTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: DomainToolsQuota
+      TopicName: !Sub ${SNSPrefix}DomainToolsQuota
+
+  DomainToolsQuotaPagerTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: DomainToolsQuotaPager
+      TopicName: !Sub ${SNSPrefix}DomainToolsQuotaPager
+      Subscription:
+        - Endpoint: syathiraju@infoblox.com
           Protocol: email
 
   DSSummariesTopic:
@@ -23,19 +43,45 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: DSSummaries
-      TopicName: DSSummaries
+      TopicName: !Sub ${SNSPrefix}DSSummaries
       Subscription:
         - Endpoint: ldarocha@infoblox.com
           Protocol: email
-  
+
+  EMRClusterStatusTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: EMRClusters
+      TopicName: !Sub ${SNSPrefix}EMRClusters
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
   FarsightDataTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
     Properties:
       DisplayName: FarsightData
-      TopicName: FarsightData
+      TopicName: !Sub ${SNSPrefix}FarsightData
       Subscription:
         - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
+  ForeverMailTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ForeverMail
+      TopicName: !Sub ${SNSPrefix}ForeverMail
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: epatterson@infoblox.com
+          Protocol: email
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+        - Endpoint: plaudanski@infoblox.com
           Protocol: email
 
   GenericS3AtgTopic:
@@ -43,7 +89,17 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: RorschachGenericS3Atg
-      TopicName: RorschachGenericS3Atg
+      TopicName: !Sub ${SNSPrefix}RorschachGenericS3Atg
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
+  GenericQuotaTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: GenericQuotaCheck
+      TopicName: !Sub ${SNSPrefix}GenericQuota
       Subscription:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
@@ -53,23 +109,98 @@ Resources:
     Condition: IsProd
     Properties:
       DisplayName: GeorgiaTechpDNS
-      TopicName: GeorgiaTechpDNS
+      TopicName: !Sub ${SNSPrefix}GeorgiaTechpDNS
       Subscription:
         - Endpoint: aciarochi@infoblox.com
           Protocol: email
+
+  Lookalike2AlgorithmS3Topic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: Lookalike2AlgorithmS3
+      TopicName: !Sub ${SNSPrefix}Lookalike2AlgorithmS3
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: vtymchenko@infoblox.com
+          Protocol: email
+
+  MetricsAndKPITopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: MetricsAndKPI
+      TopicName: !Sub ${SNSPrefix}MetricsAndKPI
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: aurban@infoblox.com
+          Protocol: email
+        - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+
+  ReaperFeedsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ReaperFeeds
+      TopicName: !Sub ${SNSPrefix}ReaperFeeds
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+
+  ReaperFeedsPagerTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ReaperFeedsPager
+      TopicName: !Sub ${SNSPrefix}ReaperFeedsPager
+      Subscription:
+        - Endpoint: +13603598760
+          Protocol: sms
+
+  ReaperMetricsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: ReaperMetrics
+      TopicName: !Sub ${SNSPrefix}ReaperMetrics
+      Subscription:
+        - Endpoint: garciam@infoblox.com
+          Protocol: email
+
+  SlowdripMetricsTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: SlowdripMetrics
+      TopicName: !Sub ${SNSPrefix}SlowdripMetrics
 
   SmartListingTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
     Properties:
       DisplayName: SmartListingS3
-      TopicName: SmartListingS3
+      TopicName: !Sub ${SNSPrefix}SmartListingS3
       Subscription:
         - Endpoint: rili@infoblox.com
           Protocol: email
         - Endpoint: ldarocha@infoblox.com
           Protocol: email
         - Endpoint: rburton@infoblox.com
+          Protocol: email
+
+  SockeyeTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: Sockeye
+      TopicName: !Sub ${SNSPrefix}Sockeye
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
 
   ThreatwaveTopic:
@@ -84,12 +215,38 @@ Resources:
         - Endpoint: plaudanski@infoblox.com
           Protocol: email
 
+
+  VirusTotalQuotaTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: VirusTotalQuota
+      TopicName: !Sub ${SNSPrefix}VirusTotalQuota
+      Subscription:
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+        - Endpoint: nsundvall@infoblox.com
+          Protocol: email
+        - Endpoint: ldarocha@infoblox.com
+          Protocol: email
+        - Endpoint: epatterson@infoblox.com
+          Protocol: email
+        - Endpoint: kramos@infoblox.com
+          Protocol: email
+
+  VirusTotalQuotaPagerTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: VirusTotalQuotaPager
+      TopicName: !Sub ${SNSPrefix}VirusTotalQuotaPager
+
   WatchmenTestTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsTest
     Properties:
       DisplayName: WatchmenTest
-      TopicName: WatchmenTest
+      TopicName: !Sub ${SNSPrefix}Test
       Subscription:
         - Endpoint: vermaa@infoblox.com
           Protocol: email
@@ -110,29 +267,85 @@ Outputs:
     Condition: IsProd
     Value: !Ref DomainCountsMetricsTopic
 
+  DomainToolsQuota:
+    Condition: IsProd
+    Value: !Ref DomainToolsQuotaTopic
+
+  DomainToolsQuotaPager:
+    Condition: IsProd
+    Value: !Ref DomainToolsQuotaPagerTopic
+
   DSSummaries:
     Condition: IsProd
     Value: !Ref DSSummariesTopic
+
+  EMRClusterStatus:
+    Condition: IsProd
+    Value: !Ref EMRClusterStatusTopic
   
   FarsightData:
     Condition: IsProd
     Value: !Ref FarsightDataTopic
-  
+
+  ForeverMail:
+    Condition: IsProd
+    Value: !Ref ForeverMailTopic
+
   GenericS3Atg:
     Condition: IsProd
     Value: !Ref GenericS3AtgTopic
+
+  GenericQuota:
+    Condition: IsProd
+    Value: !Ref GenericQuotaTopic
 
   GeorgiaTechpDNS:
     Condition: IsProd
     Value: !Ref GeorgiaTechpDNSTopic
 
+  Lookalike2AlgorithmS3:
+    Condition: IsProd
+    Value: !Ref Lookalike2AlgorithmS3Topic
+
+  MetricsAndKPI:
+    Condition: IsProd
+    Value: !Ref MetricsAndKPITopic
+
+  ReaperFeeds:
+    Condition: IsProd
+    Value: !Ref ReaperFeedsTopic
+
+  ReaperFeedsPager:
+    Condition: IsProd
+    Value: !Ref ReaperFeedsPagerTopic
+
+  ReaperMetrics:
+    Condition: IsProd
+    Value: !Ref ReaperMetricsTopic
+
+  SlowdripMetrics:
+    Condition: IsProd
+    Value: !Ref SlowdripMetricsTopic
+
   SmartListingS3:
     Condition: IsProd
     Value: !Ref SmartListingTopic
 
+  Sockeye:
+    Condition: IsProd
+    Value: !Ref SockeyeTopic
+
   ThreatWaveS3:
     Condition: IsProd
     Value: !Ref ThreatwaveTopic
+
+  VirusTotalQuota:
+    Condition: IsProd
+    Value: !Ref VirusTotalQuotaTopic
+
+  VirusTotalQuotaPager:
+    Condition: IsProd
+    Value: !Ref VirusTotalQuotaPagerTopic
 
   WatchmenTest:
     Condition: IsTest

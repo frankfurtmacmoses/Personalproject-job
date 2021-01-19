@@ -3,7 +3,7 @@ from watchmen.config import settings
 SNS = {
   "Cyber-Intel Endpoints": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Sockeye"
+    "sns": settings("sns.sockeye")
   },
   "Domain Counts Metrics": {
     "notifier": "SnsNotifier",
@@ -11,11 +11,11 @@ SNS = {
   },
   "DomainTools Email": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:DomainTools_Quota_Email"
+    "sns": settings("sns.domaintoolsquota")
   },
   "DomainTools Pager": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:DomainTools_Quota_Pager"
+    "sns": settings("sns.domaintoolsquotapager")
   },
   "DS Summaries": {
     "notifier": "SnsNotifier",
@@ -23,7 +23,7 @@ SNS = {
   },
   "EMR Cluster Status": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:EMR_Clusters"
+    "sns": settings("sns.emrclusterstatus")
   },
   "Farsight Data": {
     "notifier": "SnsNotifier",
@@ -31,11 +31,11 @@ SNS = {
   },
   "ForeverMail": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-malspam-prod"
+    "sns": settings('sns.forevermail')
   },
   "Generic Quota Email": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Generic_Quota_Email"
+    "sns": settings('sns.genericquota')
   },
   "Georgia Tech S3": {
     "notifier": "SnsNotifier",
@@ -43,7 +43,7 @@ SNS = {
   },
   "Lookalike2 Algorithm S3": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-lookalike-s3"
+    "sns": settings("sns.lookalike2algorithms3")
   },
   "Mercator Data - RZ": {
     "notifier": "SnsNotifier",
@@ -51,7 +51,7 @@ SNS = {
   },
   "Metrics and KPI": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Metrics_and_KPI"
+    "sns": settings("sns.metricsandkpi")
   },
   "Newly Observed Data": {
     "notifier": "SnsNotifier",
@@ -59,7 +59,7 @@ SNS = {
   },
   "Pager Duty": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:PagerDuty"
+    "sns": settings("sns.reaperfeedspager")
   },
   "Poseidon DNS Customer Data - RZ": {
     "notifier": "SnsNotifier",
@@ -95,11 +95,11 @@ SNS = {
   },
   "Reaper Feeds": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:cyberintel-feeds-prod"
+    "sns": settings("sns.reaperfeeds")
   },
   "Reaper Metrics": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Reaper_Metrics"
+    "sns": settings("sns.reapermetrics")
   },
   "SaaS Apps Customer Data Phase 1 - CZ": {
     "notifier": "SnsNotifier",
@@ -119,7 +119,7 @@ SNS = {
   },
   "Slowdrip Metrics": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:Slowdrip_Metrics"
+    "sns": settings("sns.slowdripmetrics")
   },
   "Smartlisting": {
     "notifier": "SnsNotifier",
@@ -127,11 +127,11 @@ SNS = {
   },
   "VirusTotal Email": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Email"
+    "sns": settings("sns.virustotalquota")
   },
   "VirusTotal Pager": {
     "notifier": "SnsNotifier",
-    "sns": "arn:aws:sns:us-east-1:405093580753:VirusTotal_Quota_Pager"
+    "sns": settings("sns.virustotalquotapager")
   },
   "Generic S3 atg": {
     "notifier": "SnsNotifier",
