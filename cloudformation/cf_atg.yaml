@@ -443,16 +443,16 @@ Resources:
           - Id: RorschachDailyScheduler1500
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Daily": "15:00"}}'
-    RorschachHourlyScheduledEvent00:
+    RorschachDailyScheduledEvent0115:
       Type: 'AWS::Events::Rule'
       Properties:
-        Description: A hourly event that kicks off the Rorschach Watchman
-        ScheduleExpression: cron(0 * * * ? *)
+        Description: A daily event that kicks off the Rorschach Watchman
+        ScheduleExpression: cron(15 1 * * ? *)
         State: !If [ IsProd, ENABLED, DISABLED ]
         Targets:
-          - Id: RorschachHourlyScheduler00
+          - Id: RorschachDailyScheduler0115
             Arn: !GetAtt WatchmenRorschachLambda.Arn
-            Input: '{"Type": {"Hourly": "00"}}'
+            Input: '{"Type": {"Daily": "01:15"}}'
     RorschachWeeklyScheduledEventMon1045:
       Type: 'AWS::Events::Rule'
       Properties:
