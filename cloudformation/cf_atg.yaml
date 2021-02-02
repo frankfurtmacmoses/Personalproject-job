@@ -545,13 +545,13 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt MothmanScheduledEvent.Arn
-    InvokeRorschachHourlyLambdaPermission00:
+    InvokeRorschachDailyLambdaPermission0115:
       Type: 'AWS::Lambda::Permission'
       Properties:
         FunctionName: !GetAtt WatchmenRorschachLambda.Arn
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
-        SourceArn: !GetAtt RorschachHourlyScheduledEvent00.Arn
+        SourceArn: !GetAtt RorschachDailyScheduledEvent0115.Arn
     InvokeRorschachDailyLambdaPermission1500:
       Type: 'AWS::Lambda::Permission'
       Properties:
