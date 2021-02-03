@@ -28,6 +28,7 @@ import yaml
 from dateutil.relativedelta import relativedelta
 
 # External Libraries
+from watchmen.utils.extension import date_range
 import watchmen.utils.s3 as _s3
 from watchmen import const, messages
 from watchmen.common.result import Result
@@ -573,18 +574,28 @@ class Rorschach(Watchman):
             time_offset = item.get("time_offset", 1)
 
             offset_type = item.get('offset_type') if item.get('offset_type') else self.event
-            generated_prefix, tb = self._generate_key(item['prefix'], offset_type, time_offset)
+            generated_prefixes, tb = self._generate_prefixes(item['prefix'], offset_type, time_offset)
 
             if tb:
                 return contents_dict, tb
 
-            s3_prefix = 's3://' + item['bucket_name'] + '/' + generated_prefix
-            contents = list(
-                _s3.generate_pages(
-                    generated_prefix,
-                    **{'bucket': item['bucket_name'], 'max_items': item.get('max_items', DEFAULT_MAX_FILES_TO_CHECK)}
+            contents = []
+            max_items = item.get('max_items', DEFAULT_MAX_FILES_TO_CHECK)
+            for generated_prefix in generated_prefixes:
+                s3_prefix = 's3://' + item['bucket_name'] + '/' + generated_prefix
+                s3_objects = list(
+                    _s3.generate_pages(
+                        generated_prefix,
+                        **{'bucket': item['bucket_name'], 'max_items': max_items}
+                    )
                 )
-            )
+                contents.extend(s3_objects)
+
+                # check to see if we've already loaded the max number of items and if so don't bother
+                # checking the next prefix (if there are multiple prefixes to check)
+                max_items = max_items - len(s3_objects)
+                if max_items <= 0:
+                    break
 
             # Trim contents to include only object within the time offset
             if offset_type in TRIMMABLE_EVENT_TYPES:
@@ -627,6 +638,35 @@ class Rorschach(Watchman):
             return prefix, None
         except Exception as ex:
             self.logger.error("ERROR Generating Key!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
+    def _generate_prefixes(self, prefix_format, offset_type, time_offset=1):
+        """
+        Method to generate the prefix for each target based on the event frequency.
+        Will return multiple prefixes if they are variable by day and the time_offset brings us
+        back so we are looking at multiple days worth of data (i.e. running at 1am with a time_offset of 4)
+        Note: timedelta() does not support offset by months so relativedelta() is used
+        :param prefix_format: <string> The S3 key prefix format.
+        :param offset_type: <string> The event type.
+        :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
+        :return: <list<string>>, <string>
+                 <list<string>>: The properly formatted S3 prefixes with the correct date based off the time_offset.
+                 <string>: Traceback if an exception was encountered, None otherwise.
+        """
+        try:
+            prefixes = set()
+            now = _datetime.datetime.now(pytz.utc)
+            check_time = now - relativedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
+
+            for check_date in date_range(check_time.date(), now.date()):
+                prefixes.add(check_date.strftime(prefix_format))
+
+            return list(prefixes), None
+        except Exception as ex:
+            self.logger.error("ERROR Generating Prefixes!")
             self.logger.info(const.MESSAGE_SEPARATOR)
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
