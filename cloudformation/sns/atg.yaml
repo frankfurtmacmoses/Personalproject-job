@@ -11,16 +11,6 @@ Conditions:
   IsProd: !Equals [ !Ref Env, "prod" ]
   IsTest: !Equals [ !Ref Env, "test" ]
 Resources:
-  DomainCountsMetricsTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: IsProd
-    Properties:
-      DisplayName: DomainCountsMetrics
-      TopicName: !Sub ${SNSPrefix}DomainCountsMetrics
-      Subscription:
-        - Endpoint: ldarocha@infoblox.com
-          Protocol: email
-
   DomainToolsQuotaTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -262,10 +252,6 @@ Resources:
           Protocol: email
 
 Outputs:
-
-  DomainCountsMetrics:
-    Condition: IsProd
-    Value: !Ref DomainCountsMetricsTopic
 
   DomainToolsQuota:
     Condition: IsProd
