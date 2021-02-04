@@ -20,7 +20,7 @@ class TestMetropolis(unittest.TestCase):
         self.example_failure_subject = 'failure subject'
         self.example_generic_result = 'generic result'
         self.example_message = "Example message"
-        self.example_process_name = 'domain_counts'
+        self.example_process_name = 'reaper'
         self.example_result_list = ['result1', 'result2', self.example_generic_result]
         self.example_snapshot = 'some snapshot'
         self.example_watchman_name = 'Metropolis'
@@ -131,7 +131,7 @@ class TestMetropolis(unittest.TestCase):
             "state": self.example_state,
             "subject": MESSAGES.get("failure_subject").format(self.example_process_name),
             "short_message": MESSAGES.get("failure_message"),
-            "target": "Domain Counts Metrics"
+            "target": "Reaper Metrics"
         }
         self.example_result_dict = {
             "details": self.example_details,
