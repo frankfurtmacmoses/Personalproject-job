@@ -152,8 +152,6 @@ Resources:
                     - IsProd
                     - - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedDomains/*"
                       - "arn:aws:s3:::deteque-new-observable-data/NewlyObservedHostname/*"
-                      - "arn:aws:s3:::ib-customer-data-usa-va/parquet-dns/com.infoblox.300224/*"
-                      - "arn:aws:s3:::ib-customer-data-usa-va/parquet-northstar-dns/com.infoblox.300224/*"
                       - "arn:aws:s3:::ib-cyberint-prod-deploys/watchmen/*"
                       - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/heka/*"
                       - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/prometheus/metrics-prd-1/*"
@@ -166,6 +164,8 @@ Resources:
                       - "arn:aws:s3:::ib-dl-saas-lz-dev-tmp/saas-customer-data/*"
                       - "arn:aws:s3:::ib-dl-saas-lz-prod/athena-full-exports/atcapi/*"
                       - "arn:aws:s3:::ib-dl-saas-lz-prod/athena-full-exports/identity/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod/dns-logs/customer/*"
+                      - "arn:aws:s3:::ib-dl-saas-lz-prod/parquet-northstar-dns/*"
                       - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/summaries/customer/name_servers/*"
                       - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/metadata/*"
                       - "arn:aws:s3:::ib-dl-saas-rz-prod/dns-logs/customer/summaries/qtype_answer_counts/qtype=1/*"
