@@ -100,7 +100,7 @@ Daily:
     - target_name: Prometheus - CZ
       items:
       - bucket_name: ib-dl-saas-cz-prod
-        prefix: prometheus/year=%0Y/month=%0m/day=%0d/
+        prefix: prometheus/metrics-prd-1/year=%0Y/month=%0m/day=%0d/
         suffix: .parquet
         min_total_files: 0
 
