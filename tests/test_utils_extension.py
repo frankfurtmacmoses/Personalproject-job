@@ -7,6 +7,7 @@
 @created: 2017-02-22
 
 """
+from datetime import date, timedelta
 import json
 import logging
 import os
@@ -18,6 +19,7 @@ from logging import getLogger
 from watchmen.utils.extension import DictEncoder
 from watchmen.utils.extension import check_duplicate_key
 from watchmen.utils.extension import check_valid_md5
+from watchmen.utils.extension import date_range
 from watchmen.utils.extension import del_attr
 from watchmen.utils.extension import get_attr
 from watchmen.utils.extension import get_camel_title_word
@@ -192,6 +194,25 @@ class ExtensionTests(unittest.TestCase):
         }]
         for test in tests:
             self.assertEqual(test['result'], convert_to_snake_case(test["input"]))
+
+    def test_date_range_same_day(self):
+        """
+        If both params are for the same day then should yield that one date
+        """
+        today = date.today()
+        actual = list(date_range(today, today))
+        self.assertEqual(len(actual), 1)
+        self.assertEqual(actual[0], today)
+
+    def test_date_range_multiple_days(self):
+        today = date.today()
+        tomorrow = today + timedelta(1)
+        day_after_tomorrow = tomorrow + timedelta(1)
+
+        expected = [today, tomorrow, day_after_tomorrow]
+
+        for index, return_date in enumerate(date_range(today, day_after_tomorrow)):
+            self.assertEqual(expected[index], return_date)
 
     def test_del_attr(self):
         tests = [

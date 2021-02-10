@@ -979,10 +979,10 @@ class TestRorschach(unittest.TestCase):
             returned = rorschach_obj._create_summary_parameters(processed_target_example)
             self.assertEqual(expected, returned)
 
-    @patch('watchmen.process.rorschach.Rorschach._generate_key')
+    @patch('watchmen.process.rorschach.Rorschach._generate_prefixes')
     @patch('watchmen.process.rorschach._s3.generate_pages')
     @patch('watchmen.process.rorschach.Rorschach._remove_whitelisted_files_from_contents')
-    def test_generate_contents(self, mock_whitelist, mock_pages, mock_key):
+    def test_generate_contents(self, mock_whitelist, mock_pages, mock_prefixes):
         """
         test watchmen.process.rorschach :: Rorschach :: _generate_contents
         """
@@ -990,7 +990,7 @@ class TestRorschach(unittest.TestCase):
         item = self.example_config_file['Daily']['00'][0].get('items')[0]
 
         # Test successful _generate_contents call
-        mock_key.return_value = 'some/path/to/', None
+        mock_prefixes.return_value = ['some/path/to/'], None
         mock_pages.return_value = self.example_contents
 
         expected_dict = {
@@ -1021,7 +1021,7 @@ class TestRorschach(unittest.TestCase):
             "s3_prefix": None
         }
 
-        mock_key.return_value = None, self.example_traceback
+        mock_prefixes.return_value = None, self.example_traceback
         returned_dict, returned_tb = rorschach_obj._generate_contents(item)
         self.assertEqual(returned_dict, expected_dict)
 
@@ -1051,6 +1051,25 @@ class TestRorschach(unittest.TestCase):
         check_time_example = datetime.datetime.now(pytz.utc) - relativedelta(**{'months': 1})
         expected, expected_tb = check_time_example.strftime(prefix_format_example), None
         returned, returned_tb = rorschach_obj._generate_key(prefix_format_example, "Monthly")
+        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+
+        # Test exception while generating key:
+        expected, expected_tb = None, 'Traceback'
+        returned, returned_tb = rorschach_obj._generate_key(None, None)
+        self.assertEqual(expected, returned)
+        self.assertTrue(expected_tb in returned_tb)
+
+    def test_generate_prefixes(self):
+        prefix_format_example = 'some/path/year=%0Y/month=%0m/day=%0d/'
+        now = datetime.datetime.now(pytz.utc)
+        check_time_example = now - datetime.timedelta(**{'days': 1})
+        rorschach_obj = self._create_rorschach()
+
+        # Test multiple prefixes (one for each day) when using daily offset
+        expected = [check_time_example.strftime(prefix_format_example), now.strftime(prefix_format_example)]
+        expected_tb = None
+        event_frequency = list(self.example_event_daily.get('Type').keys())[0]
+        returned, returned_tb = rorschach_obj._generate_prefixes(prefix_format_example, event_frequency)
         self.assertEqual((expected, expected_tb), (returned, returned_tb))
 
         # Test exception while generating key:
