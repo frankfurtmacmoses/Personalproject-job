@@ -5,10 +5,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.sockeye")
   },
-  "Domain Counts Metrics": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.domaincountsmetrics")
-  },
   "DomainTools Email": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.domaintoolsquota")

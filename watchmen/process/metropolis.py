@@ -32,7 +32,6 @@ REAPER_METRICS_URL = settings("metropolis.reaper.metrics_url")
 
 # TARGETS:
 TARGETS = {
-    "domain_counts": "Domain Counts Metrics",
     "slowdrip": "Slowdrip Metrics",
     "reaper": "Reaper Metrics",
 }
@@ -59,7 +58,6 @@ class Metropolis(Watchman):
         generic_checks, generic_details = [], ""
         # Keys are all of the possible processes(add/remove if necessary in future):
         sources_per_process = {
-            "domain_counts": [],
             "slowdrip": [],
             "reaper": []
         }
