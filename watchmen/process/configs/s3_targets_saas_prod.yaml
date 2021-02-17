@@ -14,13 +14,6 @@ Hourly:
         suffix: .json.gz
         time_offset: 4
 
-    - target_name: Prometheus - LZ
-      items:
-      - bucket_name: ib-dl-lz-ttl-prod
-        prefix: ib-dl-saas-lz-prod/prometheus/metrics-prd-1/year=%0Y/month=%0m/day=%0d/
-        suffix: .json.gz
-        min_total_files: 300
-
     - target_name: Newly Observed Data
       items:
         - bucket_name: deteque-new-observable-data
