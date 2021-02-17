@@ -25,7 +25,7 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "ForeverMail": {
+  "Malspam MTA": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },

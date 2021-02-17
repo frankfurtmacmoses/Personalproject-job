@@ -25,7 +25,7 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings('sns.farsightdata')
   },
-  "ForeverMail": {
+  "Malspam MTA": {
     "notifier": "SnsNotifier",
     "sns": settings('sns.forevermail')
   },
