@@ -11,14 +11,6 @@ Hourly:
 
 Daily:
   '15:00':
-    - target_name: Domain Counts Metrics
-      items:
-        - bucket_name: cyber-intel
-          path_vars: [farsight, customer]
-          prefix: domain-counts/src={var}/year=%0Y/month=%0m/day=%0d/
-          suffix: .parquet
-          whitelist: ['_SUCCESS']
-
     - target_name: DS Summaries
       items:
         - bucket_name: cyber-intel

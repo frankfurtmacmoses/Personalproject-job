@@ -195,10 +195,10 @@ class InfobloxCalendar(object):
     def _generate_infoblox_holidays(self):
         """
         Populates holiday list with Infoblox specific holidays and removes holidays that are not days off
-        ADD: Day after Thanksgiving, Friday before Independence day, Christmas Eve, Spring Break day and Holiday Slowdown (week of Christmas)
+        ADD: Day after Thanksgiving, Friday before Independence day, Christmas Eve, Spring Break day and Holiday
+        Slowdown (week of Christmas).
         REMOVE: Veteran's Day and Columbus Day
         DEPENDENT: Good Friday and the Day before Christmas Eve
-        @param year_range: years to add/remove holidays
         @note Some years, Good Friday is not an Infoblox holiday
         """
         not_holidays = ["Veterans Day", "Columbus Day"]

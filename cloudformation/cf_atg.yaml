@@ -253,7 +253,7 @@ Resources:
         Code:
           S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
           S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-        Description: Monitors files uploaded to the ForeverMail S3 folder.
+        Description: Monitors files uploaded from Malspam MTA.
         Environment:
           Variables:
             ENVIRONMENT: !Ref Env
