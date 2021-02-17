@@ -7,6 +7,7 @@
 @updated: 2018-01-23 (for python 3)
 
 """
+from datetime import timedelta
 import hashlib
 import json
 import os
@@ -64,6 +65,19 @@ def check_valid_md5(data):
     reiter = re.finditer(r'\b(?!^[\d]*$)(?!^[a-fA-F]*$)([a-f\d]{32}|[A-F\d]{32})\b', data)
     result = [match.group(1) for match in reiter]
     return bool(result)
+
+
+def date_range(start_date, end_date):
+    """
+    Method to generate a range of date objects (1 per day) based on a start and end date. Will at a minimum yield one
+    date if both start and end are the same date.
+    :param start_date: <date>
+    :param end_date: <date>
+    :return: <generator(date)>
+    """
+    day_count = (end_date - start_date).days
+    for day_offset in range(day_count + 1):
+        yield start_date + timedelta(day_offset)
 
 
 def del_attr(obj, attr):
