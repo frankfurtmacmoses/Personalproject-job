@@ -32,8 +32,12 @@ emr:
     
 holiday:
   good_friday: false
-  day_before_xmas_eve: true
-  thursday_before_independence_day: true
+  day_before_xmas_eve: false
+  thursday_before_independence_day: false
+  friday_before_independence_day: true
+  spring_break_day_bool: true
+  spring_break_month: 4
+  spring_break_day: 2
 
 jupiter:
   bucket: cyber-intel-test
