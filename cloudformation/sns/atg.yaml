@@ -48,16 +48,6 @@ Resources:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
 
-  FarsightDataTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: IsProd
-    Properties:
-      DisplayName: FarsightData
-      TopicName: !Sub ${SNSPrefix}FarsightData
-      Subscription:
-        - Endpoint: cyberint-devs@infoblox.com
-          Protocol: email
-
   ForeverMailTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -268,10 +258,6 @@ Outputs:
   EMRClusterStatus:
     Condition: IsProd
     Value: !Ref EMRClusterStatusTopic
-  
-  FarsightData:
-    Condition: IsProd
-    Value: !Ref FarsightDataTopic
 
   ForeverMail:
     Condition: IsProd

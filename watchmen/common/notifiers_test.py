@@ -21,10 +21,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "Farsight Data": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.watchmentest")
-  },
   "Malspam MTA": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")

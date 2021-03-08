@@ -21,10 +21,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.emrclusterstatus")
   },
-  "Farsight Data": {
-    "notifier": "SnsNotifier",
-    "sns": settings('sns.farsightdata')
-  },
   "Malspam MTA": {
     "notifier": "SnsNotifier",
     "sns": settings('sns.forevermail')
