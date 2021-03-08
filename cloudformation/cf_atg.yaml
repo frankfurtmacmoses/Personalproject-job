@@ -440,16 +440,6 @@ Resources:
           - Id: RorschachDailyScheduler1500
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Daily": "15:00"}}'
-    RorschachDailyScheduledEvent0115:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A daily event that kicks off the Rorschach Watchman
-        ScheduleExpression: cron(15 1 * * ? *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: RorschachDailyScheduler0115
-            Arn: !GetAtt WatchmenRorschachLambda.Arn
-            Input: '{"Type": {"Daily": "01:15"}}'
     RorschachWeeklyScheduledEventMon1045:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -542,13 +532,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt MothmanScheduledEvent.Arn
-    InvokeRorschachDailyLambdaPermission0115:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt RorschachDailyScheduledEvent0115.Arn
     InvokeRorschachDailyLambdaPermission1500:
       Type: 'AWS::Lambda::Permission'
       Properties:
@@ -875,8 +858,6 @@ Resources:
                     - 's3:HeadBucket'
                     - 's3:ListBucket'
                   Resource:
-                    - 'arn:aws:s3:::bitaa'
-                    - 'arn:aws:s3:::bitaa/parquet/com.farsightsecurity.300021/*'
                     - 'arn:aws:s3:::cyber-intel'
                     - 'arn:aws:s3:::cyber-intel/*'
                     - 'arn:aws:s3:::cyber-intel-threatwave'
