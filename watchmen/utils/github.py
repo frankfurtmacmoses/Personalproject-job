@@ -57,3 +57,29 @@ def get_repository_commits(owner, repo, since=None, token=None, path=None):
         tb = traceback.format_exc()
         return None, tb
 
+
+def get_repository_release(owner, repo, token=None):
+    """
+    Retrieves the current release for a repo.
+    :param owner: <str> The repo owner
+    :param repo: <str> The github repository
+    :param token: <str> The github account token
+    :return: <dict>, <str> the current repository release with metadata, and a traceback
+    """
+    header = {}
+    if token:
+        header.update({'Authorization': f'token {token}'})
+
+    try:
+        response = requests.get(url=f'{API_URL}/repos/{owner}/{repo}/releases/latest',
+                                headers=header)
+
+        response.raise_for_status()
+
+        return response.json(), None
+    except Exception as ex:
+        LOGGER.error("ERROR Retrieving Repo Release!")
+        LOGGER.info(const.MESSAGE_SEPARATOR)
+        LOGGER.exception('{}: {}'.format(type(ex).__name__, ex))
+        tb = traceback.format_exc()
+        return None, tb
