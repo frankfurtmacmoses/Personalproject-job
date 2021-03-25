@@ -13,10 +13,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "DS Summaries": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.watchmentest")
-  },
   "EMR Cluster Status": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")

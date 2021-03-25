@@ -28,16 +28,6 @@ Resources:
         - Endpoint: syathiraju@infoblox.com
           Protocol: email
 
-  DSSummariesTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: IsProd
-    Properties:
-      DisplayName: DSSummaries
-      TopicName: !Sub ${SNSPrefix}DSSummaries
-      Subscription:
-        - Endpoint: ldarocha@infoblox.com
-          Protocol: email
-
   EMRClusterStatusTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -250,10 +240,6 @@ Outputs:
   DomainToolsQuotaPager:
     Condition: IsProd
     Value: !Ref DomainToolsQuotaPagerTopic
-
-  DSSummaries:
-    Condition: IsProd
-    Value: !Ref DSSummariesTopic
 
   EMRClusterStatus:
     Condition: IsProd

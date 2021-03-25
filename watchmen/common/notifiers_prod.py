@@ -13,10 +13,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.domaintoolsquotapager")
   },
-  "DS Summaries": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.dssummaries")
-  },
   "EMR Cluster Status": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.emrclusterstatus")
