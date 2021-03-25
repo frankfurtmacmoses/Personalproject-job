@@ -6,17 +6,6 @@ Daily:
           full_path: hancock/georgia_tech/%0Y/%0m/gt_mpdns_%Y%m%d.zip
           time_offset: 1
 
-Weekly:
-  Mon:
-    '10:45':
-      - target_name: Smartlisting
-        items:
-          - bucket_name: cyber-intel
-            full_path: whitelist/smartlisting/prod/smartlist/src={var}/year=%Y/smartlist_%Y%m%d_{var}.csv
-            offset_type: Daily
-            path_vars: [atc, farsight, majestic, umbrella]
-            time_offset: 1
-
 Minutely:
   '00':
     - target_name: Threatwave

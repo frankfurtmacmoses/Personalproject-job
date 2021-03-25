@@ -109,10 +109,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.slowdripmetrics")
   },
-  "Smartlisting": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.smartlistings3")
-  },
   "VirusTotal Email": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.virustotalquota")

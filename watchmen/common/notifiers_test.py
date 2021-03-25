@@ -109,10 +109,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "Smartlisting": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.watchmentest")
-  },
   "VirusTotal Email": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
