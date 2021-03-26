@@ -159,6 +159,10 @@ MOTHMAN = {
     "failure_subject": "FAILURE: Malspam MTA S3 Files Error"
 }
 
+NITEOWL = {
+
+}
+
 RORSCHACH = {
     "exception_config_load_failure_details": "Cannot load S3 targets from file: {}\nException: {}",
     "exception_config_load_failure_subject": "EXCEPTION: Unable to Load S3 Targets Config File!",
