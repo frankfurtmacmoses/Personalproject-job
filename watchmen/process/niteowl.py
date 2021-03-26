@@ -11,8 +11,10 @@ to a repo. An exception represents an error that occurred in the code, or that o
 @email: phecksel@infoblox.com
 """
 
+from watchmen import const, messages
 from watchmen.common.result import Result
 from watchmen.common.watchman import Watchman
+MESSAGES = messages.NITEOWL
 
 
 class Niteowl(Watchman):
