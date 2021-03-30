@@ -13,10 +13,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.domaintoolsquotapager")
   },
-  "DS Summaries": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.dssummaries")
-  },
   "EMR Cluster Status": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.emrclusterstatus")
@@ -112,10 +108,6 @@ SNS = {
   "Slowdrip Metrics": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.slowdripmetrics")
-  },
-  "Smartlisting": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.smartlistings3")
   },
   "VirusTotal Email": {
     "notifier": "SnsNotifier",

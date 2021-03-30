@@ -28,16 +28,6 @@ Resources:
         - Endpoint: syathiraju@infoblox.com
           Protocol: email
 
-  DSSummariesTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: IsProd
-    Properties:
-      DisplayName: DSSummaries
-      TopicName: !Sub ${SNSPrefix}DSSummaries
-      Subscription:
-        - Endpoint: ldarocha@infoblox.com
-          Protocol: email
-
   EMRClusterStatusTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -159,20 +149,6 @@ Resources:
       DisplayName: SlowdripMetrics
       TopicName: !Sub ${SNSPrefix}SlowdripMetrics
 
-  SmartListingTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: IsProd
-    Properties:
-      DisplayName: SmartListingS3
-      TopicName: !Sub ${SNSPrefix}SmartListingS3
-      Subscription:
-        - Endpoint: rili@infoblox.com
-          Protocol: email
-        - Endpoint: ldarocha@infoblox.com
-          Protocol: email
-        - Endpoint: rburton@infoblox.com
-          Protocol: email
-
   SockeyeTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -251,10 +227,6 @@ Outputs:
     Condition: IsProd
     Value: !Ref DomainToolsQuotaPagerTopic
 
-  DSSummaries:
-    Condition: IsProd
-    Value: !Ref DSSummariesTopic
-
   EMRClusterStatus:
     Condition: IsProd
     Value: !Ref EMRClusterStatusTopic
@@ -298,10 +270,6 @@ Outputs:
   SlowdripMetrics:
     Condition: IsProd
     Value: !Ref SlowdripMetricsTopic
-
-  SmartListingS3:
-    Condition: IsProd
-    Value: !Ref SmartListingTopic
 
   Sockeye:
     Condition: IsProd

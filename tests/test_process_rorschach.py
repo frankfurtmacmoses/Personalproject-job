@@ -1066,7 +1066,7 @@ class TestRorschach(unittest.TestCase):
         rorschach_obj = self._create_rorschach()
 
         # Test multiple prefixes (one for each day) when using daily offset
-        expected = [check_time_example.strftime(prefix_format_example), now.strftime(prefix_format_example)]
+        expected = [now.strftime(prefix_format_example), check_time_example.strftime(prefix_format_example)]
         expected_tb = None
         event_frequency = list(self.example_event_daily.get('Type').keys())[0]
         returned, returned_tb = rorschach_obj._generate_prefixes(prefix_format_example, event_frequency)

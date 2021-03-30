@@ -287,10 +287,8 @@ Resources:
         Description: Monitors s3 targets hourly and daily.
         Environment:
           Variables:
-            SNS_DSSUMMARIES: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DSSummaries, !Ref 'AWS::NoValue']
             SNS_GEORGIATECHPDNS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GeorgiaTechpDNS, !Ref 'AWS::NoValue']
             SNS_GENERICS3ATG: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
-            SNS_SMARTLISTINGS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.SmartListingS3, !Ref 'AWS::NoValue']
             SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
             ENVIRONMENT: !Ref Env
@@ -440,16 +438,6 @@ Resources:
           - Id: RorschachDailyScheduler1500
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Daily": "15:00"}}'
-    RorschachWeeklyScheduledEventMon1045:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A weekly event that kicks off the Rorschach Watchman
-        ScheduleExpression: cron(45 10 ? * MON *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: RorschachWeeklySchedulerMon1045
-            Arn: !GetAtt WatchmenRorschachLambda.Arn
-            Input: '{"Type": {"Weekly": "Mon,10:45"}}'
     RorschachMinutelyScheduledEvent10:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -539,13 +527,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachDailyScheduledEvent1500.Arn
-    InvokeRorschachWeeklyLambdaPermissionMon1045:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt RorschachWeeklyScheduledEventMon1045.Arn
     InvokeRorschachMinutelyLambdaPermission10:
       Type: 'AWS::Lambda::Permission'
       Properties:

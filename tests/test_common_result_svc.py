@@ -123,7 +123,7 @@ class TestResultSvc(unittest.TestCase):
         self.assertEqual(expected, returned)
 
         class EnvironmentVarAlt:
-            target = 'Smartlisting'
+            target = 'Cyber-Intel Endpoints'
 
         test_result = EnvironmentVarAlt
         expected = result_svc_obj._build_test_sns_topic()
