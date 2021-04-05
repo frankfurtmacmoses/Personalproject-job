@@ -72,6 +72,31 @@ class Niteowl(Watchman):
             .replace(microsecond=0)
         return date
 
+    def _check_commits(self, target):
+        """
+        This checks for new git commits from the target and returns a formatted summary of them if they exist.
+        :param target: <dict> The target's entry in github_targets.yaml
+        :return: <list> new_commit_strings are formatted messages for any new git commits
+                 <list> exception_strings are messages for any errors encountered
+        """
+        repo = target.get('repo')
+        owner = target.get('owner')
+        time_offset = target.get('time_offset', 1)
+        offset_type = target.get('offset_type')
+        since_date = self._calculate_since_date(time_offset, offset_type)
+        new_commit_strings, exception_strings = [], []
+
+        if target.get('target_path'):
+            new_commits, exceptions = self._get_new_commits(target.get('target_name'), repo, owner, since_date,
+                                                            target.get('target_path'))
+        else:
+            new_commits, exceptions = self._get_new_commits(target.get('target_name'), repo, owner, since_date)
+
+        new_commit_strings.extend(new_commits)
+        exception_strings.extend(exceptions)
+
+        return new_commit_strings, exception_strings
+
     def _create_config_not_loaded_result(self):
         """
         Creates a Result object for if the config cannot be loaded.
@@ -120,6 +145,50 @@ class Niteowl(Watchman):
             return MESSAGES.get("exception_api_failed_w_path").format(check_name, target_name, path, tb)
 
         return MESSAGES.get("exception_api_failed").format(check_name, target_name, tb)
+
+    @staticmethod
+    def _format_commits(commits):
+        """
+        Method to help format the returned commits from the call to the github util to a readable message
+        :param commits: <list<dict>> A list of commits returned from the _get_repo_commits
+        :return: <list<str>> A list of strings which contain information about each new commit
+        """
+        formatted_commits = []
+        for commit in commits:
+            formatted_commits.append(MESSAGES.get('new_commit').format(
+                date=commit.get('commit').get('author').get('date'),
+                sha=commit.get('sha'),
+                message=commit.get('commit').get('message'),
+                url=commit.get('html_url')
+            ))
+        return formatted_commits
+
+    def _get_new_commits(self, target_name, repo, owner, since_date, paths=[None]):
+        """
+        Calls the get_repository_commits method from the Github util, then formats the results.
+        :param repo :<str> The name of the github repository to check
+        :param target_name: <str> The name of the target
+        :param owner: <str> The owner of the repository
+        :param since_date: <datetime> A Datetime object to start checking for new commits from.
+        :param paths: <List<str>> A list of paths to check for new commits on if there is no need to check the entire
+                        repo.
+        :return: <list<str>> A list of every new commit since the since_date.
+                 <list<str>> Any exceptions that occurred when checking new commits
+        """
+        new_commit_strings = []
+        exception_strings = []
+
+        for path in paths:
+            new_commits, tb = github.get_repository_commits(
+                owner=owner, repo=repo, since=since_date, token=GITHUB_TOKEN, path=path)
+
+            if tb:
+                exception_strings.append(self._format_api_exception('commits', target_name, tb, path))
+                return new_commit_strings, exception_strings
+
+            new_commit_strings.extend(self._format_commits(new_commits))
+
+        return new_commit_strings, exception_strings
 
     def _is_valid_event(self):
         """
