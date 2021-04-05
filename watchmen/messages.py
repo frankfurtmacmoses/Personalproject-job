@@ -162,6 +162,7 @@ MOTHMAN = {
 NITEOWL = {
     "exception_config_load_failure_details": "Cannot load Github targets from the config",
     "exception_config_load_failure_subject": "EXCEPTION: Cannot load Github Targets!",
+    "exception_invalid_check": "Check {} is an invalid check for {}",
     "exception_invalid_event_details": "An invalid event was passed from the CloudWatch event. Check the events in the "
                                        "CloudFormation file.",
     "exception_invalid_event_subject": "EXCEPTION: Niteowl received an invalid event type!",
