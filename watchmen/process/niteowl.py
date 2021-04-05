@@ -54,6 +54,8 @@ class Niteowl(Watchman):
         if tb:
             return self._create_config_not_loaded_result()
 
+        processed_targets = self._process_targets(github_targets)
+
     def _create_config_not_loaded_result(self):
         """
         Creates a Result object for if the config cannot be loaded.
@@ -110,6 +112,62 @@ class Niteowl(Watchman):
             self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
+
+    def _process_targets(self, github_targets):
+        """
+        This method validates the target config entry, then performs the requested checks and creates a processed
+        target dictionary from the new_change_strings and exception strings.
+        :param github_targets: <list<dict>> The config entries for each target
+        :returns: <list<dict>> processed_targets will contain the information gathered from each check performed.
+                Format: {
+                            'target_name': str
+                            'success': boolean
+                            'exception_strings': [str]
+                            'new_changes_strings': [str]
+                        }
+        """
+        processed_targets = []
+        for target in github_targets:
+            new_change_strings = []
+            exception_strings = []
+
+            is_valid, missing_string = self._validate_target_entry(target)
+
+            if is_valid:
+                for target_check in target.get('checks'):
+                    new_changes, exceptions = self._run_check(target_check, target)
+
+                    new_change_strings.extend(new_changes)
+                    exception_strings.extend(exceptions)
+            else:
+                exception_strings.append(missing_string)
+
+            processed_targets.append({
+                    'target_name': target.get('target_name'),
+                    'success': None if exception_strings and not new_change_strings else not new_change_strings,
+                    'exception_strings': exception_strings,
+                    'new_changes_strings': new_change_strings
+            })
+
+        return processed_targets
+
+    def _run_check(self, check_name, target):
+        """
+        This will find the method to perform a specific check based on the check_name. Ex: the Commits check will be
+        mapped to the _check_commits function
+        :param check_name: <str> The name of the check to make.
+        :param target: <dict> The target's config entry
+        :return: The check function's result
+        """
+        try:
+            source_function = getattr(self, '_check_{}'.format(check_name.lower()))
+            return source_function(target)
+        except Exception as ex:
+            self.logger.error("ERROR retrieving {} check function!".format(check_name))
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception("{}: {}".format(type(ex).__name__, ex))
+            exception = [MESSAGES.get('exception_invalid_check').format(check_name, target.get('target_name'))]
+            return [], exception
 
     @staticmethod
     def _validate_target_entry(target):
