@@ -23,6 +23,7 @@ from watchmen.config import settings
 CONFIG_NAME = settings('niteowl.targets')
 DAILY = "Daily"
 MESSAGES = messages.NITEOWL
+REQUIRED_TARGET_TAGS = ['target_name', 'owner', 'repo', 'checks']
 TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
 
 CONFIG_PATH = os.path.join(
@@ -110,4 +111,19 @@ class Niteowl(Watchman):
             tb = traceback.format_exc()
             return None, tb
 
-
+    @staticmethod
+    def _validate_target_entry(target):
+        """
+        Checks the target config entry for required tags to make the github api call.
+        :param target: <dict> The target's config entry
+        :return: <bool> if the entry is valid,
+                 <str> A missing message if a tag is missing
+        """
+        is_valid, missing, message = True, [], ''
+        for tag in REQUIRED_TARGET_TAGS:
+            if not target.get(tag):
+                is_valid = False
+                missing.append(tag)
+        if missing:
+            message = MESSAGES.get("exception_invalid_target_format").format(missing)
+        return is_valid, message
