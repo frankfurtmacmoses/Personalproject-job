@@ -214,37 +214,6 @@ Resources:
             Value: watchmen-metropolis
           - Key: Env
             Value: !Ref Env
-    WatchmenMolochLambda:
-      Type: 'AWS::Lambda::Function'
-      Properties:
-        FunctionName: !Join ["-", [ !Ref "AWS::StackName", Moloch]]
-        Runtime: python3.7
-        Code:
-          S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
-          S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
-        Description: Monitors NOH/D Feed hourly.
-        Environment:
-          Variables:
-            SNS_REAPERFEEDS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ReaperFeeds, !Ref 'AWS::NoValue']
-            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
-            ENVIRONMENT: !Ref Env
-        Handler: !Sub watchmen.main_${Account}.start_moloch_watcher
-        MemorySize: 256
-        Role: !GetAtt MolochLambdaExecutionRole.Arn
-        Timeout: 30
-        Tags:
-          - Key: Owner
-            Value: CyberIntel
-          - Key: Product
-            Value: watchmen
-          - Key: Protected
-            Value: 'TRUE'
-          - Key: Component
-            Value: lambda
-          - Key: Name
-            Value: watchmen-moloch
-          - Key: Env
-            Value: !Ref Env
     WatchmenMothmanLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
@@ -410,15 +379,6 @@ Resources:
           - Id: MetropolisScheduler
             Arn: !GetAtt WatchmenMetropolisLambda.Arn
             Input: '{"Type": "Daily"}'
-    MolochScheduledEvent:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A hourly event that kicks off Moloch Watchman.
-        ScheduleExpression: cron(59 * * * ? *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: MolochScheduler
-            Arn: !GetAtt WatchmenMolochLambda.Arn
     MothmanScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -506,13 +466,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt MetropolisScheduledEvent.Arn
-    InvokeMolochLambdaPermission:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenMolochLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt MolochScheduledEvent.Arn
     InvokeMothmanLambdaPermission:
       Type: 'AWS::Lambda::Permission'
       Properties:
@@ -744,38 +697,6 @@ Resources:
                     - 's3:ListBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/analytics/change_detection/prod/*'
 
-    MolochLambdaExecutionRole:
-      Type: 'AWS::IAM::Role'
-      Properties:
-        RoleName: !Sub MolochLambdaExecutionRole-${Env}
-        AssumeRolePolicyDocument:
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action:
-                - 'sts:AssumeRole'
-        ManagedPolicyArns:
-          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-          - !Ref SNSPolicy
-        Policies:
-          - PolicyName: !Sub MolochLambdaExecutionRole${Env}
-            PolicyDocument:
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - 'kms:Decrypt'
-                  Resource: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}'
-                - Effect: Allow
-                  Action:
-                    - 's3:GetObject'
-                    - 's3:HeadBucket'
-                    - 's3:ListBucket'
-                  Resource:
-                    - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedDomains/*'
-                    - !Sub 'arn:${AWS::Partition}:s3:::deteque-new-observable-data/NewlyObservedHostname/*'
-
     MothmanLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
       Properties:
@@ -986,8 +907,6 @@ Resources:
                     - 'arn:aws:s3:::cyber-intel/*'
                     - 'arn:aws:s3:::cyber-intel-test/*'
                     - 'arn:aws:s3:::bitaa/*'
-                    - 'arn:aws:s3:::deteque-new-observable-data'
-                    - 'arn:aws:s3:::deteque-new-observable-data/*'
                 - Effect: Allow
                   Action:
                     - 's3:GetAccountPublicAccessBlock'
