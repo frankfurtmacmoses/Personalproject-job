@@ -128,9 +128,6 @@ Resources:
     Properties:
       DisplayName: ReaperFeedsPager
       TopicName: !Sub ${SNSPrefix}ReaperFeedsPager
-      Subscription:
-        - Endpoint: +13603598760
-          Protocol: sms
 
   ReaperMetricsTopic:
     Type: 'AWS::SNS::Topic'
