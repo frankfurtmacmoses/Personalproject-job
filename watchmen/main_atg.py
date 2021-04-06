@@ -55,7 +55,6 @@ from watchmen.process.comedian import Comedian
 from watchmen.process.jupiter import Jupiter
 from watchmen.process.manhattan import Manhattan
 from watchmen.process.metropolis import Metropolis
-from watchmen.process.moloch import Moloch
 from watchmen.process.mothman import Mothman
 from watchmen.process.rorschach import Rorschach
 from watchmen.process.silhouette import Silhouette
@@ -116,18 +115,6 @@ def start_metropolis_watcher(event, context):
     """
     metropolis = Metropolis(event, context)
     results = metropolis.monitor()
-    result_svc = ResultSvc(results)
-    result_svc.send_alert()
-    return result_svc.create_lambda_message()
-
-
-def start_moloch_watcher(event, context):
-    """
-    Start the moloch watcher for NOH/D feeds.
-    :return: The context that the code is being run in.
-    """
-    moloch = Moloch(event, context)
-    results = moloch.monitor()
     result_svc = ResultSvc(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
