@@ -141,29 +141,6 @@ METROPOLIS = {
     "success_subject": "Metropolis: No Outliers! - {}"
 }
 
-MOLOCH = {
-    "exception_message": "The newly observed domain feeds and hostname feeds reached an exception during the file"
-                         " checking process due to the following:\n\n{}\n\nPlease look at the logs for more insight.",
-    "exception_short_message": "Moloch: Feeds failed due to an exception, please look at the logs!",
-    "exception_subject": "Moloch watchmen reached an exception!",
-    "failure_both": "Please check the Response Guide for Moloch in watchmen documents: "
-                    "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
-                    "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
-                    "ERROR: Both hostname and domains feed have gone down!",
-    "failure_domain": "Please check the Response Guide for Moloch in watchmen documents: "
-                      "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
-                      "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
-                      "ERROR: The newly observed domains feed has gone down!",
-    "failure_hostname": "Please check the Response Guide for Moloch in watchmen documents: "
-                        "https://docs.google.com/document/d/1to0ZIaU4E-XRbZ8QvNrPLe4"
-                        "30bWWxRAPCkWk68pcwjE/edit#heading=h.6dcje1sj7gup"
-                        "ERROR: The newly observed hostname feed has gone down!",
-    "failure_subject": "Moloch watchmen detected an issue with NOH/D feed!",
-    "failure_short_message": "Moloch: A Feed has gone down, please check logs in CloudWatch!",
-    "success_message": "NOH/D Feeds are up and running!",
-    "success_subject": "Moloch watchman found Hostnames and Domains feeds works okay!"
-}
-
 MOTHMAN = {
     "exception_details": "There was an exception while trying to check the Malspam MTA S3 files.\n\nTraceback of "
                          "exception:\n{}",
