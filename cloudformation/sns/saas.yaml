@@ -35,9 +35,6 @@ Resources:
     Properties:
       DisplayName: NewlyObservedData
       TopicName: NewlyObservedData
-      Subscription:
-        - Endpoint: cyberint-devs@infoblox.com
-          Protocol: email
 
   WatchmenTestTopic:
     Type: 'AWS::SNS::Topic'
