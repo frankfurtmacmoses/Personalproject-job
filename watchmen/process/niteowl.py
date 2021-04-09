@@ -58,6 +58,7 @@ class Niteowl(Watchman):
             return self._create_config_not_loaded_result()
 
         processed_targets = self._process_targets(github_targets)
+        summary_parameters = self._create_summary_parameters(processed_targets)
 
     def _calculate_since_date(self, time_offset=1, offset_type=None):
         """
@@ -182,6 +183,58 @@ class Niteowl(Watchman):
             target=GENERIC_TARGET,
             watchman_name=self.watchman_name,
         )]
+
+    def _create_summary_parameters(self, processed_targets):
+        """
+        Create the parameters needed for result objects based on the checks performed for each target.
+        :param processed_targets: <list<dict>> Dictionaries of information from each check performed on a target
+        :return: <list<dict>> Returns a dictionary for every processed target that has the parameters needed to create
+            the result object for that target
+        """
+        summary_parameters = []
+        parameter_chart = {
+            None: {
+                "disable_notifier": False,
+                "state": Watchman.STATE.get("exception"),
+                "success": None
+            },
+            True: {
+                "disable_notifier": True,
+                "state": Watchman.STATE.get("success"),
+                "success": True
+            },
+            False: {
+                "disable_notifier": False,
+                "state": Watchman.STATE.get("failure"),
+                "success": False
+            }
+        }
+
+        for target in processed_targets:
+            target_name = target.get('target_name')
+            success = target.get('success')
+            parameters = parameter_chart.get(success).copy()
+            parameters.update({'target': target_name, 'details': self._create_details(target)})
+
+            if success:
+                parameters.update({"short_message": MESSAGES.get("success_message")})
+                parameters.update({"subject": MESSAGES.get("success_subject").format(target_name)})
+            elif target.get('success') is None:
+                parameters.update({"short_message": MESSAGES.get("exception_message")})
+                parameters.update({"subject": MESSAGES.get("exception_subject").format(target_name)})
+            else:
+                # If there are exceptions and failures:
+                if target.get("exception_strings"):
+                    parameters.update({"short_message": MESSAGES.get("change_detected_exception_message")})
+                    parameters.update({"subject": MESSAGES.get("change_detected_exception_subject")
+                                      .format(target_name)})
+                else:
+                    parameters.update({"short_message": MESSAGES.get("change_detected_message")})
+                    parameters.update({"subject": MESSAGES.get("change_detected_subject").format(target_name)})
+
+            summary_parameters.append(parameters)
+
+        return summary_parameters
 
     @staticmethod
     def _format_api_exception(check_name, target_name, tb, path=None):
