@@ -59,6 +59,8 @@ class Niteowl(Watchman):
 
         processed_targets = self._process_targets(github_targets)
         summary_parameters = self._create_summary_parameters(processed_targets)
+        results = self._create_results(summary_parameters)
+        return results
 
     def _calculate_since_date(self, time_offset=1, offset_type=None):
         """
@@ -183,6 +185,91 @@ class Niteowl(Watchman):
             target=GENERIC_TARGET,
             watchman_name=self.watchman_name,
         )]
+
+    def _create_results(self, summary_parameters):
+        """
+        This creates result objects for each of the summary parameters and a generic result for all of them. These will
+        then be sent to subscribers of the corresponding sns topics.
+        :param summary_parameters: <list<dict>>  The parameters needed to make each Result object.
+        :return: <list> Result objects for each summary parameter, as well as a generic result object that represents
+            all results.
+        """
+        results = []
+        generic_result_details = ''
+        change_detected = False
+        exception = False
+        for parameters in summary_parameters:
+            success = parameters.get("success")
+
+            if success is False:
+                change_detected = True
+            if success is None:
+                exception = True
+
+            if not success:
+                generic_result_details += "{}{}\n\n".format(parameters.get("details"), const.MESSAGE_SEPARATOR)
+
+            results.append(Result(
+                details=parameters.get("details"),
+                disable_notifier=parameters.get("disable_notifier"),
+                short_message=parameters.get("short_message"),
+                snapshot={},
+                state=parameters.get("state"),
+                subject=parameters.get("subject"),
+                success=success is True,
+                target=parameters.get("target"),
+                watchman_name=self.watchman_name,
+            ))
+        results.append(self._create_generic_result(change_detected, exception, generic_result_details))
+        return results
+
+    def _create_generic_result(self, change_detected, exception, details):
+        """
+        This creates the generic result object which contains information from all checks performed for all targets.
+        :param change_detected: <bool> True if there was a change detected during a github check
+        :param exception: <bool> True if an exception occurred during a github check
+        :param details: <str> A string with all the messages generated from each check
+        :return: <Result> A result with all targets check information
+        """
+        if change_detected and exception:
+            disable_notifier = False
+            short_message = MESSAGES.get("change_detected_exception_message")
+            state = Watchman.STATE.get("exception")
+            subject = MESSAGES.get("generic_change_detected_exception_subject")
+            success = False
+
+        elif exception:
+            disable_notifier = False
+            short_message = MESSAGES.get("exception_message")
+            state = Watchman.STATE.get("exception")
+            subject = MESSAGES.get("generic_exception_subject")
+            success = False
+
+        elif change_detected:
+            disable_notifier = False
+            short_message = MESSAGES.get("change_detected_message")
+            state = Watchman.STATE.get("failure")
+            subject = MESSAGES.get("generic_change_detected_subject")
+            success = False
+
+        else:
+            disable_notifier = True
+            short_message = MESSAGES.get("success_message")
+            state = Watchman.STATE.get("success")
+            subject = MESSAGES.get("generic_success_subject")
+            success = True
+
+        return Result(
+            details=details,
+            disable_notifier=disable_notifier,
+            short_message=short_message,
+            snapshot={},
+            watchman_name=self.watchman_name,
+            state=state,
+            subject=subject,
+            success=success,
+            target=GENERIC_TARGET,
+        )
 
     def _create_summary_parameters(self, processed_targets):
         """
