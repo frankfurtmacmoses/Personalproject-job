@@ -171,6 +171,7 @@ NITEOWL = {
     "exception_invalid_target_format": "Missing required tags: {}",
     "exception_message": "An exception occurred while checking Github targets. Check the logs for more details.",
     "new_commit": "New Commit:\nDate:{date}\nSHA:{sha}\nMessage:{message}\nUrl:{url}\n",
+    "new_release": "New Release: \nName:{name}\n Release Date:{date}\n Url:{url}\n",
 }
 
 RORSCHACH = {

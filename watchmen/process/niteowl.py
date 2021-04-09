@@ -97,6 +97,35 @@ class Niteowl(Watchman):
 
         return new_commit_strings, exception_strings
 
+    def _check_releases(self, target):
+        """
+        This checks for new releases for the target within the specified time window (default is 1 of the event type).
+        :param target: <dict> The target's entry in github_targets.yaml
+        :return: <list> new_release_strings are formatted messages for any new releases
+                 <list> exception_strings are messages for any errors encountered
+        """
+        repo = target.get('repo')
+        owner = target.get('owner')
+        time_offset = target.get('time_offset', 1)
+        offset_type = target.get('offset_type')
+        since_date = self._calculate_since_date(time_offset, offset_type)
+
+        new_release_strings, exception_strings = [], []
+
+        current_release, tb = github.get_repository_release(owner=owner, repo=repo, token=GITHUB_TOKEN)
+        if tb:
+            exception_strings.append(self._format_api_exception('releases', target.get('target_name'), tb))
+            return new_release_strings, exception_strings
+
+        release_date = datetime.datetime.fromisoformat(current_release.get('published_at')[:-1])
+
+        if release_date >= since_date:
+            new_release_strings.append(MESSAGES.get('new_release').format(
+                name=current_release.get('name'), date=release_date, url=current_release.get('url')
+            ))
+
+        return new_release_strings, exception_strings
+
     def _create_config_not_loaded_result(self):
         """
         Creates a Result object for if the config cannot be loaded.
