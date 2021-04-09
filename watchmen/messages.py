@@ -160,10 +160,12 @@ MOTHMAN = {
 }
 
 NITEOWL = {
+    "change_detected_details": "The following changes have been detected in {}: \n\n{}",
     "exception_api_failed": "The Github api call failed checking {} for {}\nTraceback:\n{}",
     "exception_api_failed_w_path": "The Github api call failed checking {} for {} on path: {}\nTraceback:\n{}",
     "exception_config_load_failure_details": "Cannot load Github targets from the config",
     "exception_config_load_failure_subject": "EXCEPTION: Cannot load Github Targets!",
+    "exception_details": "The following exceptions occurred when checking {}: \n\n{}",
     "exception_invalid_check": "Check {} is an invalid check for {}",
     "exception_invalid_event_details": "An invalid event was passed from the CloudWatch event. Check the events in the "
                                        "CloudFormation file.",
@@ -172,6 +174,7 @@ NITEOWL = {
     "exception_message": "An exception occurred while checking Github targets. Check the logs for more details.",
     "new_commit": "New Commit:\nDate:{date}\nSHA:{sha}\nMessage:{message}\nUrl:{url}\n",
     "new_release": "New Release: \nName:{name}\n Release Date:{date}\n Url:{url}\n",
+    "success_details": "No changes for the Github target {} have been detected",
 }
 
 RORSCHACH = {

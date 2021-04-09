@@ -143,6 +143,29 @@ class Niteowl(Watchman):
             watchman_name=self.watchman_name,
         )]
 
+    @staticmethod
+    def _create_details(processed_target):
+        """
+        Creates details for the result objects from the new_change_strings and exception_strings if they exist.
+        :param processed_target: <dict> A dictionary of the target name with any failures or exceptions that occurred
+        :return: <str> A details string for the target with information from the checks performed
+        """
+        target_name = processed_target.get('target_name')
+
+        if processed_target.get('success'):
+            return MESSAGES.get("success_details").format(target_name)
+
+        details = ''
+        if processed_target.get("exception_strings"):
+            all_exceptions_string = "\n\n".join(processed_target.get("exception_strings"))
+            details += MESSAGES.get("exception_details").format(target_name, all_exceptions_string) + "\n\n"
+
+        if processed_target.get('new_changes_strings'):
+            all_changes_string = "\n\n".join(processed_target.get("new_changes_strings"))
+            details += MESSAGES.get("change_detected_details").format(target_name, all_changes_string) + "\n\n"
+
+        return details
+
     def _create_invalid_event_result(self):
         """
         Creates a result object for if the event type is invalid
