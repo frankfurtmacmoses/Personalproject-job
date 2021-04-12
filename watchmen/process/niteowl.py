@@ -19,9 +19,11 @@ from watchmen import const, messages
 from watchmen.common.result import Result
 from watchmen.common.watchman import Watchman
 from watchmen.config import settings
+from watchmen.utils import github
 
 CONFIG_NAME = settings('niteowl.targets')
 DAILY = "Daily"
+GITHUB_TOKEN = settings('niteowl.github_token')
 MESSAGES = messages.NITEOWL
 REQUIRED_TARGET_TAGS = ['target_name', 'owner', 'repo', 'checks']
 TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
