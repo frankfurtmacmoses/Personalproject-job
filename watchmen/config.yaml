@@ -64,12 +64,6 @@ metropolis:
     metrics_url: https://1niw6imbal.execute-api.us-east-1.amazonaws.com/prod/query_metrics?time=day
     metrics_api_key: AQICAHg3HNyIwRj/VgA+LeTSbBvD+KLqwR4I7fTUIoefURORLQH2QRUYgyk9DP/rcj5pWJnrAAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDHiRxI65Zw2R+6esvgIBEIBD4F2NpEz3teCoknvVBJxJU4R82Oe3X8ZVINUuXh0Co2GsZlymc8p4aA2Z3En3QCk1qxomQJKXqSqsQ2aQQtoqepa3ww==
 
-moloch:
-  bucket_name: deteque-new-observable-data
-  domain_path: NewlyObservedDomains
-  hostname_path: NewlyObservedHostname
-  sns_topic: arn:aws:sns:us-east-1:405093580753:Watchmen_Test
-
 mothman:
   bucket_name: cyber-intel
   path_prefix: malspam

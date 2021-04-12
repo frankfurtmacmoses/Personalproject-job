@@ -76,21 +76,11 @@ class MainAtgTester(unittest.TestCase):
     @patch('watchmen.process.metropolis.Metropolis')
     @patch('watchmen.process.metropolis.Metropolis.monitor')
     @patch('watchmen.common.result_svc.ResultSvc.send_alert')
-    def test_start_metropolis_watcher(self, mock_alert, mock_monitor, mock_moloch):
+    def test_start_metropolis_watcher(self, mock_alert, mock_monitor, mock_metropolis):
         mock_monitor.return_value = self.example_result_list
 
         expected = self.example_lambda_message + const.LINE_SEPARATOR
         returned = main.start_metropolis_watcher(self.event, self.context)
-        self.assertEqual(expected, returned)
-
-    @patch('watchmen.process.moloch.Moloch')
-    @patch('watchmen.process.moloch.Moloch.monitor')
-    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
-    def test_start_moloch_watcher(self, mock_alert, mock_monitor, mock_moloch):
-        mock_monitor.return_value = self.example_result_list
-
-        expected = self.example_lambda_message + const.LINE_SEPARATOR
-        returned = main.start_moloch_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
     @patch('watchmen.process.mothman.Mothman')
