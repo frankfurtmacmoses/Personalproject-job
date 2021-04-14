@@ -46,7 +46,7 @@ Daily:
     - target_name: Poseidon DNS Data - CZ
       items:
       - bucket_name: ib-dl-saas-cz-prod
-        prefix: dns-logs/customer/year=%0Y/month=%0m/day=%0d/storage_id=300224/
+        prefix: dns-logs/customer-history/year=%0Y/month=%0m/day=%0d/storage_id=300224/
         suffix: .parquet
 
       - bucket_name: ib-dl-saas-cz-prod

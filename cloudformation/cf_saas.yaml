@@ -156,7 +156,7 @@ Resources:
                       - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/heka/*"
                       - "arn:aws:s3:::ib-dl-lz-ttl-prod/ib-dl-saas-lz-prod/prometheus/metrics-prd-1/*"
                       - "arn:aws:s3:::ib-dl-saas-cz-prod/heka/*"
-                      - "arn:aws:s3:::ib-dl-saas-cz-prod/dns-logs/customer/*"
+                      - "arn:aws:s3:::ib-dl-saas-cz-prod/dns-logs/customer-history/*"
                       - "arn:aws:s3:::ib-dl-saas-cz-prod/dns-logs/farsight/*"
                       - "arn:aws:s3:::ib-dl-saas-cz-prod/saas-customer-data/*"
                       - "arn:aws:s3:::ib-dl-saas-cz-prod/athena-full-exports/*"
