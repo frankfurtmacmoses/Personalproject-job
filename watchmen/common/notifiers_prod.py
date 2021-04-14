@@ -33,6 +33,10 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.datalakezonemonitors")
   },
+  "Mitre Cti": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.mitrecti")
+  },
   "Newly Observed Data": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.newlyobserveddata")
@@ -116,6 +120,10 @@ SNS = {
   "zVelo Data Monitor": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:488906355115:zvelo_data_monitor"
+  },
+  "Generic Github atg": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.genericgithubatg")
   },
   "Generic S3 cyberintel": {
     "notifier": "SnsNotifier",

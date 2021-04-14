@@ -33,6 +33,10 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
+  "Mitre Cti": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
+  },
   "Newly Observed Data": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
@@ -124,6 +128,10 @@ SNS = {
   "zVelo Data Monitor": {
     "notifier": "SnsNotifier",
     "sns": "arn:aws:sns:us-east-1:488906355115:Watchmen_Test"
+  },
+  "Generic Github atg": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
   },
   "Generic S3 cyberintel": {
     "notifier": "SnsNotifier",
