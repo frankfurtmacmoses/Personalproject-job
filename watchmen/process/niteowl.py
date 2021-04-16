@@ -50,6 +50,25 @@ class Niteowl(Watchman):
             return self._create_invalid_event_result()
 
         github_targets, tb = self._load_config()
+        if tb:
+            return self._create_config_not_loaded_result()
+
+    def _create_config_not_loaded_result(self):
+        """
+        Creates a Result object for if the config cannot be loaded.
+        :return: <list> A result object for the config error
+        """
+        return [Result(
+            details=MESSAGES.get("exception_config_load_failure_details"),
+            disable_notifier=False,
+            short_message=MESSAGES.get("exception_message"),
+            snapshot={},
+            state=Watchman.STATE.get("exception"),
+            subject=MESSAGES.get("exception_config_load_failure_subject"),
+            success=False,
+            target=GENERIC_TARGET,
+            watchman_name=self.watchman_name,
+        )]
 
     def _create_invalid_event_result(self):
         """
