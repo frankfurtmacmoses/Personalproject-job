@@ -1,0 +1,18 @@
+#  Target_Name: Required
+#  owner : Required : String
+#  repo : Required : String
+#  checks : Required : List : Possible Values = [Commits, Releases]
+#  offset_type : Optional : String : Default = same as section
+#  time_offset : Optional : Int : Default = 1
+#  target_path: Optional : List<String> : Default = whole repo
+#               Ex: [/enterprise-attack/, ics-attack/ics-attack.json]
+#                   OR
+#                   - /enterprise-attack/
+#                   - ics-attack/ics-attack.json
+
+Daily:
+  - target_name: Mitre Cti
+    owner: mitre
+    repo: cti
+    checks: [Commits, Releases]
+    time_offset: 1
