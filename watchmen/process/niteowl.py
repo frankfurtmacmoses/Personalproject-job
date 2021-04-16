@@ -11,15 +11,22 @@ to a repo. An exception represents an error that occurred in the code, or that o
 @email: phecksel@infoblox.com
 """
 
+import os
+import traceback
+import yaml
+
 from watchmen import const, messages
 from watchmen.common.result import Result
 from watchmen.common.watchman import Watchman
 from watchmen.config import settings
 
+CONFIG_NAME = settings('niteowl.targets')
 DAILY = "Daily"
 MESSAGES = messages.NITEOWL
 TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
 
+CONFIG_PATH = os.path.join(
+    os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
 EVENT_OFFSET_PAIR = {DAILY: 'days'}
 GENERIC_TARGET = 'Generic Github {}'.format(TARGET_ACCOUNT)
 
@@ -41,6 +48,8 @@ class Niteowl(Watchman):
 
         if not self._is_valid_event():
             return self._create_invalid_event_result()
+
+        github_targets, tb = self._load_config()
 
     def _create_invalid_event_result(self):
         """
@@ -65,4 +74,21 @@ class Niteowl(Watchman):
         :return: if the event is in the list of time offsets used for performing github checks
         """
         return self.event in list(EVENT_OFFSET_PAIR.keys())
+
+    def _load_config(self):
+        """
+        Loads github_targets.yaml and returns the targets for the event type.
+        :returns: <list<dict>> A list of targets with the needed information
+        """
+        try:
+            with open(CONFIG_PATH) as f:
+                github_targets = yaml.load(f, Loader=yaml.FullLoader).get(self.event)
+            return github_targets, None
+        except Exception as ex:
+            self.logger.error("ERROR Loading Config!")
+            self.logger.info(const.MESSAGE_SEPARATOR)
+            self.logger.exception('{}: {}'.format(type(ex).__name__, ex))
+            tb = traceback.format_exc()
+            return None, tb
+
 

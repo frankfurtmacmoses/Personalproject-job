@@ -69,6 +69,9 @@ mothman:
   path_prefix: malspam
   mail_sources: forevermail,uscert
 
+niteowl:
+  targets: github_targets.yaml
+
 result_svc:
   default: arn:aws:sns:{region}:{account_id}:WatchmenTest
   atg: arn:aws:sns:{region}:{account_id}:Watchmen_Test
