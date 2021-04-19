@@ -4,6 +4,12 @@ Daily:
       items:
       - bucket_name: cyberintel-ozone
         full_path: data/%0Y%0m%0d/zone/%0Y%0m%0d.com.zone.gz
+      - bucket_name: cyberintel-ozone
+        prefix: data/%0Y%0m%0d/raw/%0Y%0m%0d_com_
+        suffix: .raw.txt
+        min_total_files: 50
+      - bucket_name: cyberintel-ozone
+        full_path: nerds/%0Y%0m%0d_ozone_nerds.txt
 
 Hourly:
   '30':
