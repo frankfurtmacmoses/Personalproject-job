@@ -1070,7 +1070,7 @@ class TestRorschach(unittest.TestCase):
         expected_tb = None
         event_frequency = list(self.example_event_daily.get('Type').keys())[0]
         returned, returned_tb = rorschach_obj._generate_prefixes(prefix_format_example, event_frequency)
-        self.assertEqual((expected, expected_tb), (returned, returned_tb))
+        self.assertEqual((set(expected), expected_tb), (set(returned), returned_tb))
 
         # Test exception while generating key:
         expected, expected_tb = None, 'Traceback'
