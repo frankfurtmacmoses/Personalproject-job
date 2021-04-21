@@ -256,7 +256,6 @@ Resources:
         Description: Monitors s3 targets hourly and daily.
         Environment:
           Variables:
-            SNS_GEORGIATECHPDNS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GeorgiaTechpDNS, !Ref 'AWS::NoValue']
             SNS_GENERICS3ATG: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
             SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
@@ -388,16 +387,6 @@ Resources:
         Targets:
           - Id: MothmanScheduler
             Arn: !GetAtt WatchmenMothmanLambda.Arn
-    RorschachDailyScheduledEvent1500:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A daily event that kicks off the Rorschach Watchman
-        ScheduleExpression: cron(0 15 * * ? *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: RorschachDailyScheduler1500
-            Arn: !GetAtt WatchmenRorschachLambda.Arn
-            Input: '{"Type": {"Daily": "15:00"}}'
     RorschachMinutelyScheduledEvent10:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -473,13 +462,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt MothmanScheduledEvent.Arn
-    InvokeRorschachDailyLambdaPermission1500:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt RorschachDailyScheduledEvent1500.Arn
     InvokeRorschachMinutelyLambdaPermission10:
       Type: 'AWS::Lambda::Permission'
       Properties:
