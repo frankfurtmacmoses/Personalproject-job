@@ -25,10 +25,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "Georgia Tech S3": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.watchmentest")
-  },
   "Lookalike2 Algorithm S3": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")

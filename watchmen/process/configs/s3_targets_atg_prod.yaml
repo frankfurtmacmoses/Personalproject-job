@@ -1,11 +1,3 @@
-Daily:
-  '15:00':
-    - target_name: Georgia Tech S3
-      items:
-        - bucket_name: cyber-intel
-          full_path: hancock/georgia_tech/%0Y/%0m/gt_mpdns_%Y%m%d.zip
-          time_offset: 1
-
 Minutely:
   '00':
     - target_name: Threatwave

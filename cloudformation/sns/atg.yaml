@@ -74,16 +74,6 @@ Resources:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
 
-  GeorgiaTechpDNSTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: IsProd
-    Properties:
-      DisplayName: GeorgiaTechpDNS
-      TopicName: !Sub ${SNSPrefix}GeorgiaTechpDNS
-      Subscription:
-        - Endpoint: aciarochi@infoblox.com
-          Protocol: email
-
   Lookalike2AlgorithmS3Topic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -239,10 +229,6 @@ Outputs:
   GenericQuota:
     Condition: IsProd
     Value: !Ref GenericQuotaTopic
-
-  GeorgiaTechpDNS:
-    Condition: IsProd
-    Value: !Ref GeorgiaTechpDNSTopic
 
   Lookalike2AlgorithmS3:
     Condition: IsProd
