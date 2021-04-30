@@ -11,6 +11,7 @@ to a repo. An exception represents an error that occurred in the code, or that o
 @email: phecksel@infoblox.com
 """
 
+import datetime
 import os
 import traceback
 import yaml
@@ -57,6 +58,19 @@ class Niteowl(Watchman):
             return self._create_config_not_loaded_result()
 
         processed_targets = self._process_targets(github_targets)
+
+    def _calculate_since_date(self, time_offset=1, offset_type=None):
+        """
+        Creates a date that is a specified distance from the current date. This is used to check github changes within a
+        window of time.
+        :param time_offset: <int> The number of offset_type's to go backwards. Defaults to 1.
+        :param offset_type: <str> The unit of the time_offset (Ex: Daily). Defaults to the event type.
+        :return: <Datetime> A Datetime object representing a date in the past.
+        """
+        offset_type = self.event if not offset_type else offset_type
+        date = (datetime.datetime.utcnow() - datetime.timedelta(**{EVENT_OFFSET_PAIR[offset_type]: time_offset}))\
+            .replace(microsecond=0)
+        return date
 
     def _create_config_not_loaded_result(self):
         """
