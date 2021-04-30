@@ -40,7 +40,24 @@ class Niteowl(Watchman):
         """
 
         if not self._is_valid_event():
-            pass
+            return self._create_invalid_event_result()
+
+    def _create_invalid_event_result(self):
+        """
+        Creates a result object for if the event type is invalid
+        :return: <list> A Result object for an invalid event type
+        """
+        return [Result(
+            details=MESSAGES.get("exception_invalid_event_details"),
+            disable_notifier=False,
+            short_message=MESSAGES.get("exception_message"),
+            snapshot={},
+            state=Watchman.STATE.get("exception"),
+            subject=MESSAGES.get("exception_invalid_event_subject"),
+            success=False,
+            target=GENERIC_TARGET,
+            watchman_name=self.watchman_name,
+        )]
 
     def _is_valid_event(self):
         """
