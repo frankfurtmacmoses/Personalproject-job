@@ -160,7 +160,10 @@ MOTHMAN = {
 }
 
 NITEOWL = {
-
+    "exception_invalid_event_details": "An invalid event was passed from the CloudWatch event. Check the events in the "
+                                       "CloudFormation file.",
+    "exception_invalid_event_subject": "EXCEPTION: Niteowl received an invalid event type!",
+    "exception_message": "An exception occurred while checking Github targets. Check the logs for more details.",
 }
 
 RORSCHACH = {
