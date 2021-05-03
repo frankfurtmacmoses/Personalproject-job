@@ -33,10 +33,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.datalakezonemonitors")
   },
-  "Metrics and KPI": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.metricsandkpi")
-  },
   "Newly Observed Data": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.newlyobserveddata")
@@ -81,10 +77,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.reaperfeeds")
   },
-  "Reaper Metrics": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.reapermetrics")
-  },
   "SaaS Apps Customer Data Phase 1 - CZ": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.datalakezonemonitors")
@@ -100,10 +92,6 @@ SNS = {
   "SaaS Apps Customer Data Phase 2 - LZ": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.datalakezonemonitors")
-  },
-  "Slowdrip Metrics": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.slowdripmetrics")
   },
   "VirusTotal Email": {
     "notifier": "SnsNotifier",
