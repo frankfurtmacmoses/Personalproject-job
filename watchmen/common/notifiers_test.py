@@ -33,10 +33,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "Metrics and KPI": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.watchmentest")
-  },
   "Newly Observed Data": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
@@ -81,10 +77,6 @@ SNS = {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
-  "Reaper Metrics": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.watchmentest")
-  },
   "SaaS Apps Customer Data Phase 1 - CZ": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
@@ -98,10 +90,6 @@ SNS = {
     "sns": settings("sns.watchmentest")
   },
   "SaaS Apps Customer Data Phase 2 - LZ": {
-    "notifier": "SnsNotifier",
-    "sns": settings("sns.watchmentest")
-  },
-  "Slowdrip Metrics": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
   },
