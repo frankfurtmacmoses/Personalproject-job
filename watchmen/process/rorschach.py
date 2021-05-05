@@ -51,7 +51,7 @@ CONFIG_NAME = 's3_targets_{}_{}.yaml'.format(TARGET_ACCOUNT, ENVIRONMENT)
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
 GENERIC_TARGET = 'Generic S3 {}'.format(TARGET_ACCOUNT)
-TRIMMABLE_EVENT_TYPES = [HOURLY, MINUTELY]
+TRIMMABLE_EVENT_TYPES = [HOURLY, MINUTELY, WEEKLY]
 
 DEFAULT_MAX_FILES_TO_CHECK = 2000
 
@@ -296,6 +296,16 @@ class Rorschach(Watchman):
         if not found_file:
             failure_strings.append(MESSAGES.get('failure_invalid_s3_key').format(s3_key))
             return exception_strings, failure_strings
+        # Trim contents to include only object within the time offset
+        if offset_type in TRIMMABLE_EVENT_TYPES:
+            file_obj = _s3.get_object(item['bucket_name'], s3_key)
+            contents = self._trim_contents([file_obj], time_offset, offset_type)
+            if not contents:
+                end_time = _datetime.datetime.now(pytz.utc).replace(second=0, microsecond=0)
+                start_time = end_time - _datetime.timedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
+                date_range = "{} to {}".format(start_time.strftime('%m-%d-%y'), end_time.strftime('%m-%d-%y'))
+                failure_strings.append(MESSAGES.get('failure_last_modified_date').format(s3_key, date_range))
+                return exception_strings, failure_strings
 
         # Checking single file size:
         if item.get("min_total_size_kb"):

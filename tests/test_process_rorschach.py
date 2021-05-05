@@ -706,7 +706,8 @@ class TestRorschach(unittest.TestCase):
     @patch('watchmen.process.rorschach.Rorschach._generate_key')
     @patch('watchmen.process.rorschach.Rorschach._check_single_file_existence')
     @patch('watchmen.process.rorschach.Rorschach._check_single_file_size')
-    def test_check_single_file(self, mock_check_size, mock_check_existence, mock_generate_key):
+    @patch('watchmen.process.rorschach.Rorschach._trim_contents')
+    def test_check_single_file(self, mock_trim_contents, mock_check_size, mock_check_existence, mock_generate_key):
         """
         test watchmen.process.rorschach :: Rorschach :: _check_single_file
         """
@@ -714,10 +715,12 @@ class TestRorschach(unittest.TestCase):
         example_item = {
             "full_path": "example/bad/path/test.json",
             "time_offset": 2,
-            "min_total_size_kb": 50
+            "min_total_size_kb": 50,
+            "bucket_name": "example_bucket"
         }
 
         # Test for generate_key failure:
+        mock_trim_contents.return_value = [{}]
         mock_generate_key.return_value = None, self.example_traceback
 
         expected_exception_string = self.example_traceback
