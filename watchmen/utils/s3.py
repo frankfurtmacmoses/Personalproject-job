@@ -675,3 +675,20 @@ def validate_file_on_s3(bucket_name, key):
         LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
 
     return is_valid_file
+
+
+def get_object(bucket_name, key):
+    """
+    Method to gets file object from S3
+    :param bucket_name: Name of the bucket to check
+    :param key: path to the file
+    :return: <S3 Object> otherwise false
+    """
+    s3_client = boto3.client('s3')
+    file_obj = False
+    try:
+        file_obj = s3_client.head_object(Bucket=bucket_name,
+                                         Key=key)
+    except ClientError:
+        LOGGER.info(FILE_NOT_FOUND_ERROR_MESSAGE)
+    return file_obj
