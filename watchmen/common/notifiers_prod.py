@@ -124,5 +124,9 @@ SNS = {
   "Threatwave": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.threatwaves3")
+  },
+  "Psl": {
+      "notifier": "SnsNotifier",
+      "sns": settings("sns.psls3")
   }
 }

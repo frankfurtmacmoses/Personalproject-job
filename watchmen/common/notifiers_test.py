@@ -132,5 +132,9 @@ SNS = {
   "Threatwave": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
+  },
+  "Psl": {
+      "notifier": "SnsNotifier",
+      "sns": settings("sns.watchmentest")
   }
 }
