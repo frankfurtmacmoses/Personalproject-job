@@ -106,6 +106,21 @@ class Niteowl(Watchman):
             watchman_name=self.watchman_name,
         )]
 
+    @staticmethod
+    def _format_api_exception(check_name, target_name, tb, path=None):
+        """
+        Returns an exception string with information about a Github API Failure
+        :param check_name: <str> Name of the check that threw the exception
+        :param target_name: <str> The target name
+        :param tb: <str> The traceback of the exception
+        :param path: <str> The path the exception occurred on, if applicable
+        :return: <str> An message with information from the API exception
+        """
+        if path:
+            return MESSAGES.get("exception_api_failed_w_path").format(check_name, target_name, path, tb)
+
+        return MESSAGES.get("exception_api_failed").format(check_name, target_name, tb)
+
     def _is_valid_event(self):
         """
         A check to make sure the event is supported by niteowl
