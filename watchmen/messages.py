@@ -160,6 +160,8 @@ MOTHMAN = {
 }
 
 NITEOWL = {
+    "exception_api_failed": "The Github api call failed checking {} for {}\nTraceback:\n{}",
+    "exception_api_failed_w_path": "The Github api call failed checking {} for {} on path: {}\nTraceback:\n{}",
     "exception_config_load_failure_details": "Cannot load Github targets from the config",
     "exception_config_load_failure_subject": "EXCEPTION: Cannot load Github Targets!",
     "exception_invalid_check": "Check {} is an invalid check for {}",
