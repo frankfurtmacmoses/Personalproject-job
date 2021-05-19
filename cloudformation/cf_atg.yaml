@@ -699,6 +699,30 @@ Resources:
                     - 's3:HeadBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/malspam/forevermail/*'
 
+    NiteowlLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub NiteowlLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
+        Policies:
+          - PolicyName: !Sub NiteowlLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
+
     RorschachExecutionRole:
       Type: 'AWS::IAM::Role'
       Properties:
