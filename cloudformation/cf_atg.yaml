@@ -377,6 +377,16 @@ Resources:
         Targets:
           - Id: MothmanScheduler
             Arn: !GetAtt WatchmenMothmanLambda.Arn
+    NiteowlDailyScheduledEvent:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A Daily event that kicks off the Niteowl Watchman
+        ScheduleExpression: cron(0 14 * * ? *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: NiteowlDailyScheduler
+            Arn: !GetAtt WatchmenNiteowlLambda.Arn
+            Input: '{"Type": "Daily"}'
     RorschachMinutelyScheduledEvent10:
       Type: 'AWS::Events::Rule'
       Properties:
