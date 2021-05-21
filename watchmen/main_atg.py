@@ -56,6 +56,7 @@ from watchmen.process.jupiter import Jupiter
 from watchmen.process.manhattan import Manhattan
 from watchmen.process.metropolis import Metropolis
 from watchmen.process.mothman import Mothman
+from watchmen.process.niteowl import Niteowl
 from watchmen.process.rorschach import Rorschach
 from watchmen.process.silhouette import Silhouette
 
@@ -127,6 +128,18 @@ def start_mothman_watcher(event, context):
     """
     mothman = Mothman(event, context)
     results = mothman.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
+
+
+def start_niteowl_watcher(event, context):
+    """
+    Start niteowl watcher to monitor changes made in github repos.
+    :return: The context that the code is being run in.
+    """
+    niteowl = Niteowl(event, context)
+    results = niteowl.monitor()
     result_svc = ResultSvc(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
