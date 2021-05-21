@@ -188,6 +188,7 @@ RORSCHACH = {
     "failure_subject": "FAILURE: S3 File Checks Failed for {}!",
     "failure_total_objects": "The number of objects found in {} is {}, which is less than expected total objects count:"
                              " {}.",
+    "failure_last_modified_date": "FAILURE: S3 Target file {} has not been updated during {}",
     "generic_exception_subject": "EXCEPTION: At Least One S3 Target Has An Exception!",
     "generic_failure_exception_subject": "EXCEPTION and FAILURE: At Least One S3 Target Has An Exception and Failure!",
     "generic_failure_subject": "FAILURE: At Least One S3 Target Has Failed!",

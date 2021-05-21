@@ -7,3 +7,12 @@ Minutely:
           suffix : .gz
           time_offset : 10
           min_total_files : 1
+
+Weekly:
+  'Mon':
+    '10:30':
+      - target_name: Psl
+        items:
+          - bucket_name: cyber-intel
+            full_path: analytics/enrichment-data/psl_infoblox_custom.dat
+            time_offset: 1
