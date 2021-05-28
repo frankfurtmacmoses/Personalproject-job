@@ -54,6 +54,16 @@ Resources:
         - Endpoint: plaudanski@infoblox.com
           Protocol: email
 
+  GenericGithubAtgTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: NiteowlGenericGithubAtg
+      TopicName: !Sub ${SNSPrefix}NiteowlGenericGithubAtg
+      Subscription:
+        - Endpoint: cyberint-devs@infoblox.com
+          Protocol: email
+
   GenericS3AtgTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -84,6 +94,16 @@ Resources:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
         - Endpoint: vtymchenko@infoblox.com
+          Protocol: email
+
+  MitreCtiTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: MitreCti
+      TopicName: !Sub ${SNSPrefix}MitreCti
+      Subscription:
+        - Endpoint: chkim@infoblox.com
           Protocol: email
 
   PslTopic:
@@ -204,6 +224,10 @@ Outputs:
     Condition: IsProd
     Value: !Ref ForeverMailTopic
 
+  GenericGithubAtg:
+    Condition: IsProd
+    Value: !Ref GenericGithubAtgTopic
+
   GenericS3Atg:
     Condition: IsProd
     Value: !Ref GenericS3AtgTopic
@@ -215,6 +239,10 @@ Outputs:
   Lookalike2AlgorithmS3:
     Condition: IsProd
     Value: !Ref Lookalike2AlgorithmS3Topic
+
+  MitreCti:
+    Condition: IsProd
+    Value: !Ref MitreCtiTopic
 
   PslS3:
     Condition: IsProd

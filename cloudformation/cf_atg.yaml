@@ -212,6 +212,38 @@ Resources:
             Value: watchmen-mothman
           - Key: Env
             Value: !Ref Env
+    WatchmenNiteowlLambda:
+      Type: 'AWS::Lambda::Function'
+      Properties:
+        FunctionName: !Join ["-", [ !Ref "AWS::StackName", Niteowl]]
+        Runtime: python3.7
+        Code:
+          S3Bucket: !FindInMap [EnvMap, !Ref Env, Bucket]
+          S3Key: !Join ["/", [!Ref BuildsPrefix, !FindInMap [EnvMap, !Ref Env, BuildFile]]]
+        Description: Monitors Github repositories for changes.
+        Environment:
+          Variables:
+            ENVIRONMENT: !Ref Env
+            SNS_MITRECTI: !If [IsProd, !GetAtt SnsTopicStack.Outputs.MitreCti, !Ref 'AWS::NoValue']
+            SNS_GENERICGITHUBATG: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericGithubAtg, !Ref 'AWS::NoValue']
+            SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
+        Handler: !Sub watchmen.main_${Account}.start_niteowl_watcher
+        MemorySize: 256
+        Role: !GetAtt NiteowlLambdaExecutionRole.Arn
+        Timeout: 30
+        Tags:
+          - Key: Owner
+            Value: CyberIntel
+          - Key: Product
+            Value: watchmen
+          - Key: Protected
+            Value: 'TRUE'
+          - Key: Component
+            Value: lambda
+          - Key: Name
+            Value: watchmen-niteowl
+          - Key: Env
+            Value: !Ref Env
     WatchmenRorschachLambda:
       Type: 'AWS::Lambda::Function'
       Properties:
@@ -345,6 +377,16 @@ Resources:
         Targets:
           - Id: MothmanScheduler
             Arn: !GetAtt WatchmenMothmanLambda.Arn
+    NiteowlDailyScheduledEvent:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A Daily event that kicks off the Niteowl Watchman
+        ScheduleExpression: cron(0 14 * * ? *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: NiteowlDailyScheduler
+            Arn: !GetAtt WatchmenNiteowlLambda.Arn
+            Input: '{"Type": "Daily"}'
     RorschachMinutelyScheduledEvent10:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -423,6 +465,13 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt MothmanScheduledEvent.Arn
+    InvokeNiteowlLambdaPermission:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenNiteowlLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt NiteowlDailyScheduledEvent.Arn
     InvokeRorschachMinutelyLambdaPermission10:
       Type: 'AWS::Lambda::Permission'
       Properties:
@@ -649,6 +698,30 @@ Resources:
                     - 's3:GetObject'
                     - 's3:HeadBucket'
                   Resource: !Sub 'arn:${AWS::Partition}:s3:::cyber-intel/malspam/forevermail/*'
+
+    NiteowlLambdaExecutionRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: !Sub NiteowlLambdaExecutionRole-${Env}
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        ManagedPolicyArns:
+          - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          - !Ref SNSPolicy
+        Policies:
+          - PolicyName: !Sub NiteowlLambdaExecutionRole${Env}
+            PolicyDocument:
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - "kms:Decrypt"
+                  Resource: !Sub "arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:key/${KmsKeyId}"
 
     RorschachExecutionRole:
       Type: 'AWS::IAM::Role'
