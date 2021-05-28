@@ -96,6 +96,16 @@ Resources:
         - Endpoint: vtymchenko@infoblox.com
           Protocol: email
 
+  MaxmindTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: Maxmind
+      TopicName: !Sub ${SNSPrefix}Maxmind
+      Subscription:
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+
   MitreCtiTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -239,6 +249,10 @@ Outputs:
   Lookalike2AlgorithmS3:
     Condition: IsProd
     Value: !Ref Lookalike2AlgorithmS3Topic
+
+  Maxmind:
+    Condition: IsProd
+    Value: !Ref MaxmindTopic
 
   MitreCti:
     Condition: IsProd
