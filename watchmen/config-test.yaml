@@ -65,6 +65,10 @@ mothman:
   path_prefix: malspam
   mail_sources: forevermail,uscert
 
+niteowl:
+  github_token: AQICAHjgFSn/OLf0nqRgxqYgtITXps0RY6ItQKkRvwzM+g5SDgGRNZGrXzngBY20SwTA4gmEAAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDK7+T+li2pbrdzsCnAIBEIBDl0k617ys75djRoYyvMTrkv8W1SGUg37k58zPHcxQIdVWXp/AjY77cQZQfd0FeVDn7TdNy+Qr1zVBDkYB3+o2NSWV3Q==
+  targets: github_targets.yaml
+
 silhouette:
   bucket_name: cyber-intel
   path_prefix: analytics/lookalike2/prod/status/
