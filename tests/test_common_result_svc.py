@@ -16,6 +16,22 @@ class TestResultSvc(unittest.TestCase):
         """
         setup for test
         """
+        self.test_list = [{
+            "target": "Threatwave"
+        }, {
+            "target": "Psl"
+        }, {
+            "target": "Cyber-Intel Endpoints"
+        }, {
+            "target": "Generic"
+        }]
+        self.expected = [{
+            "target": "Threatwave"
+        }, {
+            "target": "Psl"
+        }, {
+            "target": "Cyber-Intel Endpoints"
+        }]
         self.test_result_list = [{
             "result": 1
         }, {
@@ -128,6 +144,46 @@ class TestResultSvc(unittest.TestCase):
         test_result = EnvironmentVarAlt
         expected = result_svc_obj._build_test_sns_topic()
         returned = result_svc_obj._get_sns_topic(test_result)
+        self.assertEqual(expected, returned)
+
+    def test_remove_generic(self):
+        """
+        test watchmen.common.result_svc :: ResultSvc :: remove_generic
+        """
+        class TestResult:
+            def __init__(self, val):
+                self.target = val['target']
+
+        results = [TestResult(result) for result in self.test_list]
+        result_svc_obj = ResultSvc(results)
+        test_returned = result_svc_obj._remove_generic(results)
+        returned = []
+        for test in test_returned:
+            result = test.__dict__
+            returned.append(result)
+        expected = self.expected
+        self.assertEqual(expected, returned)
+
+        # test exception
+        result_svc_obj = ResultSvc(self.test_list)
+        returned = result_svc_obj._remove_generic(self.test_list)
+        expected = None
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.common.result_svc.ResultSvc._remove_generic')
+    @patch('watchmen.common.storage_service.StorageService.save_results')
+    def test_save_results(self, mock_save_results, mock_remove_generic):
+        """
+        test watchmen.common.result_svc :: ResultSvc :: save_results
+        """
+        result_svc_obj = ResultSvc(self.test_list)
+        mock_remove_generic = self.test_list
+        result_svc_obj.save_results(mock_remove_generic)
+        mock_save_results.assert_called()
+
+        # test exception
+        returned = result_svc_obj.save_results(None)
+        expected = None
         self.assertEqual(expected, returned)
 
     @patch('watchmen.common.result_svc.ResultSvc._get_notifier')
