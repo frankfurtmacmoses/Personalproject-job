@@ -256,6 +256,7 @@ Resources:
         Environment:
           Variables:
             SNS_GENERICS3ATG: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
+            SNS_MAXMINDS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.Maxmind, !Ref 'AWS::NoValue' ]
             SNS_PSLS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.PslS3, !Ref 'AWS::NoValue']
             SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
@@ -407,6 +408,16 @@ Resources:
           - Id: RorschachWeeklyScheduler1030
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Weekly": "Mon,10:30"}}'
+    RorschachWeeklyScheduledEvent0800:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A Weekly event that kicks off the Rorschach Watchman at 08:00 AM every Tuesday
+        ScheduleExpression: cron(00 08 ? * TUE *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: RorschachWeeklyScheduler0800
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": {"Weekly": "Tue,08:00"}}'
     SilhouetteScheduledEvent:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -486,6 +497,13 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachWeeklyScheduledEvent1030.Arn
+    InvokeRorschachWeeklyLambdaPermission0800:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt RorschachWeeklyScheduledEvent0800.Arn
 
     InvokeSilhouetteLambdaPermission:
       Type: 'AWS::Lambda::Permission'

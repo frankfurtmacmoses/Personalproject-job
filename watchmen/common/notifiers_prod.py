@@ -136,5 +136,9 @@ SNS = {
   "Psl": {
       "notifier": "SnsNotifier",
       "sns": settings("sns.psls3")
+  },
+  "Maxmind": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.maxminds3")
   }
 }
