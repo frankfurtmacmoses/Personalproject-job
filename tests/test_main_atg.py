@@ -93,6 +93,26 @@ class MainAtgTester(unittest.TestCase):
         returned = main.start_mothman_watcher(self.event, self.context)
         self.assertEqual(expected, returned)
 
+    @patch('watchmen.process.niteowl.Niteowl')
+    @patch('watchmen.process.niteowl.Niteowl.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_niteowl_watcher(self, mock_alert, mock_monitor, mock_niteowl):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
+        returned = main.start_niteowl_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
+    @patch('watchmen.process.rorschach.Rorschach')
+    @patch('watchmen.process.rorschach.Rorschach.monitor')
+    @patch('watchmen.common.result_svc.ResultSvc.send_alert')
+    def test_start_rorschach_watcher(self, mock_alert, mock_monitor, mock_rorschach):
+        mock_monitor.return_value = self.example_result_list
+
+        expected = self.example_lambda_message + const.LINE_SEPARATOR
+        returned = main.start_rorschach_watcher(self.event, self.context)
+        self.assertEqual(expected, returned)
+
     @patch('watchmen.process.silhouette.Silhouette')
     @patch('watchmen.process.silhouette.Silhouette.monitor')
     @patch('watchmen.common.result_svc.ResultSvc.send_alert')
