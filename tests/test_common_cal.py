@@ -7,7 +7,7 @@ from watchmen.utils.logger import get_logger
 LOGGER = get_logger('watchmen.' + __name__)
 
 
-class TestJupiter(unittest.TestCase):
+class TestCal(unittest.TestCase):
 
     def setUp(self):
         self.example_today = '12/18/2019'
@@ -165,7 +165,7 @@ class TestJupiter(unittest.TestCase):
 
         }]
         # Remove christmas
-        year = 2027
+        year = 2021
         month = 12
         day = 25
 
@@ -218,3 +218,28 @@ class TestJupiter(unittest.TestCase):
             cal = InfobloxCalendar(start, end)
             years = [date.today().year]
             self.assertEqual(years, cal.year_range)
+
+    def test_find_weekday(self):
+        # Test for incorrect date type
+        cal = InfobloxCalendar(2019, 2030)
+        returned = cal._find_weekday("wrong")
+        expected = None
+        self.assertEqual(returned, expected)
+
+    def test_generate_infoblox_holidays(self):
+        import watchmen.common.cal as calendar
+        calendar.HOLIDAY_GOOD_FRIDAY = True
+        calendar.HOLIDAY_BEFORE_XMAS_EVE = True
+        calendar.HOLIDAY_FRIDAY_BEFORE_INDEPENDENCE_DAY = True
+        calendar.HOLIDAY_SPRING_BREAK_DAY = True
+        calendar.HOLIDAY_THURSDAY_BEFORE_INDEPENDENCE_DAY = True
+        cal = InfobloxCalendar(date.today().year, 3000)
+        years = [date.today().year]
+        self.assertEqual(years, cal.year_range)
+
+    def test_get_month(self):
+        # Test for incorrect date type
+        cal = InfobloxCalendar(2019, 2030)
+        returned = cal._get_month("wrong")
+        expected = None
+        self.assertEqual(returned, expected)
