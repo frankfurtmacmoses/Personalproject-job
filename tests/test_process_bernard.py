@@ -132,6 +132,15 @@ class TestBernard(unittest.TestCase):
                                                                      test.get("cluster_check_info"))
             self.assertEqual((test.get('expected')), returned)
 
+    def test_check_successful_cluster_termination_exception(self):
+        cluster = {
+            "input_status": {},
+            "cluster_check_info": {},
+        }
+        bernard = self._create_bernard()
+        returned = bernard._check_successful_cluster_termination(cluster, self.example_cluster_info)
+        self.assertEqual(None, returned)
+
     @patch('watchmen.process.bernard.traceback.format_exc')
     @patch("watchmen.process.bernard.datetime")
     def test_check_cluster_runtime(self, mock_datetime, mock_traceback):
@@ -246,6 +255,23 @@ class TestBernard(unittest.TestCase):
             returned, returned_msg = bernard_obj._load_clusters_to_check()
             self.assertEqual(expected, returned)
             self.assertTrue(expected_msg in returned_msg)
+
+    @patch('watchmen.process.bernard.get_content')
+    @patch('watchmen.process.bernard.raise_alarm')
+    def test_load_clusters_to_check_error(self, mock_alarm, mock_content):
+        # exception occurs
+        # Make the initial json.load() for the S3 file fail, as well as the nested json.loads() for the local file.
+        bernard_obj = self._create_bernard()
+        # mock_load.side_effect = exception
+        mock_content.side_effect = Exception()
+        mock_alarm.return_value = True
+        expected = ['cyberintel-mining-algorithms-prod',
+                    'CyberIntel Sinkhole Detector',
+                    'ParkingDomain_Miner',
+                    'CyberIntel CDN Detector',
+                    'CyberIntel Cryptocurrency Detector']
+        returned, returned_msg = bernard_obj._load_clusters_to_check()
+        self.assertEqual(expected, returned)
 
     @mock_emr
     @patch('boto3.client')
