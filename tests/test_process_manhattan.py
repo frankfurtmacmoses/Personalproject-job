@@ -122,17 +122,17 @@ class TestManhattan(unittest.TestCase):
             "no_metrics_feeds": self.example_no_metrics_feeds
         }
         self.example_result_dict = {
-                "details": self.example_fail_details,
-                "disable_notifier": False,
-                "dt_created": "2018-12-18T00:00:00+00:00",
-                "short_message": MESSAGES.get("failure_down_message"),
-                "result_id": 0,
-                "snapshot": self.example_snapshot,
-                "watchman_name": "Manhattan",
-                "state": "FAILURE",
-                "subject": self.example_fail_subject,
-                "success": False,
-                "target": TARGET,
+            "details": self.example_fail_details,
+            "disable_notifier": False,
+            "dt_created": "2018-12-18T00:00:00+00:00",
+            "short_message": MESSAGES.get("failure_down_message"),
+            "result_id": 0,
+            "snapshot": self.example_snapshot,
+            "watchman_name": "Manhattan",
+            "state": "FAILURE",
+            "subject": self.example_fail_subject,
+            "success": False,
+            "target": TARGET,
         }
         self.example_pager_result_dict = {
             "details": MESSAGES.get("failure_down_message"),
@@ -517,6 +517,15 @@ class TestManhattan(unittest.TestCase):
         returned = manhattan_obj._create_summary(stuck, bad, tb)
         self.assertEqual(expected, returned)
 
+    def test_create_tb_details(self):
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+        result = manhattan_obj._create_tb_details(self.example_traceback, self.example_traceback)
+        expected = \
+            MESSAGES.get("exception_details_start") + \
+            "\n\n* when finding bad feed: {}".format(self.example_traceback) + \
+            "\n\n* when finding stuck tasks: {}".format(self.example_traceback)
+        self.assertEqual(expected, result)
+
     @mock_sns
     @mock_ecs
     @patch('watchmen.process.manhattan.process_feeds_metrics')
@@ -611,24 +620,56 @@ class TestManhattan(unittest.TestCase):
             self.assertEqual(expected, returned)
             self.assertTrue(expected_msg in returned_msg)
 
+    @patch('watchmen.process.manhattan.json.loads')
+    @patch('watchmen.process.manhattan.get_content')
+    @patch('watchmen.process.manhattan.raise_alarm')
+    def test_load_feeds_to_check_error(self, mock_alarm, mock_content, mock_loads):
+        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+        mock_loads.return_value = self.example_json_file
+        mock_content.side_effect = Exception()
+        mock_alarm.return_value = True
+        expected = self.example_json_file
+        returned, returned_msg = manhattan_obj._load_feeds_to_check()
+        self.assertEqual(expected, returned)
+
     @patch('watchmen.process.manhattan.Manhattan._create_results')
     @patch('watchmen.process.manhattan.Manhattan._create_summary')
     @patch('watchmen.process.manhattan.Manhattan._create_tb_details')
     @patch('watchmen.process.manhattan.Manhattan._create_snapshot')
     @patch('watchmen.process.manhattan.Manhattan._find_bad_feeds')
     @patch('watchmen.process.manhattan.Manhattan._find_stuck_tasks')
-    def test_monitor(self, mock_stuck, mock_bad, mock_snapshot, mock_tb_details, mock_summary, mock_result):
+    @patch('watchmen.process.manhattan.Manhattan._create_invalid_event_results')
+    @patch('watchmen.process.manhattan.Manhattan._check_invalid_event')
+    def test_monitor(self, mock_invalid_event, mock_invalid_event_res, mock_stuck, mock_bad, mock_snapshot,
+                     mock_tb_details, mock_summary, mock_result):
         """
         test watchmen.model.manhattan :: Manhattan :: monitor
         """
-        manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
-        mock_stuck.return_value = self.example_stuck_tasks_with_tb
-        mock_bad.return_value = self.example_found_bad_feeds_with_tb
-        mock_snapshot.return_value = self.example_snapshot
-        mock_tb_details.return_value = self.example_tb_msg
-        mock_summary.return_value = self.example_summarized_result
-        mock_result.return_value = [self.example_result_dict, self.example_pager_result_dict]
+        tests = [
+            {
+                "invalid_event": True,
+                "invalid_result": [self.expected_invalid_event_email_result, self.expected_invalid_event_pager_result],
+                "expected": [self.expected_invalid_event_email_result, self.expected_invalid_event_pager_result]
+            },
+            {
+                "invalid_event": False,
+                "invalid_result": None,
+                "expected": [self.example_result_dict, self.example_pager_result_dict]
+            }
+        ]
 
-        expected = mock_result()
-        returned = manhattan_obj.monitor()
-        self.assertEqual(expected, returned)
+        for test in tests:
+            manhattan_obj = Manhattan(event=self.example_event_daily, context=None)
+            mock_invalid_event.return_value = test.get('invalid_event')
+            mock_stuck.return_value = self.example_stuck_tasks_with_tb
+            mock_bad.return_value = self.example_found_bad_feeds_with_tb
+            mock_snapshot.return_value = self.example_snapshot
+            mock_tb_details.return_value = self.example_tb_msg
+            mock_summary.return_value = self.example_summarized_result
+            if test.get("invalid_result"):
+                mock_invalid_event_res.return_value = test.get("invalid_result")
+            mock_result.return_value = test.get('expected')
+
+            expected = mock_result()
+            returned = manhattan_obj.monitor()
+            self.assertEqual(expected, returned)
