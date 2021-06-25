@@ -255,10 +255,23 @@ class TestMothman(unittest.TestCase):
             self.assertEqual(test['expected'], returned)
 
     def test_create_result_parameters(self):
+        parameters_fail = {
+            "details": self.details + '\n\n',
+            "disable_notifier": False,
+            "short_message": MESSAGES.get("failure_short_message"),
+            "state": "SUCCESS",
+            "subject": MESSAGES.get("failure_subject"),
+            "success": False,
+            "target": "Malspam MTA"
+        }
         tests = [
             {
                 'expected': self.parameters,
                 'files_check_info': [{"success": True, "details": self.details}]
+            },
+            {
+                'expected': parameters_fail,
+                'files_check_info': [{"success": None, "details": self.details}]
             }
         ]
         mothman_obj = self._create_mothman_obj()
