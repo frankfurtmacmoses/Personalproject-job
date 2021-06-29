@@ -66,6 +66,12 @@ class TestCal(unittest.TestCase):
             cal.add_holiday(holiday.get('year'), holiday.get('month'), holiday.get('day'))
             self.assertRaises(Exception)
 
+    def test__add_holiday_before_xmas_eve(self):
+        # Test for when Christmas eve is on a Sunday
+        expected = date(2017, 12, 22)
+        returned = InfobloxCalendar(2017, 2030)._add_holiday_before_xmas_eve()
+        self.assertEqual(expected, returned)
+
     def test_is_workday(self):
         dates = [{
             'year': 2019, 'month': 12, 'day': 18, 'expected': True,
