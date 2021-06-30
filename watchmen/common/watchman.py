@@ -39,11 +39,10 @@ class Watchman(metaclass=ABCMeta):
     def monitor(self) -> [Result]:
         """
         Each watchman must implement this method.
-        Otherwise it will cause the following error:
-            TypeError: Can't instantiate abstract class Watchman with abstract methods monitor
+        Otherwise it will cause the following error: NotImplementedError
 
         This method contains the monitoring process unique to each watchman.
 
         @return: <Result> result
         """
-        pass
+        raise NotImplementedError
