@@ -47,8 +47,12 @@ class StorageService:
             data = []  # data is a list used to store all the result objects.
             for result in results:
                 data.append(result.to_dict())
-            s3_prefix = FOLDER.format(NOW.strftime('%Y'), NOW.strftime('%m'), NOW.strftime('%d'), NOW.strftime('%Y-%m-%d%X.%f'))
+            s3_prefix = FOLDER.format(NOW.strftime('%Y'),
+                                      NOW.strftime('%m'),
+                                      NOW.strftime('%d'),
+                                      NOW.strftime('%Y-%m-%d%X.%f'))
             result_data = json.dumps(data, indent=4)  # data is converted to json form to get an organised output.
-            create_key(result_data, s3_prefix, bucket=bucket)
+            return create_key(result_data, s3_prefix, bucket=bucket)
         except Exception as ex:
             LOGGER.exception('{}'.format(ex))
+            return None
