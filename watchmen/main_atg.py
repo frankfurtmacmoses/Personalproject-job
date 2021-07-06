@@ -5,15 +5,6 @@
 @email: dhanshew@infoblox.com
 @created: 2018-07-23
 
-Refactored on 2019-11-07:
-@author: Michael Garcia
-@email: garciam@infoblox.com
-
-Refactored on 2020-06-29:
-@author: Laura Peaslee
-@email: lpeaslee@infoblox.com
-
-
 @note: this module includes entry points for AWS lambda functions.
        the Lambda functions are configured by cron schedules; however
        it can be triggered by e.g. RDS and/or S3 event.
@@ -69,6 +60,7 @@ def start_bernard_watcher(event, context):
     bernard = Bernard(event, context)
     results = bernard.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -81,6 +73,7 @@ def start_comedian_watcher(event, context):
     comedian = Comedian(event, context)
     results = comedian.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -93,6 +86,7 @@ def start_jupiter_watcher(event, context):
     jupiter = Jupiter(event, context)
     results = jupiter.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -105,6 +99,7 @@ def start_manhattan_watcher(event, context):
     manhattan = Manhattan(event, context)
     results = manhattan.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -117,6 +112,7 @@ def start_metropolis_watcher(event, context):
     metropolis = Metropolis(event, context)
     results = metropolis.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -129,6 +125,7 @@ def start_mothman_watcher(event, context):
     mothman = Mothman(event, context)
     results = mothman.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -141,6 +138,7 @@ def start_niteowl_watcher(event, context):
     niteowl = Niteowl(event, context)
     results = niteowl.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -153,6 +151,7 @@ def start_rorschach_watcher(event, context):
     rorschach = Rorschach(event, context)
     results = rorschach.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
 
@@ -165,5 +164,6 @@ def start_silhouette_watcher(event, context):
     silhouette = Silhouette(event, context)
     results = silhouette.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()

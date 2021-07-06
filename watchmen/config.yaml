@@ -79,6 +79,9 @@ result_svc:
   cyberintel: arn:aws:sns:{region}:{account_id}:WatchmenTest
   saas: arn:aws:sns:{region}:{account_id}:WatchmenTest
 
+storage_service:
+  s3_prefix: watchmen/results/{}/{}/{}/{}.json
+
 silhouette:
   bucket_name: cyber-intel
   path_prefix: analytics/lookalike2/prod/status/

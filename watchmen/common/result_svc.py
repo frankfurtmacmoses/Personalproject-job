@@ -5,8 +5,8 @@ and finds the correct notifiers to send alert messages.
 The sns topic for each target is in notifier.json in order for the ResultSvc class to work.
 In the future, sns topics will be in the config.yaml.
 
-@author: Jinchi Zhang
-@email: jzhang@infoblox.com
+@author: Saba Farheen
+@email: sfarheen@infoblox.com
 """
 # python imports
 import boto3
@@ -15,11 +15,14 @@ import traceback
 # watchmen imports
 from watchmen import const
 from watchmen.common.result import Result
+from watchmen.common.storage_service import StorageService
 from watchmen.config import settings
 from watchmen.utils.extension import convert_to_snake_case, get_class
 from watchmen.utils.logger import get_logger
 
+BUCKET = settings("BUCKET", "cyber-intel-test")
 ENVIRONMENT = settings("ENVIRONMENT", "test")
+GENERIC_TARGET_PREFIX = "Generic"
 LOGGER = get_logger('watchmen.' + __name__)
 NOTIFIER_DICTIONARY_NAME = "SNS"
 NOTIFIER_FILE_NAME = 'notifiers_{}'.format(ENVIRONMENT)
@@ -110,6 +113,38 @@ class ResultSvc:
         """
         notifier_file_path = NOTIFIER_MODEL_PREFIX + NOTIFIER_FILE_NAME
         return get_class(NOTIFIER_DICTIONARY_NAME, notifier_file_path)
+
+    @staticmethod
+    def _remove_generic(results):
+        """
+        For each Result in result list, check if the target of the result is a generic target.
+        This method removes the Result if it contains a generic target and returns the remaining non-generic results.
+        @param results: <list> Result Object.
+        @return: <Result> Non-Generic Result Object.
+        """
+        try:
+            for result in results:
+                target = result.target
+                if GENERIC_TARGET_PREFIX in target:
+                    results.remove(result)
+            return results
+
+        except Exception as ex:
+            LOGGER.exception('{}'.format(ex))
+
+    def save_results(self, results):
+        """
+        This method calls the remove_generic() method to remove the generic results.
+        The obtained non-generic result objects are then saved using save_results() method from StorageService class.
+        @param results: <list> Result Object.
+        """
+        try:
+            trimmed_results = self._remove_generic(results)
+            if trimmed_results:
+                storage_service = StorageService()
+                storage_service.save_results(trimmed_results, BUCKET)
+        except Exception as ex:
+            LOGGER.exception('{}'.format(ex))
 
     def send_alert(self):
         """

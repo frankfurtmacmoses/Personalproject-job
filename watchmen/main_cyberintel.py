@@ -52,5 +52,6 @@ def start_rorschach_watcher(event, context):
     rorschach = Rorschach(event, context)
     results = rorschach.monitor()
     result_svc = ResultSvc(results)
+    result_svc.save_results(results)
     result_svc.send_alert()
     return result_svc.create_lambda_message()
