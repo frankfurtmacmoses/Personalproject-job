@@ -181,11 +181,6 @@ class TestResultSvc(unittest.TestCase):
         result_svc_obj.save_results(mock_remove_generic)
         mock_save_results.assert_called()
 
-        # test exception
-        returned = result_svc_obj.save_results(None)
-        expected = None
-        self.assertEqual(expected, returned)
-
     @patch('watchmen.common.result_svc.ResultSvc._get_notifier')
     @patch('watchmen.common.result_svc.ResultSvc._get_sns_topic')
     def test_send_alert(self, mock_get_sns, mock_get_notifier):
