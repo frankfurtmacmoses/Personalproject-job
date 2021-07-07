@@ -28,13 +28,6 @@ DATA = [{
         "path": "v1/hancock/info",
         "format": "json",
         "keys_check": ["dbInfo"],
-    }, {
-        "name": "Sockeye Truth",
-        "calendar": "disabled",
-        "desc": "ThreatView application and REST API",
-        "path": "v1/truth/info",
-        "format": "json",
-        "keys_check": ["dbInfo"],
     }]
 }, {
     "name": "Sockeye NG (test)",
@@ -70,22 +63,6 @@ DATA = [{
         "path": "v1/truth/info",
         "format": "json",
         "keys_check": ["dbInfo"],
-    }]
-}, {
-    "name": "ThreatView (prod)",
-    "calendar": "disabled",
-    "path": "http://35.168.224.86/threatview",
-    "format": "html",
-    "routes": [{
-        "name": "ThreatView API (prod)",
-        "calendar": "disabled",
-        "path": "/rest/info",
-    }, {
-        "name": "ThreatView API spec (prod)",
-        "calendar": "disabled",
-        "path": "/rest/info",
-        "format": "text",
-        "regx": "ThreatView REST API",
     }]
 }, {
     "name": "ThreatView (test/ci-tac)",
