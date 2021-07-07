@@ -29,8 +29,10 @@ class StorageService:
 
     def save_results(self, results, bucket):
         """
-        This method is used to save the obtained result objects.
+        This method is used to save the obtained Result Objects.
+        @param results: <list> List of Result Objects to save
         @param bucket: <str> Name of the bucket to store the results.
+        @return: Dict containing S3 file metadata; otherwise, None upon exception
         """
         return self._save_to_s3(results, bucket)
 
@@ -42,6 +44,7 @@ class StorageService:
         Example file name: 2021-06-1606:13:07.102614.json
         @param results: <list> Result Object.
         @param bucket: <str> Name of the bucket to store the results.
+        @return: Dict containing newly create key metadata; otherwise, None upon exception
         """
         try:
             data = []  # data is a list used to store all the result objects.

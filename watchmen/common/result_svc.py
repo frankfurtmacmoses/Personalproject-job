@@ -119,8 +119,8 @@ class ResultSvc:
         """
         For each Result in result list, check if the target of the result is a generic target.
         This method removes the Result if it contains a generic target and returns the remaining non-generic results.
-        @param results: <list> Result Object.
-        @return: <Result> Non-Generic Result Object.
+        @param results: <list> Result Objects.
+        @return: <list> Non-Generic Result Objects; otherwise, None upon exception.
         """
         try:
             for result in results:
@@ -138,6 +138,7 @@ class ResultSvc:
         This method calls the remove_generic() method to remove the generic results.
         The obtained non-generic result objects are then saved using save_results() method from StorageService class.
         @param results: <list> Result Object.
+        @return: Dict containing storage metadata; otherwise, None upon exception
         """
         storage_service = StorageService()
 
