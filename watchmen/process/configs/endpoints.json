@@ -53,31 +53,6 @@
         "path": "v1/hancock/info",
         "format": "json",
         "keys_check": ["dbInfo"]
-    }, {
-        "name": "Sockeye Truth (test)",
-        "calendar": "enabled",
-        "desc": "ThreatView application and REST API",
-        "path": "v1/truth/info",
-        "format": "json",
-        "keys_check": ["dbInfo"]
-    }]
-}, {
-    "name": "ThreatView (test/ci-tac)",
-    "calendar": "enabled",
-    "path": "http://172.18.103.121/threatview",
-    "format": "html",
-    "routes": [{
-        "name": "ThreatView API (test/ci-tac),",
-        "calendar": "enabled",
-        "path": "/rest/info",
-        "format": "json",
-        "keys_check": ["dbInfo"]
-    }, {
-        "name": "ThreatView API spec (test/ci-tac)",
-        "calendar": "enabled",
-        "path": "/rest/info",
-        "format": "text",
-        "regx": "ThreatView REST API"
     }]
 }, {
     "name": "CyberIntel Services",
