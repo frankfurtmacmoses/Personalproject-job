@@ -35,6 +35,12 @@ class TestUniversalWatchman(unittest.TestCase):
                 "success": False,
                 "expected": self.example_subject_message,
                 "pager": self.example_pager_topic
+            },
+            {
+                "success": False,
+                "expected": self.example_subject_message,
+                "pager": self.example_pager_topic,
+                "pager_message": "test"
             }
         ]
 
@@ -42,6 +48,8 @@ class TestUniversalWatchman(unittest.TestCase):
             expected = test.get('expected')
             result = SummarizedResult(
                 success=test.get('success'), message=self.example_message_body, subject=self.example_subject_message)
+            if test.get('pager_message'):
+                result.result.update({"pager_message": test.get("pager_message")})
             returned = self.example_watchmen.notify(
                 res_dict=result, sns_topic=self.example_topic, pager_topic=test.get('pager'))
             self.assertEqual(expected, returned)

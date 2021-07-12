@@ -3,6 +3,7 @@ import unittest
 from datetime import datetime
 from mock import patch
 
+from watchmen import const
 from watchmen.process.metropolis import Metropolis
 from watchmen.process.metropolis import \
     DATA_FILE, \
@@ -251,6 +252,75 @@ class TestMetropolis(unittest.TestCase):
             self.assertIsNone(returned)
             self.assertTrue(expected_tb_msg in returned_tb)
 
+    @patch('watchmen.process.metropolis.Metropolis._check_against_threshold')
+    @patch('watchmen.process.metropolis.Metropolis._get_live_target_data')
+    @patch('watchmen.process.metropolis.Metropolis._create_details')
+    def test_check_all_sources(self, mock_details, mock_live_data, mock_check_threshold):
+        """
+        test watchmen.process.metropolis :: Metropolis :: _check_all_sources
+        """
+        result_success = {
+            'details': '',
+            'disable_notifier': True,
+            'dt_created': "2018-12-18T00:00:00+00:00",
+            'result_id': 0,
+            'short_message': MESSAGES.get('success_message'),
+            'snapshot': {},
+            'state': 'SUCCESS',
+            'subject': MESSAGES.get('success_subject').format('reap'),
+            'success': True,
+            'target': None,
+            'watchman_name': 'Metropolis'
+        }
+
+        result_no_success = {
+            'details': self.example_details + '\n' + const.MESSAGE_SEPARATOR + '\n',
+            'disable_notifier': False,
+            'dt_created': "2018-12-18T00:00:00+00:00",
+            'result_id': 0,
+            'short_message': MESSAGES.get('failure_message'),
+            'snapshot': {},
+            'state': self.example_state,
+            'subject': MESSAGES.get('failure_subject').format("reap"),
+            'success': False,
+            'target': None,
+            'watchman_name': 'Metropolis'
+        }
+
+        tests = [
+            {
+                "sources": [self.example_row_dict_for_unknown_source],
+                "generic_checks": [],
+                "generic_details": self.example_generic_result,
+                "mock_live_data": (True, ""),
+                "mock_check_threshold": (True, ""),
+                "mock_details": self.example_details,
+                "expected": (result_success, [True], self.example_generic_result)
+            },
+            {
+                "sources": [self.example_row_dict_for_unknown_source],
+                "generic_checks": [],
+                "generic_details": '',
+                "mock_live_data": (False, "test"),
+                "mock_check_threshold": (False, ""),
+                "mock_details": self.example_details,
+                "expected": (result_no_success, [False],
+                             self.example_details + '\n' + const.MESSAGE_SEPARATOR + '\n')
+            }
+        ]
+
+        test_metropolis = self._create_metropolis()
+        for test in tests:
+            mock_live_data.return_value = test.get('mock_live_data')
+            mock_check_threshold.return_value = test.get('mock_check_threshold')
+            mock_details.return_value = test.get('mock_details')
+            result, generic_checks, generic_details = test_metropolis._check_all_sources(test.get('sources'),
+                                                                                         test.get('generic_checks'),
+                                                                                         test.get('generic_details'))
+            result = result.to_dict()
+            result["dt_created"] = "2018-12-18T00:00:00+00:00"
+            self.assertEqual(test.get('expected'), (result, generic_checks, generic_details))
+
     def test_create_details(self):
         """
         test watchmen.process.metropolis :: Metropolis :: _create_details
@@ -366,6 +436,57 @@ class TestMetropolis(unittest.TestCase):
         returned_dict["dt_created"] = "2018-12-18T00:00:00+00:00"
 
         self.assertEqual(expected_dict, returned_dict)
+
+    def test_create_process_result(self):
+        result_success = {
+            'details': self.example_details,
+            'disable_notifier': True,
+            'dt_created': "2018-12-18T00:00:00+00:00",
+            'result_id': 0,
+            'short_message': MESSAGES.get('success_message'),
+            'snapshot': {},
+            'state': 'SUCCESS',
+            'subject': MESSAGES.get('success_subject').format('reap'),
+            'success': True,
+            'target': None,
+            'watchman_name': 'Metropolis'
+        }
+        result_exception = {
+            'details': self.example_details,
+            'disable_notifier': False,
+            'dt_created': "2018-12-18T00:00:00+00:00",
+            'result_id': 0,
+            'short_message': MESSAGES.get('exception_message'),
+            'snapshot': {},
+            'state': 'EXCEPTION',
+            'subject': MESSAGES.get('exception_subject').format("reap"),
+            'success': False,
+            'target': None,
+            'watchman_name': 'Metropolis'
+        }
+
+        tests = [
+            {
+                "process_name": "reap",
+                "process_checks": [True],
+                "process_details": self.example_details,
+                "expected": result_success
+            },
+            {
+                "process_name": "reap",
+                "process_checks": [None],
+                "process_details": self.example_details,
+                "expected": result_exception
+            }
+        ]
+        test_metropolis = self._create_metropolis()
+        for test in tests:
+            returned = test_metropolis._create_process_result(test.get('process_name'),
+                                                              test.get('process_checks'),
+                                                              test.get('process_details')).to_dict()
+            returned["dt_created"] = "2018-12-18T00:00:00+00:00"
+            expected = test.get('expected')
+            self.assertEqual(expected, returned)
 
     def test_create_result(self):
         """
@@ -497,14 +618,26 @@ class TestMetropolis(unittest.TestCase):
         """
         test watchmen.process.metropolis :: Metropolis :: monitor
         """
-        mock_read_csv.return_value = 'mock', 'mock'
-        mock_get_data_by_date.return_value = self.example_dict_list_with_rows
-        mock_create_result.side_effect = ['result1', 'result2']
-        mock_create_generic_result.return_value = self.example_generic_result
-        mock_rows_today.return_value = self.example_sources_per_process
-        expected = self.example_result_list
-        returned = self._create_metropolis().monitor()
-        self.assertEqual(expected, returned)
+        tests = [
+            {
+                "mock_rows": self.example_sources_per_process,
+                "expected": self.example_result_list
+            },
+            {
+                "mock_rows": {"process2": []},
+                "expected": [self.example_generic_result]
+            }
+        ]
+
+        for test in tests:
+            mock_read_csv.return_value = 'mock', 'mock'
+            mock_get_data_by_date.return_value = self.example_dict_list_with_rows
+            mock_create_result.side_effect = ['result1', 'result2']
+            mock_create_generic_result.return_value = self.example_generic_result
+            mock_rows_today.return_value = test.get("mock_rows")
+            expected = test.get("expected")
+            returned = self._create_metropolis().monitor()
+            self.assertEqual(expected, returned)
 
     @patch('watchmen.process.metropolis.get_csv_data')
     def test_monitor_exception(self, mock_get_csv_data):

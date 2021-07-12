@@ -1,9 +1,11 @@
 """
 test_common_api.py
 """
+import http
 import unittest
 
 from mock import MagicMock, patch
+from requests import exceptions as request_ex
 
 from watchmen.common.api import get_api_data
 from watchmen.utils.logger import get_logger
@@ -88,3 +90,21 @@ class CommonApiTester(unittest.TestCase):
             result, __ = get_api_data(self.api_url, self.headers)
             self.assertEqual(result, None)
         pass
+
+    @patch('watchmen.common.api.requests.get')
+    def test_api_errors(self, mock_response):
+        tests = [
+            {
+                "error": request_ex.Timeout(),
+                "expected": (None, http.client.REQUEST_TIMEOUT)
+            },
+            {
+                "error": Exception(),
+                "expected": (None, None)
+            }
+        ]
+        for test in tests:
+            mock_response.return_value = None
+            mock_response.side_effect = test.get('error')
+            result = get_api_data(self.api_url, self.headers)
+            self.assertEqual(test.get('expected'), result)

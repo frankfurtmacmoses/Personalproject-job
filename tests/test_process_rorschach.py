@@ -282,7 +282,7 @@ class TestRorschach(unittest.TestCase):
                     {
                         "bucket_name": "success_example",
                         "full_path": "path/{var}/file.json",
-                        "path_var": ["to"]
+                        "path_vars": ["to"]
                     }
                 ],
                 "mocks": {"mock_check_multiple_file_paths": ([], [])},
@@ -694,6 +694,12 @@ class TestRorschach(unittest.TestCase):
                 "file_return": ([], []),
                 "expected": ([], [])
 
+            },
+            {
+                "item": {},
+                "path_tag": "prefix",
+                "file_return": ([], []),
+                "expected": (['Item: {}\nException: Invalid path tag'], [])
             }
         ]
         for test in tests:
@@ -774,6 +780,24 @@ class TestRorschach(unittest.TestCase):
         expected_failure_strings = []
 
         returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(example_item)
+        self.assertEqual((expected_exception_strings, expected_failure_strings),
+                         (returned_exception_strings, returned_failure_strings))
+
+        # test for Trim contents failure
+        trimmable_item = {
+            "full_path": "example/bad/path/test.json",
+            "time_offset": 2,
+            "min_total_size_kb": 50,
+            "bucket_name": "example_bucket",
+            "offset_type": "Hourly"
+        }
+        time_now = datetime.datetime.now(pytz.utc).replace(second=0, microsecond=0)
+        date_range = "{} to {}".format(time_now.strftime('%m-%d-%y'), time_now.strftime('%m-%d-%y'))
+        mock_trim_contents.return_value = None
+        returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(trimmable_item)
+        expected_exception_strings = []
+        expected_failure_strings = [MESSAGES.get('failure_last_modified_date').
+                                    format(self.example_s3_prefix, date_range)]
         self.assertEqual((expected_exception_strings, expected_failure_strings),
                          (returned_exception_strings, returned_failure_strings))
 
@@ -1028,6 +1052,54 @@ class TestRorschach(unittest.TestCase):
         returned_dict, returned_tb = rorschach_obj._generate_contents(item)
         self.assertEqual(returned_dict, expected_dict)
 
+        # Test Max Items
+        max_item = {
+                "bucket_name": "bucket",
+                "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
+                "suffix": ".parquet",
+                "min_total_size_kb": 50,
+                'max_items': 0,
+                'offset_type': 'Daily'
+               }
+
+        expected = {'contents': [], 'count': 0, 's3_prefix': 's3://bucket/some/path/to/'}
+        mock_prefixes.return_value = ['some/path/to/'], None
+        mock_pages.return_value = {}
+        returned_dict, returned_tb = rorschach_obj._generate_contents(max_item)
+        self.assertEqual(returned_dict, expected)
+
+        # Test trim contents
+        max_item = {
+                "bucket_name": "bucket",
+                "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
+                "suffix": ".parquet",
+                "min_total_size_kb": 50,
+                'max_items': 1,
+                'offset_type': 'Hourly'
+               }
+
+        expected = {'contents': [], 'count': 0, 's3_prefix': 's3://bucket/some/path/to/'}
+        mock_prefixes.return_value = ['some/path/to/'], None
+        mock_pages.return_value = {}
+        returned_dict, returned_tb = rorschach_obj._generate_contents(max_item)
+        self.assertEqual(returned_dict, expected)
+
+        # Test whitelist
+        max_item = {
+                "bucket_name": "bucket",
+                "prefix": "dns-logs-others/customer=302886/year=%0Y/month=%0m/day=%0d/",
+                "suffix": ".parquet",
+                "min_total_size_kb": 50,
+                'max_items': 1,
+                'whitelist': 'test'
+               }
+
+        expected = {'contents': [], 'count': 0, 's3_prefix': 's3://bucket/some/path/to/'}
+        mock_prefixes.return_value = ['some/path/to/'], None
+        mock_pages.return_value = {}
+        returned_dict, returned_tb = rorschach_obj._generate_contents(max_item)
+        self.assertEqual(returned_dict, expected)
+
     def test_generate_key(self):
         """
         test watchmen.process.rorschach :: Rorschach :: _generate_key
@@ -1080,6 +1152,11 @@ class TestRorschach(unittest.TestCase):
         returned, returned_tb = rorschach_obj._generate_key(None, None)
         self.assertEqual(expected, returned)
         self.assertTrue(expected_tb in returned_tb)
+
+        # Test exception while generating key:
+        expected, expected_tb = None, 'Traceback'
+        returned, returned_tb = rorschach_obj._generate_prefixes(None, None)
+        self.assertEqual(expected, returned)
 
     @patch('builtins.open', new_callable=mock_open())
     @patch('watchmen.process.rorschach.yaml.load')
@@ -1205,6 +1282,22 @@ class TestRorschach(unittest.TestCase):
             expected = target_example.get("processed_targets")
             returned = rorschach_obj._process_checking([target_example])
             self.assertEqual(expected, returned)
+
+        # Check Bucket exception
+        mocks = self.process_checking_examples[0].get("mocks")
+        mock_bucket_check.return_value = (True, self.example_traceback)
+        mock_single_file_check.return_value = mocks.get("mock_single_file_check", ([], []))
+        mock_multiple_files_check.return_value = mocks.get("mock_multiple_files_check", ([], []))
+
+        expected = {"target 1": {
+                    "success": None,
+                    "exception_strings": [MESSAGES.get("exception_string_format").format(
+                        {'bucket_name': "bad_bucket_example"},
+                        self.example_traceback)],
+                    "failure_strings": []
+                    }}
+        returned = rorschach_obj._process_checking([self.process_checking_examples[0]])
+        self.assertEqual(expected, returned)
 
     def test_remove_whitelisted_files_from_contents(self):
         """

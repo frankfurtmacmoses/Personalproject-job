@@ -114,7 +114,7 @@ class InfobloxCalendar(object):
         """
         for key, value in dict(self.holiday_list).items():
             if value == "Christmas Eve":
-                if key.weekday == 6:
+                if key.weekday() == 6:
                     day_before = key - timedelta(days=2)
                 else:
                     day_before = key - timedelta(days=1)

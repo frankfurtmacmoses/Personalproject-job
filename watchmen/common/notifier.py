@@ -19,15 +19,14 @@ class Notifier(metaclass=ABCMeta):
         """
         Constructor of Notifier interface.
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def notify(self, topic=str):
         """
         Each notifier must implement this method.
-        Otherwise it will cause the following error:
-        TypeError: Can't instantiate abstract class Notifier with abstract methods notify
+        Otherwise it will cause the following error: NotImplementedError
 
         @param topic: <str> the topic arn to be notified.
         """
-        pass
+        raise NotImplementedError
