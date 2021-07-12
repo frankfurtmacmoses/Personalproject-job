@@ -29,8 +29,10 @@ class StorageService:
 
     def save_results(self, results, bucket):
         """
-        This method is used to save the obtained result objects.
+        This method is used to save the obtained Result Objects.
+        @param results: <list> List of Result Objects to save
         @param bucket: <str> Name of the bucket to store the results.
+        @return: Dict containing S3 file metadata; otherwise, None upon exception
         """
         return self._save_to_s3(results, bucket)
 
@@ -42,13 +44,18 @@ class StorageService:
         Example file name: 2021-06-1606:13:07.102614.json
         @param results: <list> Result Object.
         @param bucket: <str> Name of the bucket to store the results.
+        @return: Dict containing newly create key metadata; otherwise, None upon exception
         """
         try:
             data = []  # data is a list used to store all the result objects.
             for result in results:
                 data.append(result.to_dict())
-            s3_prefix = FOLDER.format(NOW.strftime('%Y'), NOW.strftime('%m'), NOW.strftime('%d'), NOW.strftime('%Y-%m-%d%X.%f'))
+            s3_prefix = FOLDER.format(NOW.strftime('%Y'),
+                                      NOW.strftime('%m'),
+                                      NOW.strftime('%d'),
+                                      NOW.strftime('%Y-%m-%d%X.%f'))
             result_data = json.dumps(data, indent=4)  # data is converted to json form to get an organised output.
-            create_key(result_data, s3_prefix, bucket=bucket)
+            return create_key(result_data, s3_prefix, bucket=bucket)
         except Exception as ex:
             LOGGER.exception('{}'.format(ex))
+            return None

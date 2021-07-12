@@ -119,8 +119,8 @@ class ResultSvc:
         """
         For each Result in result list, check if the target of the result is a generic target.
         This method removes the Result if it contains a generic target and returns the remaining non-generic results.
-        @param results: <list> Result Object.
-        @return: <Result> Non-Generic Result Object.
+        @param results: <list> Result Objects.
+        @return: <list> Non-Generic Result Objects; otherwise, None upon exception.
         """
         try:
             for result in results:
@@ -131,20 +131,27 @@ class ResultSvc:
 
         except Exception as ex:
             LOGGER.exception('{}'.format(ex))
+            return None
 
     def save_results(self, results):
         """
         This method calls the remove_generic() method to remove the generic results.
         The obtained non-generic result objects are then saved using save_results() method from StorageService class.
         @param results: <list> Result Object.
+        @return: Dict containing storage metadata; otherwise, None upon exception
         """
+        storage_service = StorageService()
+
         try:
             trimmed_results = self._remove_generic(results)
             if trimmed_results:
-                storage_service = StorageService()
-                storage_service.save_results(trimmed_results, BUCKET)
+                return storage_service.save_results(trimmed_results, BUCKET)
+            # At the moment, it is better to save bad and/or redundant results than no results when removing
+            # generic errors out. Our queries to S3 can be smart enough to handle this.
+            return storage_service.save_results(results, BUCKET)
         except Exception as ex:
             LOGGER.exception('{}'.format(ex))
+            return None
 
     def send_alert(self):
         """
