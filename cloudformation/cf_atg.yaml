@@ -526,12 +526,12 @@ Resources:
               Resource:
                 - !Sub 'arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:${SNSPrefix}*'
             - Effect: Allow
-                Action:
-                  - 's3:PutObject'
-                Resource:
-                  - !Sub
-                    - 'arn:${AWS::Partition}:s3:::${s3_bucket}/watchmen/results/*'
-                    - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
+              Action:
+                - 's3:PutObject'
+              Resource:
+                - !Sub
+                  - 'arn:${AWS::Partition}:s3:::${s3_bucket}/watchmen/results/*'
+                  - { s3_bucket: !FindInMap [EnvMap, !Ref 'Env', 'Bucket'] }
 
     BernardLambdaExecutionRole:
       Type: 'AWS::IAM::Role'
