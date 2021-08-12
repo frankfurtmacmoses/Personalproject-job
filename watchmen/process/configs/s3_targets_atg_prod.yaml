@@ -8,6 +8,13 @@ Minutely:
           time_offset : 10
           min_total_files : 1
 
+Hourly:
+  '59':
+    - target_name: FedPhish
+      items:
+      - bucket_name: cyber-intel
+        full_path: malspam/fedphish/reports/year=%0Y/month=%0m/day=%0d/hour=%H/fedphishreport.json
+
 Weekly:
   'Mon':
     '10:30':
