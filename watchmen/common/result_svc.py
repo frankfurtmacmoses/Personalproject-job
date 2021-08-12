@@ -20,7 +20,7 @@ from watchmen.config import settings
 from watchmen.utils.extension import convert_to_snake_case, get_class
 from watchmen.utils.logger import get_logger
 
-BUCKET = settings("BUCKET", "cyber-intel-test")
+BUCKET = settings('STORAGE_BUCKET')
 ENVIRONMENT = settings("ENVIRONMENT", "test")
 GENERIC_TARGET_PREFIX = "Generic"
 LOGGER = get_logger('watchmen.' + __name__)
