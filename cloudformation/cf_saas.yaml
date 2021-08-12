@@ -46,6 +46,7 @@ Resources:
           SNS_GENERICS3SAAS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Saas, !Ref 'AWS::NoValue']
           SNS_NEWLYOBSERVEDDATA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.NewlyObservedData, !Ref 'AWS::NoValue']
           SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
+          STORAGE_BUCKET: !FindInMap [EnvMap, !Ref 'Env', 'Bucket']
           ENVIRONMENT: !Ref Env
           ACCOUNT: !Ref Account
           TARGET_ACCOUNT: saas   # This is necessary in order to find the correct targets file. Definitely hacky.
