@@ -393,11 +393,11 @@ Resources:
     RorschachMinutelyScheduledEvent10:
       Type: 'AWS::Events::Rule'
       Properties:
-        Description: A Miutely event that kicks off the Rorschach Watchman every 10 minutes
+        Description: A Minutely event that kicks off the Rorschach Watchman every 10 minutes
         ScheduleExpression: cron(0/10 * * * ? *)
         State: !If [ IsProd, ENABLED, DISABLED ]
         Targets:
-          - Id: RorschachMinuteyScheduler10
+          - Id: RorschachMinutelyScheduler10
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Minutely": "00"}}'
     RorschachHourlyScheduledEvent59:
