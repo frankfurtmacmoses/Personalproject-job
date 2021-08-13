@@ -116,6 +116,16 @@ Resources:
         - Endpoint: chkim@infoblox.com
           Protocol: email
 
+  MsisacTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: MSISAC
+      TopicName: !Sub ${SNSPrefix}Msisac
+      Subscription:
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+
   PslTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -257,6 +267,10 @@ Outputs:
   MitreCti:
     Condition: IsProd
     Value: !Ref MitreCtiTopic
+
+  Msisac:
+    Condition: IsProd
+    Value: !Ref MsisacTopic
 
   PslS3:
     Condition: IsProd

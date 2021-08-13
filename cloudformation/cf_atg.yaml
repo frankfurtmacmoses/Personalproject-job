@@ -257,6 +257,7 @@ Resources:
           Variables:
             SNS_GENERICS3ATG: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
             SNS_MAXMINDS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.Maxmind, !Ref 'AWS::NoValue' ]
+            SNS_MSISACS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.Msisac, !Ref 'AWS::NoValue' ]
             SNS_PSLS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.PslS3, !Ref 'AWS::NoValue']
             SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
