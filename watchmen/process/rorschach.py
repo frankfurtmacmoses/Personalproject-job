@@ -307,7 +307,8 @@ class Rorschach(Watchman):
             if not contents:
                 end_time = _datetime.datetime.now(pytz.utc).replace(second=0, microsecond=0)
                 start_time = end_time - _datetime.timedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
-                date_range = "{} to {}".format(start_time.strftime('%m-%d-%y'), end_time.strftime('%m-%d-%y'))
+                date_range = "{} to {}".format(start_time.strftime('%M-%H-%d-%m-%y'),
+                                               end_time.strftime('%M-%H-%d-%m-%y'))
                 failure_strings.append(MESSAGES.get('failure_last_modified_date').format(s3_key, date_range))
                 return exception_strings, failure_strings
 
