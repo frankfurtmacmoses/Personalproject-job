@@ -73,6 +73,18 @@ niteowl:
   github_token: AQICAHjgFSn/OLf0nqRgxqYgtITXps0RY6ItQKkRvwzM+g5SDgGRNZGrXzngBY20SwTA4gmEAAAAhzCBhAYJKoZIhvcNAQcGoHcwdQIBADBwBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDK7+T+li2pbrdzsCnAIBEIBDl0k617ys75djRoYyvMTrkv8W1SGUg37k58zPHcxQIdVWXp/AjY77cQZQfd0FeVDn7TdNy+Qr1zVBDkYB3+o2NSWV3Q==
   targets: github_targets.yaml
 
+ozymandias:
+  ##Pointing to dremio core api to be called
+  URL:
+    ROOT_URL: https://dremio-dev.test.infoblox.com:9047
+    LOGIN_URL: /apiv2/login
+    REFLECTION_URL: /api/v3/reflection
+    ## secrete arn
+    dremio_secret: arn:aws:secretsmanager:us-east-1:902917483333:secret:pat-dremio_dev_admin-reflection_refresh-UjWnqc
+    targets: dremio_targets.yaml
+
+
+
 result_svc:
   default: arn:aws:sns:{region}:{account_id}:WatchmenTest
   atg: arn:aws:sns:{region}:{account_id}:Watchmen_Test
