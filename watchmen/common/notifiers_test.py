@@ -148,5 +148,9 @@ SNS = {
   "Maxmind": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
+  },
+  "MSISAC": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
   }
 }

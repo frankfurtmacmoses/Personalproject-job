@@ -38,3 +38,11 @@ Weekly:
           - bucket_name: cyber-intel
             full_path: maxmind/isp/unprocessed/year=%0Y/maxmind_isp.tar.gz
             time_offset: 1
+
+  'Wed':
+    '00:00':
+      - target_name: MSISAC
+        items:
+          - bucket_name: cyber-intel
+            prefix: msisac/needreview/unprocessed/year=%0Y/month=%0m/
+            min_total_files: 1
