@@ -35,7 +35,7 @@ EVENT_OFFSET_PAIR = {DAILY: 'days'}
 GENERIC_TARGET = 'Generic Github {}'.format(TARGET_ACCOUNT)
 
 
-class Niteowl(Watchman):
+class Ozymandias(Watchman):
 
     def __init__(self, event, context):
         """

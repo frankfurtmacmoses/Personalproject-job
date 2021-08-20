@@ -10,7 +10,6 @@ Note: A regular authenticated request (with a token):
 @author Olawole Frankfurt Ogunfunminiyi
 @email oogunfunminiyi@infoblox.com
 """
-
 import logging
 import boto3
 import boto3.session
@@ -24,8 +23,8 @@ import json
 from watchmen import const
 
 dremioServer = 'dremio-dev.test.infoblox.com:9047'
-dremio_sql_url = f"https://{dremioServer}/api/v3/sql"
-dremio_job_url = f"https://{dremioServer}/api/v3/job"
+##dremio_sql_url = f"https://{dremioServer}/api/v3/sql"
+##dremio_job_url = f"https://{dremioServer}/api/v3/job"
 reflection_url = f"https://{dremioServer}/api/v3/reflection"
 dremio_login_url = f"https://{dremioServer}/apiv2/login"
 
@@ -85,11 +84,12 @@ def pull_reflection_basic_info(response):
     elements = json.loads(response)
     for element in elements['data']:
         reflection_id, reflection_name = element['id'], element['name']
-        reflection_info.append(reflection_id, reflection_name)
-        """
-        return list of reflections with id and name
-        """
-        return reflection_info
+        if not (str(reflection_name)).startswith('tmp'):
+            reflection_info.append(reflection_id, reflection_name)
+            """
+                return list of reflections with id and name
+                """
+            return reflection_info
 
 
 def pull_reflection_status(response):
@@ -110,6 +110,7 @@ def pull_reflection_status(response):
 
 
 def get_secret(secret_name, region_name):
+    ## Get secret name and region in config  from Ozymandias Class
     '''
     Common library for utility functions
 
@@ -144,3 +145,27 @@ def get_secret(secret_name, region_name):
     return secret
 
 
+def generate_auth_token():
+    """
+        Generates the auth token for communication with Dremio
+
+         return '_dremiohliaml16hn9m99qpi1d6ungcs'
+            """
+    headers = {
+        'Content-Type': "application/json",
+        'cache-control': "no-cache"
+    }
+
+    response = requests.post(dremio_login_url,
+                             json={"userName": self.user_name,  ## replace with config settings
+                                   "password": self.secret_value},  ## re
+                             headers=headers)
+
+    logging.info(f" Response from Dremio Generate Token {str(response)}")
+
+    # Grab authorization token from response
+    # Grab authorization token from response
+    if 'token' in response.json():
+        return "_dremio" + response.json()['token']
+
+    return None
