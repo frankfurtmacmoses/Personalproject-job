@@ -125,6 +125,7 @@ function deploy_stack() {
   local _cli_="aws cloudformation ${_cmd_}-stack
     --capabilities CAPABILITY_NAMED_IAM
     --stack-name ${CF_STACK_NAME}
+    --cli-input-json file://${deploy_path}/config/${_acct_}/${_env_}.json
     --parameters ParameterKey=Env,ParameterValue=${_env_} ParameterKey=Account,ParameterValue=${_acct_} ParameterKey=BuildsPrefix,ParameterValue=${aws_s3_path}
     --template-body file://${_yml_}
 "
