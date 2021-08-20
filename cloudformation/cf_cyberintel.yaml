@@ -34,6 +34,7 @@ Resources:
         Variables:
           ENVIRONMENT: !Ref Env
           ACCOUNT: !Ref Account
+          STORAGE_BUCKET: !FindInMap [EnvMap, !Ref 'Env', 'Bucket']
           TARGET_ACCOUNT: cyberintel   # This is necessary in order to find the correct targets file. Definitely hacky.
       Handler: watchmen.main_cyberintel.start_rorschach_watcher
       MemorySize: 256
