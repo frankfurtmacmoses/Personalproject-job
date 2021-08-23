@@ -73,8 +73,8 @@ def start_comedian_watcher(event, context):
     comedian = Comedian(event, context)
     results = comedian.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
 
 
@@ -86,8 +86,8 @@ def start_jupiter_watcher(event, context):
     jupiter = Jupiter(event, context)
     results = jupiter.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
 
 
@@ -99,8 +99,8 @@ def start_manhattan_watcher(event, context):
     manhattan = Manhattan(event, context)
     results = manhattan.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
 
 
@@ -112,8 +112,8 @@ def start_metropolis_watcher(event, context):
     metropolis = Metropolis(event, context)
     results = metropolis.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
 
 
@@ -125,8 +125,8 @@ def start_mothman_watcher(event, context):
     mothman = Mothman(event, context)
     results = mothman.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
 
 
@@ -138,8 +138,8 @@ def start_niteowl_watcher(event, context):
     niteowl = Niteowl(event, context)
     results = niteowl.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
 
 
@@ -151,8 +151,8 @@ def start_rorschach_watcher(event, context):
     rorschach = Rorschach(event, context)
     results = rorschach.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
 
 
@@ -164,6 +164,6 @@ def start_silhouette_watcher(event, context):
     silhouette = Silhouette(event, context)
     results = silhouette.monitor()
     result_svc = ResultSvc(results)
-    result_svc.save_results(results)
     result_svc.send_alert()
+    result_svc.save_results(results)
     return result_svc.create_lambda_message()
