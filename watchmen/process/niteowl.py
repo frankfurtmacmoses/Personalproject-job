@@ -169,7 +169,8 @@ class Niteowl(Watchman):
 
         return details
 
-    def _create_invalid_event_result(self):
+
+    def _create_invalid_event_result(self): ## Very important
         """
         Creates a result object for if the event type is invalid
         :return: <list> A Result object for an invalid event type

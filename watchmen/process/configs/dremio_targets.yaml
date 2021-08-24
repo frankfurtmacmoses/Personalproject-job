@@ -1,16 +1,6 @@
-reflection_lists:
-      9903b763-c724-4602-9d5f-a7077d12daac: tmp_s3_counters_30days_raw1
-      923909d9-ced0-4321-afdb-8c5a437c978a: s3_dhcplease_30days_raw1
-      ff5109cb-67eb-4d63-af1c-c4a5934d2ceb: s3_counters_30days_raw1
-      7163425b-69e5-44ba-bf0b-d576965f9332: s3_ddi_dns_cz_30days_raw1
-      b4275942-82a2-410a-938f-230d6f3fbcc9: Aggregation Reflection
-      89c30a22-2e8f-41a0-8f6e-1c96fb9b1ba0: tmp_s3_dhcplease_fingerprint_raw1
-      aa1f8176-6383-4f85-8c16-c2e0cc40c589: tmp_s3_dhcplease_fingerprint_dns_raw1
-      bdcf978c-d36c-4f89-ae7e-ef9ab322d0ba: s3_dhcplease_fingerprint_raw1
-      6a096b6d-87c2-477d-9384-fc9d2336fb84: Aggregation Reflection
-      e1890589-31e1-4333-bbd5-fa5a306009b9: s3_dns_history_0106_raw1
-      4c988327-e277-4d1b-82d0-e9763b14e9d4: s3_dhcplease_fingerprint_dns
+
   ## Other thresholds can be added here
-  thresholds:
-    - reflections:
-        refresh_threshold: 60 #minutes
+
+reflections:
+
+  - refresh_threshold: 60 #minutes

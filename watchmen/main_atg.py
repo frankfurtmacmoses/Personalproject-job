@@ -143,6 +143,18 @@ def start_niteowl_watcher(event, context):
     return result_svc.create_lambda_message()
 
 
+def start_niteowl_watcher(event, context):
+    """
+    Start niteowl watcher to monitor changes made in github repos.
+    :return: The context that the code is being run in.
+    """
+    niteowl = Niteowl(event, context)
+    results = niteowl.monitor()
+    result_svc = ResultSvc(results)
+    result_svc.save_results(results)
+    result_svc.send_alert()
+    return result_svc.create_lambda_message()
+
 def start_rorschach_watcher(event, context):
     """
     Start the rorschach watcher for parquet data in S3.

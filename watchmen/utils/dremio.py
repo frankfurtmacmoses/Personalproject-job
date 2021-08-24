@@ -20,13 +20,9 @@ import requests
 import traceback
 import logging
 import json
-from watchmen import const
 
-dremioServer = 'dremio-dev.test.infoblox.com:9047'
-##dremio_sql_url = f"https://{dremioServer}/api/v3/sql"
-##dremio_job_url = f"https://{dremioServer}/api/v3/job"
-reflection_url = f"https://{dremioServer}/api/v3/reflection"
-dremio_login_url = f"https://{dremioServer}/apiv2/login"
+
+##from watchmen import const
 
 
 def fetch_reflection_metadata(token, reflection_list, reflection_url):
@@ -87,7 +83,8 @@ def pull_reflection_basic_info(response):
         if not (str(reflection_name)).startswith('tmp'):
             reflection_info.append(reflection_id, reflection_name)
             """
-                return list of reflections with id and name
+                return turple of reflections with id and name
+                Check for how long reflection list take 
                 """
             return reflection_info
 
@@ -169,3 +166,18 @@ def generate_auth_token():
         return "_dremio" + response.json()['token']
 
     return None
+
+
+def main() -> object:
+    import pdb; pdb.set_trace()
+    logging.basicConfig(filename='myapp.log', level=logging.INFO)
+    logging.info('Started')
+    print("Running main")
+    logging.info('Finished')
+
+
+if __name__ == '__main__':
+    """
+    Put code to test dremio here
+    """
+main()

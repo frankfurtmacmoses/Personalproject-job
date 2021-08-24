@@ -75,15 +75,12 @@ niteowl:
 
 ozymandias:
   ##Pointing to dremio core api to be called
-  URL:
     ROOT_URL: https://dremio-dev.test.infoblox.com:9047
     LOGIN_URL: /apiv2/login
     REFLECTION_URL: /api/v3/reflection
-    ## secrete arn
     dremio_secret: arn:aws:secretsmanager:us-east-1:902917483333:secret:pat-dremio_dev_admin-reflection_refresh-UjWnqc
+    ## secrete arn
     targets: dremio_targets.yaml
-
-
 
 result_svc:
   default: arn:aws:sns:{region}:{account_id}:WatchmenTest
