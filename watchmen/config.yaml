@@ -79,8 +79,13 @@ ozymandias:
     LOGIN_URL: /apiv2/login
     REFLECTION_URL: /api/v3/reflection
     dremio_secret: arn:aws:secretsmanager:us-east-1:902917483333:secret:pat-dremio_dev_admin-reflection_refresh-UjWnqc
+
     ## secrete arn
-    targets: dremio_targets.yaml
+    targets:
+      region: us-east-1
+      account: atg
+      user_name: 'dremio_dev_admin'
+
 
 result_svc:
   default: arn:aws:sns:{region}:{account_id}:WatchmenTest

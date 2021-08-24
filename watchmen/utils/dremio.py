@@ -32,7 +32,7 @@ def fetch_reflection_metadata(token, reflection_list, reflection_url):
     reflections_status = []
     for reflection in reflection_list:
         reflection_id = reflection[id]
-        logging.info(reflection_url / {reflection_id})
+        logging.info(reflection_url/f'{reflection_id}')
         headers = {
             'Authorization': token,
             'Content-Type': "application/json",
@@ -43,7 +43,7 @@ def fetch_reflection_metadata(token, reflection_list, reflection_url):
         result = _pull_reflection_status(response)
         reflections_status.append(result)
         """
-        Dictionary of : 
+        Dictionary of : status
         """
     return reflections_status
 
@@ -137,7 +137,7 @@ def get_secret(secret_name, region_name):
     return secret
 
 
-def generate_auth_token():
+def generate_auth_token(user_name):
     """
         Generates the auth token for communication with Dremio
 

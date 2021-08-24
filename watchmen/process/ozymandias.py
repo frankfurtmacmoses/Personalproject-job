@@ -26,9 +26,10 @@ CONFIG_NAME = settings('ozymandias.targets')
 SECRETE = settings('ozymandia.dremio_secret')
 ROOT_URL = settings('ozymandia.ROOT_URL')
 LOGIN_URL = settings('ozymandia.LOGIN_URL')
-REFLECTION_URL = ('ozymandia.REFLECTION_URL')
+REFLECTION_URL = settings('ozymandia.REFLECTION_URL')
 MESSAGES = messages.OZYMANDIAS
-TARGET_ACCOUNT = settings("TARGET_ACCOUNT", "atg")
+REGION = settings("ozymandia.targets.region")
+user_name = settings("ozymandia.targets.region")
 
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
@@ -69,26 +70,27 @@ class Ozymandias(Watchman):
         :param processed_target: <dict> A dictionary of the target name with any failures or exceptions that occurred
         :return: <str> A details string for the target with information from the checks performed
         """
-        target_name = processed_target.get('target_name')
+        secret = dremio.get_secret(SECRETE, REGION)
+        token = dremio.generate_auth_token(user_name)
+        reflection_list = dremio.get_reflection_list(token, REFLECTION_URL)
 
-        if processed_target.get('success'):
-            return MESSAGES.get("success_details").format(target_name)
-
-        details = ''
-        if processed_target.get("exception_strings"):
-            all_exceptions_string = "\n\n".join(processed_target.get("exception_strings"))
-            details += MESSAGES.get("exception_details").format(target_name, all_exceptions_string) + "\n\n"
-
-        if processed_target.get('new_changes_strings'):
-            all_changes_string = "\n\n".join(processed_target.get("new_changes_strings"))
-            details += MESSAGES.get("change_detected_details").format(target_name, all_changes_string) + "\n\n"
-
-        return details
-
+        reflection_result = dremio.fetch_reflection_metadata(token, reflection_list, REFLECTION_URL)
+        """
+        Return list containing dictionary of reflection result
+         Get information about single reflection and return ->  "status": {
+        "config": "OK",
+        "refresh": "SCHEDULED",
+        "availability": "AVAILABLE",
+        "combinedStatus": "CAN_ACCELERATE",
+        "failureCount": 0,
+        "lastDataFetch": "2021-08-16T20:55:58.311Z",
+        "expiresAt": "2021-08-16T23:55:58.311Z"
+                                 }   
+        """
     def _create_results(self, summary_parameters):
         """
-        This creates result objects for each of the summary parameters and a generic result for all of them. These will
-        then be sent to subscribers of the corresponding sns topics.
+        This creates result objects for each of the failed reflections from generic result .
+        These will then be sent to subscribers of the corresponding sns topics.
         :param summary_parameters: <list<dict>>  The parameters needed to make each Result object.
         :return: <list> Result objects for each summary parameter, as well as a generic result object that represents
             all results.
@@ -124,7 +126,7 @@ class Ozymandias(Watchman):
 
     def _create_generic_result(self, change_detected, exception, details):
         """
-        This creates the generic result object which contains information from all checks performed for all targets.
+        This creates the generic result for all tested reflections - both failled  and passed
         :param change_detected: <bool> True if there was a change detected during a github check
         :param exception: <bool> True if an exception occurred during a github check
         :param details: <str> A string with all the messages generated from each check
