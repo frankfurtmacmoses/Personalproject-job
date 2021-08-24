@@ -22,9 +22,6 @@ import logging
 import json
 
 
-##from watchmen import const
-
-
 def fetch_reflection_metadata(token, reflection_list, reflection_url):
     """     Send get request to reflection  by id in a loop
             and append the result to a list
@@ -43,13 +40,29 @@ def fetch_reflection_metadata(token, reflection_list, reflection_url):
         }
         response = requests.get(reflection_url / f'{reflection_id}', headers=headers)
         logging.info(f"Response from Dremio reflection metadata{str(response)}")
-        result = pull_reflection_status(response)
+        result = _pull_reflection_status(response)
         reflections_status.append(result)
         """
         Dictionary of : 
         """
-        return reflections_status
+    return reflections_status
 
+
+def _pull_reflection_status(response):
+    """
+     Get information about single reflection and return ->  "status": {
+        "config": "OK",
+        "refresh": "SCHEDULED",
+        "availability": "AVAILABLE",
+        "combinedStatus": "CAN_ACCELERATE",
+        "failureCount": 0,
+        "lastDataFetch": "2021-08-16T20:55:58.311Z",
+        "expiresAt": "2021-08-16T23:55:58.311Z"
+      }
+    """
+    elements = json.loads(response)
+    status = elements['data']['status']
+    return status
 
 def get_reflection_list(token, reflection_url):
     """     Send get request to reflection   asset by id
@@ -66,11 +79,11 @@ def get_reflection_list(token, reflection_url):
     }
     response = requests.get(reflection_url, headers=headers)
     logging.info(f"Response from Dremio reflection metadata{str(response)}")
-    reflection_list = pull_reflection_basic_info(response)
+    reflection_list = _pull_reflection_basic_info(response)
     return reflection_list
 
 
-def pull_reflection_basic_info(response):
+def _pull_reflection_basic_info(response):
     """
     Take json response from get_reflection_list containing all reflections
     and pull out just the name and the id(s)
@@ -87,24 +100,6 @@ def pull_reflection_basic_info(response):
                 Check for how long reflection list take 
                 """
             return reflection_info
-
-
-def pull_reflection_status(response):
-    """
-     Get information about single reflection and return ->  "status": {
-        "config": "OK",
-        "refresh": "SCHEDULED",
-        "availability": "AVAILABLE",
-        "combinedStatus": "CAN_ACCELERATE",
-        "failureCount": 0,
-        "lastDataFetch": "2021-08-16T20:55:58.311Z",
-        "expiresAt": "2021-08-16T23:55:58.311Z"
-      }
-    """
-    elements = json.loads(response)
-    status = elements['data']['status']
-    return status
-
 
 def get_secret(secret_name, region_name):
     ## Get secret name and region in config  from Ozymandias Class
@@ -153,9 +148,9 @@ def generate_auth_token():
         'cache-control': "no-cache"
     }
 
-    response = requests.post(dremio_login_url,
-                             json={"userName": self.user_name,  ## replace with config settings
-                                   "password": self.secret_value},  ## re
+    response = requests.post("dremio_login_url",
+                             json={"userName": "user_name",  ## replace with config settings
+                                   "password": "secret_value"},  ## re
                              headers=headers)
 
     logging.info(f" Response from Dremio Generate Token {str(response)}")
@@ -169,7 +164,8 @@ def generate_auth_token():
 
 
 def main() -> object:
-    import pdb; pdb.set_trace()
+    import pdb;
+    pdb.set_trace()
     logging.basicConfig(filename='myapp.log', level=logging.INFO)
     logging.info('Started')
     print("Running main")
