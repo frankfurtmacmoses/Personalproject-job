@@ -30,7 +30,7 @@ REFLECTION_URL = settings('ozymandia.REFLECTION_URL')
 MESSAGES = messages.OZYMANDIAS
 REGION = settings("ozymandia.targets.region")
 user_name = settings("ozymandia.targets.region")
-
+final_result = {}
 CONFIG_PATH = os.path.join(
     os.path.realpath(os.path.dirname(__file__)), 'configs', CONFIG_NAME)
 
@@ -62,19 +62,22 @@ class Ozymandias(Watchman):
         results = self._create_results(summary_parameters)
         return results
 
-    ## Needed to be specific to Ozy
+
     @staticmethod
-    def _create_details(processed_target):
+    def create_details():
         """
         Creates details for the result objects from the new_change_strings and exception_strings if they exist.
         :param processed_target: <dict> A dictionary of the target name with any failures or exceptions that occurred
         :return: <str> A details string for the target with information from the checks performed
         """
         secret = dremio.get_secret(SECRETE, REGION)
-        token = dremio.generate_auth_token(user_name)
+        """
+        split secrete dictionary to user_name and password, pass the outputs to dremio.generate_auth_token
+        """
+        token = dremio.generate_auth_token(str(list(secret.keys())), str(list(secret.values())))
         reflection_list = dremio.get_reflection_list(token, REFLECTION_URL)
 
-        reflection_result = dremio.fetch_reflection_metadata(token, reflection_list, REFLECTION_URL)
+        reflection_results = dremio.fetch_reflection_metadata(token, reflection_list, REFLECTION_URL)
         """
         Return list containing dictionary of reflection result
          Get information about single reflection and return ->  "status": {
@@ -87,30 +90,20 @@ class Ozymandias(Watchman):
         "expiresAt": "2021-08-16T23:55:58.311Z"
                                  }   
         """
-    def _create_results(self, summary_parameters):
-        """
-        This creates result objects for each of the failed reflections from generic result .
-        These will then be sent to subscribers of the corresponding sns topics.
-        :param summary_parameters: <list<dict>>  The parameters needed to make each Result object.
-        :return: <list> Result objects for each summary parameter, as well as a generic result object that represents
-            all results.
-        """
+
+        for reflection_result in reflection_results:
+            reflectionid, name, failurecount = reflection_result["id"], reflection_result["name"], \
+                                               reflection_result["status"]['failureCount']
+            if failurecount == 3:
+                final_result[reflectionid]: [name, failurecount]
+
+        return final_result
+
+    def _format_results(self):
+
         results = []
-        generic_result_details = ''
-        change_detected = False
-        exception = False
-        for parameters in summary_parameters:
-            success = parameters.get("success")
 
-            if success is False:
-                change_detected = True
-            if success is None:
-                exception = True
 
-            if not success:
-                generic_result_details += "{}{}\n\n".format(parameters.get("details"), const.MESSAGE_SEPARATOR)
-
-            results.append(Result(
                 details=parameters.get("details"),
                 disable_notifier=parameters.get("disable_notifier"),
                 short_message=parameters.get("short_message"),
@@ -120,121 +113,33 @@ class Ozymandias(Watchman):
                 success=success is True,
                 target=parameters.get("target"),
                 watchman_name=self.watchman_name,
-            ))
-        results.append(self._create_generic_result(change_detected, exception, generic_result_details))
-        return results
 
-    def _create_generic_result(self, change_detected, exception, details):
-        """
-        This creates the generic result for all tested reflections - both failled  and passed
-        :param change_detected: <bool> True if there was a change detected during a github check
-        :param exception: <bool> True if an exception occurred during a github check
-        :param details: <str> A string with all the messages generated from each check
-        :return: <Result> A result with all targets check information
-        """
-        if change_detected and exception:
-            disable_notifier = False
-            short_message = MESSAGES.get("change_detected_exception_message")
-            state = Watchman.STATE.get("exception")
-            subject = MESSAGES.get("generic_change_detected_exception_subject")
-            success = False
 
-        elif exception:
-            disable_notifier = False
-            short_message = MESSAGES.get("exception_message")
-            state = Watchman.STATE.get("exception")
-            subject = MESSAGES.get("generic_exception_subject")
-            success = False
 
-        elif change_detected:
-            disable_notifier = False
-            short_message = MESSAGES.get("change_detected_message")
-            state = Watchman.STATE.get("failure")
-            subject = MESSAGES.get("generic_change_detected_subject")
-            success = False
+    def switcher(self, reflection_final_result):
+        if bool(reflection_final_result):
 
-        else:
-            disable_notifier = True
-            short_message = MESSAGES.get("success_message")
-            state = Watchman.STATE.get("success")
-            subject = MESSAGES.get("generic_success_subject")
-            success = True
+            "False" = {
+                "disable_notifier": False,
+                "state": "Failled",
+                "success": False
+            }
 
-        return Result(
-            details=details,
-            disable_notifier=disable_notifier,
-            short_message=short_message,
-            snapshot={},
-            watchman_name=self.watchman_name,
-            state=state,
-            subject=subject,
-            success=success,
-            target=GENERIC_TARGET,
-        )
-
-    def _create_summary_parameters(self, processed_targets):
-        """
-        Create the parameters needed for result objects based on the checks performed for each target.
-        :param processed_targets: <list<dict>> Dictionaries of information from each check performed on a target
-        :return: <list<dict>> Returns a dictionary for every processed target that has the parameters needed to create
-            the result object for that target
-        """
-        summary_parameters = []
-        parameter_chart = {
             None: {
                 "disable_notifier": False,
-                "state": Watchman.STATE.get("exception"),
+                "state": "Exception",
                 "success": None
             },
             True: {
                 "disable_notifier": True,
-                "state": Watchman.STATE.get("success"),
+                "state": "Success",
                 "success": True
             },
-            False: {
-                "disable_notifier": False,
-                "state": Watchman.STATE.get("failure"),
-                "success": False
-            }
-        }
 
-        for target in processed_targets:
-            target_name = target.get('target_name')
-            success = target.get('success')
-            parameters = parameter_chart.get(success).copy()
-            parameters.update({'target': target_name, 'details': self._create_details(target)})
 
-            if success:
-                parameters.update({"short_message": MESSAGES.get("success_message")})
-                parameters.update({"subject": MESSAGES.get("success_subject").format(target_name)})
-            elif target.get('success') is None:
-                parameters.update({"short_message": MESSAGES.get("exception_message")})
-                parameters.update({"subject": MESSAGES.get("exception_subject").format(target_name)})
-            else:
-                # If there are exceptions and failures:
-                if target.get("exception_strings"):
-                    parameters.update({"short_message": MESSAGES.get("change_detected_exception_message")})
-                    parameters.update({"subject": MESSAGES.get("change_detected_exception_subject")
-                                      .format(target_name)})
-                else:
-                    parameters.update({"short_message": MESSAGES.get("change_detected_message")})
-                    parameters.update({"subject": MESSAGES.get("change_detected_subject").format(target_name)})
 
-            summary_parameters.append(parameters)
 
-        return summary_parameters
 
     @staticmethod
     def _format_api_exception(check_name, target_name, tb, path=None):
-        """
-        Returns an exception string with information about a Github API Failure
-        :param check_name: <str> Name of the check that threw the exception
-        :param target_name: <str> The target name
-        :param tb: <str> The traceback of the exception
-        :param path: <str> The path the exception occurred on, if applicable
-        :return: <str> An message with information from the API exception
-        """
-        if path:
-            return MESSAGES.get("exception_api_failed_w_path").format(check_name, target_name, path, tb)
 
-        return MESSAGES.get("exception_api_failed").format(check_name, target_name, tb)

@@ -31,8 +31,8 @@ def fetch_reflection_metadata(token, reflection_list, reflection_url):
             """
     reflections_status = []
     for reflection in reflection_list:
-        reflection_id = reflection[id]
-        logging.info(reflection_url/f'{reflection_id}')
+        reflection_id = reflection['id']
+        logging.info(reflection_url / f'{reflection_id}')
         headers = {
             'Authorization': token,
             'Content-Type': "application/json",
@@ -50,7 +50,11 @@ def fetch_reflection_metadata(token, reflection_list, reflection_url):
 
 def _pull_reflection_status(response):
     """
-     Get information about single reflection and return ->  "status": {
+    "id":
+     Get information about single reflection and return ->
+     "id": ,
+     "name":
+     "status": {
         "config": "OK",
         "refresh": "SCHEDULED",
         "availability": "AVAILABLE",
@@ -60,9 +64,11 @@ def _pull_reflection_status(response):
         "expiresAt": "2021-08-16T23:55:58.311Z"
       }
     """
+
     elements = json.loads(response)
-    status = elements['data']['status']
-    return status
+    result = {"id": elements["id"], "name": elements["name"], "status": (elements["status"])}
+    return result
+
 
 def get_reflection_list(token, reflection_url):
     """     Send get request to reflection   asset by id
@@ -101,6 +107,7 @@ def _pull_reflection_basic_info(response):
                 """
             return reflection_info
 
+
 def get_secret(secret_name, region_name):
     ## Get secret name and region in config  from Ozymandias Class
     '''
@@ -137,7 +144,7 @@ def get_secret(secret_name, region_name):
     return secret
 
 
-def generate_auth_token(user_name):
+def generate_auth_token(user_name, secret_value):
     """
         Generates the auth token for communication with Dremio
 
@@ -149,8 +156,8 @@ def generate_auth_token(user_name):
     }
 
     response = requests.post("dremio_login_url",
-                             json={"userName": "user_name",  ## replace with config settings
-                                   "password": "secret_value"},  ## re
+                             json={"userName": user_name,
+                                   "password": secret_value},
                              headers=headers)
 
     logging.info(f" Response from Dremio Generate Token {str(response)}")
