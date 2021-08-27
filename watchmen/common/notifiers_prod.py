@@ -148,5 +148,9 @@ SNS = {
   "FedPhish": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.fedphishs3")
+  },
+  "Whowas": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.whowass3")
   }
 }
