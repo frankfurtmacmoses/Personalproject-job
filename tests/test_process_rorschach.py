@@ -792,7 +792,8 @@ class TestRorschach(unittest.TestCase):
             "offset_type": "Hourly"
         }
         time_now = datetime.datetime.now(pytz.utc).replace(second=0, microsecond=0)
-        date_range = "{} to {}".format(time_now.strftime('%m-%d-%y'), time_now.strftime('%m-%d-%y'))
+        start_time = time_now - datetime.timedelta(hours=trimmable_item.get('time_offset'))
+        date_range = "{} to {}".format(start_time.strftime('%M-%H-%d-%m-%y'), time_now.strftime('%M-%H-%d-%m-%y'))
         mock_trim_contents.return_value = None
         returned_exception_strings, returned_failure_strings = rorschach_obj._check_single_file(trimmable_item)
         expected_exception_strings = []

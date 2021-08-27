@@ -37,6 +37,16 @@ Resources:
       Subscription:
         - Endpoint: cyberint-devs@infoblox.com
           Protocol: email
+ 
+  FedPhishTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: FedPhish
+      TopicName: !Sub ${SNSPrefix}FedPhish
+      Subscription:
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
 
   ForeverMailTopic:
     Type: 'AWS::SNS::Topic'
@@ -239,6 +249,10 @@ Outputs:
   EMRClusterStatus:
     Condition: IsProd
     Value: !Ref EMRClusterStatusTopic
+
+  FedPhish:
+    Condition: IsProd
+    Value: !Ref FedPhish
 
   ForeverMail:
     Condition: IsProd

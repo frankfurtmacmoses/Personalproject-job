@@ -262,6 +262,7 @@ Resources:
         Environment:
           Variables:
             SNS_GENERICS3ATG: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Atg, !Ref 'AWS::NoValue']
+            SNS_FEDPHISHS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.FedPhish, !Ref 'AWS::NoValue' ]
             SNS_MAXMINDS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.Maxmind, !Ref 'AWS::NoValue' ]
             SNS_MSISACS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.Msisac, !Ref 'AWS::NoValue' ]
             SNS_PSLS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.PslS3, !Ref 'AWS::NoValue']
@@ -400,13 +401,23 @@ Resources:
     RorschachMinutelyScheduledEvent10:
       Type: 'AWS::Events::Rule'
       Properties:
-        Description: A Miutely event that kicks off the Rorschach Watchman every 10 minutes
+        Description: A Minutely event that kicks off the Rorschach Watchman every 10 minutes
         ScheduleExpression: cron(0/10 * * * ? *)
         State: !If [ IsProd, ENABLED, DISABLED ]
         Targets:
-          - Id: RorschachMinuteyScheduler10
+          - Id: RorschachMinutelyScheduler10
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Minutely": "00"}}'
+    RorschachHourlyScheduledEvent59:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: An Hourly event that kicks off the Rorschach Watchman at HH:59
+        ScheduleExpression: cron(59 * * * ? *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: RorschachHourlyScheduler59
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": {"Hourly": "59"}}'
     RorschachWeeklyScheduledEvent1030:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -509,6 +520,13 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachMinutelyScheduledEvent10.Arn
+    InvokeRorschachHourlyLambdaPermission59:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt RorschachHourlyScheduledEvent59.Arn
     InvokeRorschachWeeklyLambdaPermission1030:
       Type: 'AWS::Lambda::Permission'
       Properties:

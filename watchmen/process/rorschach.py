@@ -277,10 +277,10 @@ class Rorschach(Watchman):
         full_path = item.get("full_path")
 
         # Generating properly formatted S3 key:
-        time_offset = item.get("time_offset", 1)
+        prefix_offset = item.get("prefix_offset", 0)
+        prefix_offset_type = item.get('prefix_offset_type') if item.get('prefix_offset_type') else self.event
 
-        offset_type = item.get('offset_type') if item.get('offset_type') else self.event
-        s3_key, tb = self._generate_key(full_path, offset_type, time_offset)
+        s3_key, tb = self._generate_key(full_path, prefix_offset_type, prefix_offset)
 
         if tb:
             exception_strings.append(MESSAGES.get("exception_string_format").format(item, tb))
@@ -296,14 +296,19 @@ class Rorschach(Watchman):
         if not found_file:
             failure_strings.append(MESSAGES.get('failure_invalid_s3_key').format(s3_key))
             return exception_strings, failure_strings
+
         # Trim contents to include only object within the time offset
+        time_offset = item.get("time_offset", 1)
+        offset_type = item.get('offset_type') if item.get('offset_type') else self.event
+
         if offset_type in TRIMMABLE_EVENT_TYPES:
             file_obj = _s3.get_object(item['bucket_name'], s3_key)
             contents = self._trim_contents([file_obj], time_offset, offset_type)
             if not contents:
                 end_time = _datetime.datetime.now(pytz.utc).replace(second=0, microsecond=0)
                 start_time = end_time - _datetime.timedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
-                date_range = "{} to {}".format(start_time.strftime('%m-%d-%y'), end_time.strftime('%m-%d-%y'))
+                date_range = "{} to {}".format(start_time.strftime('%M-%H-%d-%m-%y'),
+                                               end_time.strftime('%M-%H-%d-%m-%y'))
                 failure_strings.append(MESSAGES.get('failure_last_modified_date').format(s3_key, date_range))
                 return exception_strings, failure_strings
 
@@ -629,7 +634,7 @@ class Rorschach(Watchman):
             tb = traceback.format_exc()
             return contents_dict, tb
 
-    def _generate_key(self, prefix_format, offset_type, time_offset=1):
+    def _generate_key(self, prefix_format, offset_type, prefix_offset=1):
         """
         Method to generate the key for each target based on the event frequency.
         Note: timedelta() does not support offset by months so relativedelta() is used
@@ -642,7 +647,7 @@ class Rorschach(Watchman):
         """
         try:
             check_time = _datetime.datetime.now(pytz.utc) - \
-                         relativedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
+                         relativedelta(**{EVENT_AND_OFFSET[offset_type]: prefix_offset})
 
             prefix = check_time.strftime(prefix_format)
             return prefix, None

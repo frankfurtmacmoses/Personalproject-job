@@ -144,5 +144,9 @@ SNS = {
   "MSISAC": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.msisacs3")
+  },
+  "FedPhish": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.fedphishs3")
   }
 }
