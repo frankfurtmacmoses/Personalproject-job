@@ -236,6 +236,18 @@ Resources:
         - Endpoint: dhl@infoblox.com
           Protocol: email
 
+  WhowasTopic:
+    Type: 'AWS::SNS::Topic'
+    Condition: IsProd
+    Properties:
+      DisplayName: Whowas
+      TopicName: !Sub ${SNSPrefix}Whowas
+      Subscription:
+        - Endpoint: rili@infoblox.com
+          Protocol: email
+        - Endpoint: minhhoang@infoblox.com
+          Protocol: email
+
 Outputs:
 
   DomainToolsQuota:
@@ -317,3 +329,7 @@ Outputs:
   WatchmenTest:
     Condition: IsTest
     Value: !Ref WatchmenTestTopic
+
+  Whowas:
+    Condition: IsProd
+    Value: !Ref WhowasTopic

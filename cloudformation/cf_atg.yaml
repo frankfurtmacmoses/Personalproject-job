@@ -268,6 +268,7 @@ Resources:
             SNS_PSLS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.PslS3, !Ref 'AWS::NoValue']
             SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
+            SNS_WHOWASS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.Whowas, !Ref 'AWS::NoValue']
             ENVIRONMENT: !Ref Env
             ACCOUNT: !Ref Account
             TARGET_ACCOUNT: atg   # This is necessary in order to find the correct targets file. Definitely hacky.
