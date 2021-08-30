@@ -252,7 +252,7 @@ Outputs:
 
   FedPhish:
     Condition: IsProd
-    Value: !Ref FedPhish
+    Value: !Ref FedPhishTopic
 
   ForeverMail:
     Condition: IsProd
