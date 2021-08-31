@@ -99,47 +99,54 @@ class Ozymandias(Watchman):
 
         return final_result
 
-    def _format_results(self):
+    def determine_result(self, reflection_final_result,details=None):
+        """
+        Determine the outcome of the check
 
-        results = []
-
-
-                details=parameters.get("details"),
-                disable_notifier=parameters.get("disable_notifier"),
-                short_message=parameters.get("short_message"),
-                snapshot={},
-                state=parameters.get("state"),
-                subject=parameters.get("subject"),
-                success=success is True,
-                target=parameters.get("target"),
-                watchman_name=self.watchman_name,
-
-
-
-    def switcher(self, reflection_final_result):
+        """
         if bool(reflection_final_result):
+            disable_notifier = False
+            short_message = MESSAGES.get("reflection_failled_message")
+            state = Watchman.STATE.get("failure")
+            subject = MESSAGES.get("failure_detected_subject")
+            success = False
 
-            "False" = {
-                "disable_notifier": False,
-                "state": "Failled",
-                "success": False
-            }
+        elif Exception:
+            ## Exception happened
+            disable_notifier = False
+            short_message = MESSAGES.get("reflection_exception_message")
+            state = Watchman.STATE.get("exception")
+            subject = MESSAGES.get("reflection_exception_subject")
+            success = False
+        else:
+            """
+            No reflection is found to have failed in the reflection 
+            final_result[]. Meaning all reflections passed
+            """
+            disable_notifier = True,
+            short_message = MESSAGES.get("reflection_success_message")
+            state = Watchman.STATE.get("success")
+            subject = MESSAGES.get("reflection_success_subject")
+            success = True
 
-            None: {
-                "disable_notifier": False,
-                "state": "Exception",
-                "success": None
-            },
-            True: {
-                "disable_notifier": True,
-                "state": "Success",
-                "success": True
-            },
+        return Result(
+            details=details,
+            disable_notifier=disable_notifier,
+            short_message=short_message,
+            snapshot={},
+            watchman_name=self.watchman_name,
+            state=state,
+            subject=subject,
+            success=success,
+            target=REFLECTION_URL
+        )
 
 
 
 
 
-    @staticmethod
-    def _format_api_exception(check_name, target_name, tb, path=None):
+
+
+
+
 

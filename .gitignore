@@ -127,3 +127,4 @@ venv.bak/
 htmlcov
 
 
+/watchmen/utils/dremio_py_utils/

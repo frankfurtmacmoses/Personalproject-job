@@ -22,7 +22,7 @@ import logging
 import json
 
 
-def fetch_reflection_metadata(token, reflection_list, reflection_url):
+def fetch_reflection_metadata(token, reflection_url, reflection_list):
     """     Send get request to reflection  by id in a loop
             and append the result to a list
             id: key value for the reflection asset
@@ -31,20 +31,21 @@ def fetch_reflection_metadata(token, reflection_list, reflection_url):
             """
     reflections_status = []
     for reflection in reflection_list:
-        reflection_id = reflection['id']
-        logging.info(reflection_url / f'{reflection_id}')
+        reflection_id = reflection_list.get(reflection)
+        reflection_url = reflection_url + f'{reflection_id}'
+        logging.info(reflection_url)
         headers = {
             'Authorization': token,
             'Content-Type': "application/json",
             'cache-control': "no-cache"
         }
-        response = requests.get(reflection_url / f'{reflection_id}', headers=headers)
-        logging.info(f"Response from Dremio reflection metadata{str(response)}")
-        result = _pull_reflection_status(response)
+        try:
+            response = requests.get(reflection_url, headers=headers)
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Response from Dremio reflection metadata{str(response)}")
+            raise SystemExit(e)
+        result = _pull_reflection_status(response.json())
         reflections_status.append(result)
-        """
-        Dictionary of : status
-        """
     return reflections_status
 
 
@@ -64,8 +65,7 @@ def _pull_reflection_status(response):
         "expiresAt": "2021-08-16T23:55:58.311Z"
       }
     """
-
-    elements = json.loads(response)
+    elements = response
     result = {"id": elements["id"], "name": elements["name"], "status": (elements["status"])}
     return result
 
@@ -85,38 +85,28 @@ def get_reflection_list(token, reflection_url):
     }
     response = requests.get(reflection_url, headers=headers)
     logging.info(f"Response from Dremio reflection metadata{str(response)}")
-    reflection_list = _pull_reflection_basic_info(response)
+    reflection_list = _pull_reflection_basic_info(response.json())
     return reflection_list
 
 
-def _pull_reflection_basic_info(response):
+def _pull_reflection_basic_info(json_response):
     """
     Take json response from get_reflection_list containing all reflections
     and pull out just the name and the id(s)
     called by get_reflectionlist(response)
     """
-    reflection_info = []
-    elements = json.loads(response)
+    reflection_info = {}
+    elements = json_response
     for element in elements['data']:
-        reflection_id, reflection_name = element['id'], element['name']
+        reflection_id, reflection_name = (element['id'], element['name'])
         if not (str(reflection_name)).startswith('tmp'):
-            reflection_info.append(reflection_id, reflection_name)
-            """
-                return turple of reflections with id and name
-                Check for how long reflection list take 
-                """
-            return reflection_info
+            ## Create a dictionary
+            reflection_info[reflection_id] = reflection_name
+    return reflection_info
 
 
 def get_secret(secret_name, region_name):
     ## Get secret name and region in config  from Ozymandias Class
-    '''
-    Common library for utility functions
-
-    authors: lpeaslee, vcollooru
-    AWS
-    Given the secret name and the region of the Secret manager, this function will fetch the secret values
-    '''
     secret = None
     # Create a Secrets Manager client
     session = boto3.session.Session()
@@ -144,7 +134,7 @@ def get_secret(secret_name, region_name):
     return secret
 
 
-def generate_auth_token(user_name, secret_value):
+def generate_auth_token(user_name, secret_value, dremio_login_url):
     """
         Generates the auth token for communication with Dremio
 
@@ -154,33 +144,37 @@ def generate_auth_token(user_name, secret_value):
         'Content-Type': "application/json",
         'cache-control': "no-cache"
     }
-
-    response = requests.post("dremio_login_url",
-                             json={"userName": user_name,
-                                   "password": secret_value},
-                             headers=headers)
-
+    try:
+        response = requests.post(dremio_login_url,
+                                 json={"userName": user_name,
+                                       "password": secret_value},
+                                 headers=headers)
+    except requests.exceptions.RequestException as e:
+        print(e.request)
     logging.info(f" Response from Dremio Generate Token {str(response)}")
 
+    if 'token' not in response.json():
+        return None
+
     # Grab authorization token from response
     # Grab authorization token from response
-    if 'token' in response.json():
-        return "_dremio" + response.json()['token']
-
-    return None
+    return "_dremio" + response.json()['token']
 
 
-def main() -> object:
-    import pdb;
-    pdb.set_trace()
-    logging.basicConfig(filename='myapp.log', level=logging.INFO)
-    logging.info('Started')
-    print("Running main")
-    logging.info('Finished')
+def main():
+    dremioServer = "dremio-dev.test.infoblox.com:9047"
+    dremio_reflection_url = f"https://{dremioServer}/api/v3/reflection"
+    dremio_login_url = f"https://{dremioServer}/apiv2/login"
+    reflection_list = []
+    secret = get_secret(
+        "arn:aws:secretsmanager:us-east-1:902917483333:secret:pat-dremio_dev_admin-reflection_refresh-UjWnqc",
+        "us-east-1")
+    token = secret['temp-pat-dremio_dev_admin-reflection_refresh']
+    user_name = secret['username']
+    auth_token = generate_auth_token(user_name, token, dremio_login_url)
+    reflection_list = get_reflection_list(auth_token, dremio_reflection_url)
+    fetch_reflection_metadata(auth_token, dremio_reflection_url, reflection_list)
 
 
 if __name__ == '__main__':
-    """
-    Put code to test dremio here
-    """
-main()
+    main()
