@@ -32,21 +32,21 @@ def fetch_reflection_metadata(token, reflection_url, reflection_list):
     reflections_status = []
     for reflection in reflection_list:
         reflection_id = reflection_list.get(reflection)
-        reflection_url = reflection_url + f'{reflection_id}'
-        logging.info(reflection_url)
+
+        logging.info(reflection_url + reflection_id)
         headers = {
             'Authorization': token,
             'Content-Type': "application/json",
             'cache-control': "no-cache"
         }
         try:
-            response = requests.get(reflection_url, headers=headers)
+            response = requests.get(f"{reflection_url}"+reflection_id, headers=headers)
         except requests.exceptions.RequestException as e:
             logging.error(f"Response from Dremio reflection metadata{str(response)}")
             raise SystemExit(e)
         result = _pull_reflection_status(response.json())
         reflections_status.append(result)
-    return reflections_status
+        print(reflections_status)
 
 
 def _pull_reflection_status(response):
@@ -101,7 +101,7 @@ def _pull_reflection_basic_info(json_response):
         reflection_id, reflection_name = (element['id'], element['name'])
         if not (str(reflection_name)).startswith('tmp'):
             ## Create a dictionary
-            reflection_info[reflection_id] = reflection_name
+            reflection_info[reflection_name] = reflection_id
     return reflection_info
 
 
@@ -163,7 +163,7 @@ def generate_auth_token(user_name, secret_value, dremio_login_url):
 
 def main():
     dremioServer = "dremio-dev.test.infoblox.com:9047"
-    dremio_reflection_url = f"https://{dremioServer}/api/v3/reflection"
+    dremio_reflection_url = f"https://{dremioServer}/api/v3/reflection/"
     dremio_login_url = f"https://{dremioServer}/apiv2/login"
     reflection_list = []
     secret = get_secret(
