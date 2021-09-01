@@ -46,7 +46,7 @@ def fetch_reflection_metadata(token, reflection_url, reflection_list):
             raise SystemExit(e)
         result = _pull_reflection_status(response.json())
         reflections_status.append(result)
-        print(reflections_status)
+    return reflections_status
 
 
 def _pull_reflection_status(response):
@@ -173,7 +173,8 @@ def main():
     user_name = secret['username']
     auth_token = generate_auth_token(user_name, token, dremio_login_url)
     reflection_list = get_reflection_list(auth_token, dremio_reflection_url)
-    fetch_reflection_metadata(auth_token, dremio_reflection_url, reflection_list)
+    outcome = fetch_reflection_metadata(auth_token, dremio_reflection_url, reflection_list)
+    print(outcome)
 
 
 if __name__ == '__main__':
