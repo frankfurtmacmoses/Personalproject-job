@@ -41,9 +41,9 @@ def fetch_reflection_metadata(token, reflection_url, reflection_list):
         }
         try:
             response = requests.get(f"{reflection_url}"+reflection_id, headers=headers)
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as exp:
             logging.error(f"Response from Dremio reflection metadata{str(response)}")
-            raise SystemExit(e)
+            raise exp
         result = _pull_reflection_status(response.json())
         reflections_status.append(result)
     return reflections_status

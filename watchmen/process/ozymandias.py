@@ -14,6 +14,8 @@ with tmp. Reflections status are checked every 60minutes
 import datetime
 import os
 import traceback
+
+import requests as requests
 import yaml
 import watchmen.utils.dremio as dremio
 from watchmen import const, messages
@@ -67,20 +69,24 @@ class Ozymandias(Watchman):
         "expiresAt": "2021-08-16T23:55:58.311Z"
                                  }
         """
+        exception_result = {}
+        computed_result = {}
         secret = dremio.get_secret(SECRETE_PATH, REGION)
         token = secret[secrete_name]
         user_name = secret['username']
         auth_token = dremio.generate_auth_token(user_name, token, LOGIN_URL)
         reflection_list = dremio.get_reflection_list(auth_token, REFLECTION_URL)
-        reflection_results = dremio.fetch_reflection_metadata(auth_token, REFLECTION_URL, reflection_list)
-        computed_result = {}
+        try:
+            reflection_results = dremio.fetch_reflection_metadata(auth_token, REFLECTION_URL, reflection_list)
+        except requests.exceptions.RequestException as exp:
+            exception_result["Error"] = exp.errno
         for reflection_result in reflection_results:
             reflectionid, name, failurecount = reflection_result["id"], reflection_result["name"], \
                                                reflection_result["status"]['failureCount']
             if failurecount == 3:
                 computed_result[reflectionid]: {name: failurecount}
         final_result = Ozymandias.determine_result(computed_result, datetime.now())
-        return final_result
+        return final_result if not bool(exception_result) else exception_result
 
     def determine_result(self, reflection_final_result, details=None) -> {}:
         """
@@ -96,8 +102,7 @@ class Ozymandias(Watchman):
             subject = MESSAGES.get("failure_detected_subject")
             success = False
 
-        elif Exception:
-
+        elif 'Error' in reflection_final_result:
             disable_notifier = False
             short_message = MESSAGES.get("reflection_exception_message")
             state = Watchman.STATE.get("exception")
