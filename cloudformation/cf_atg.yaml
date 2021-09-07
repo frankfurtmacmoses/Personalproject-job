@@ -268,6 +268,7 @@ Resources:
             SNS_PSLS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.PslS3, !Ref 'AWS::NoValue']
             SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
+            SNS_WHOWASS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.Whowas, !Ref 'AWS::NoValue']
             ENVIRONMENT: !Ref Env
             ACCOUNT: !Ref Account
             TARGET_ACCOUNT: atg   # This is necessary in order to find the correct targets file. Definitely hacky.
@@ -408,6 +409,16 @@ Resources:
           - Id: RorschachMinutelyScheduler10
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Minutely": "00"}}'
+    RorschachDailyScheduledEvent1700:
+      Type: 'AWS::Events::Rule'
+      Properties:
+        Description: A daily event that kicks off the Rorschach Watchman at 1700 UTC.
+        ScheduleExpression: cron(0 17 * * ? *)
+        State: !If [ IsProd, ENABLED, DISABLED ]
+        Targets:
+          - Id: RorschachDailyScheduler1700
+            Arn: !GetAtt WatchmenRorschachLambda.Arn
+            Input: '{"Type": {"Daily": "17:00"}}'
     RorschachHourlyScheduledEvent59:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -527,6 +538,13 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachHourlyScheduledEvent59.Arn
+    InvokeRorschachDailyLambdaPermission1700:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+        Action: 'lambda:InvokeFunction'
+        Principal: events.amazonaws.com
+        SourceArn: !GetAtt RorschachDailyScheduledEvent1700.Arn
     InvokeRorschachWeeklyLambdaPermission1030:
       Type: 'AWS::Lambda::Permission'
       Properties:

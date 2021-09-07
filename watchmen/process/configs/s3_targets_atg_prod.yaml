@@ -15,6 +15,15 @@ Hourly:
       - bucket_name: cyber-intel
         full_path: malspam/fedphish/reports/year=%0Y/month=%0m/day=%0d/hour=%H/fedphishreport.json
 
+Daily:
+  '17:00':
+    - target_name: Whowas
+      items:
+      - bucket_name: cyber-intel
+        prefix: whowas/raw/year=%0Y/month=%0m/day=%0d/tld=/
+        suffix: .csv
+        min_total_files: 350
+
 Weekly:
   'Mon':
     '10:30':
