@@ -1,0 +1,28 @@
+{
+  "Tags": [
+    {
+      "Key": "component",
+      "Value": "watchmen"
+    },
+    {
+      "Key": "creator",
+      "Value": "kramos"
+    },
+    {
+      "Key": "env",
+      "Value": "none"
+    },
+    {
+      "Key": "lifecycle",
+      "Value": "dev"
+    },
+    {
+      "Key": "owner_team",
+      "Value": "cyberapps"
+    },
+    {
+      "Key": "project",
+      "Value": "portunus"
+    }
+  ]
+}
