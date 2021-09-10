@@ -71,7 +71,7 @@ class Niteowl(Watchman):
         :return: <Datetime> A Datetime object representing a date in the past.
         """
         offset_type = self.event if not offset_type else offset_type
-        date = (datetime.datetime.utcnow() - datetime.timedelta(**{EVENT_OFFSET_PAIR[offset_type]: time_offset}))\
+        date = (datetime.datetime.utcnow() - datetime.timedelta(**{EVENT_OFFSET_PAIR[offset_type]: time_offset})) \
             .replace(microsecond=0)
         return date
 
@@ -169,8 +169,7 @@ class Niteowl(Watchman):
 
         return details
 
-
-    def _create_invalid_event_result(self): ## Very important
+    def _create_invalid_event_result(self):
         """
         Creates a result object for if the event type is invalid
         :return: <list> A Result object for an invalid event type
@@ -436,10 +435,10 @@ class Niteowl(Watchman):
                 exception_strings.append(missing_string)
 
             processed_targets.append({
-                    'target_name': target.get('target_name'),
-                    'success': None if exception_strings and not new_change_strings else not new_change_strings,
-                    'exception_strings': exception_strings,
-                    'new_changes_strings': new_change_strings
+                'target_name': target.get('target_name'),
+                'success': None if exception_strings and not new_change_strings else not new_change_strings,
+                'exception_strings': exception_strings,
+                'new_changes_strings': new_change_strings
             })
 
         return processed_targets
@@ -478,3 +477,6 @@ class Niteowl(Watchman):
         if missing:
             message = MESSAGES.get("exception_invalid_target_format").format(missing)
         return is_valid, message
+
+
+

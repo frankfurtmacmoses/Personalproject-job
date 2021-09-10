@@ -148,5 +148,9 @@ SNS = {
   "Maxmind": {
     "notifier": "SnsNotifier",
     "sns": settings("sns.watchmentest")
+  },
+  "Dremio_Reflections": {
+    "notifier": "SnsNotifier",
+    "sns": settings("sns.watchmentest")
   }
 }

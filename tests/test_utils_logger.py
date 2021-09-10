@@ -63,6 +63,7 @@ class LoggerTests(unittest.TestCase):
         """
         test watchmen.utils.logger.raise_ni
         """
+
         method_name = 'some_method_name'
         msg = 'must implement {} in derived class'.format(method_name)
         with self.assertRaises(NotImplementedError) as context:

@@ -40,9 +40,9 @@ def fetch_reflection_metadata(token, reflection_url, reflection_list):
             'cache-control': "no-cache"
         }
         try:
-            response = requests.get(f"{reflection_url}"+reflection_id, headers=headers)
+            response = requests.get(f"{reflection_url}" + reflection_id, headers=headers)
         except requests.exceptions.RequestException as exp:
-            logging.error(f"Response from Dremio reflection metadata{str(response)}")
+            logging.error(f"Response from Dremio reflection metadata{str(exp)}")
             raise exp
         result = _pull_reflection_status(response.json())
         reflections_status.append(result)
@@ -100,13 +100,13 @@ def _pull_reflection_basic_info(json_response):
     for element in elements['data']:
         reflection_id, reflection_name = (element['id'], element['name'])
         if not (str(reflection_name)).startswith('tmp'):
-            ## Create a dictionary
+            # Create a dictionary
             reflection_info[reflection_name] = reflection_id
     return reflection_info
 
 
 def get_secret(secret_name, region_name):
-    ## Get secret name and region in config  from Ozymandias Class
+    # Get secret name and region in config  from Ozymandias Class
     secret = None
     # Create a Secrets Manager client
     session = boto3.session.Session()
@@ -118,6 +118,11 @@ def get_secret(secret_name, region_name):
         get_secret_value_response = client.get_secret_value(
             SecretId=secret_name
         )
+        if 'SecretString' in get_secret_value_response:
+            secret = json.loads(get_secret_value_response['SecretString'])
+        else:
+            secret = json.loads(base64.b64decode(get_secret_value_response['SecretBinary']))
+        return secret
     except ClientError as e:
         error_message = "Problems getting secret {secret_name} in {region_name} with exception {e}".format(
             secret_name=secret_name,
@@ -127,11 +132,6 @@ def get_secret(secret_name, region_name):
 
     # Decrypts secret using the associated KMS CMK.
     # Depending on whether the secret is a string or binary, one of these fields will be populated.
-    if 'SecretString' in get_secret_value_response:
-        secret = json.loads(get_secret_value_response['SecretString'])
-    else:
-        secret = json.loads(base64.b64decode(get_secret_value_response['SecretBinary']))
-    return secret
 
 
 def generate_auth_token(user_name, secret_value, dremio_login_url):
@@ -149,33 +149,14 @@ def generate_auth_token(user_name, secret_value, dremio_login_url):
                                  json={"userName": user_name,
                                        "password": secret_value},
                                  headers=headers)
+        logging.info(f" Response from Dremio Generate Token {str(response)}")
+        if 'token' not in response.json():
+            return None
+
+            # Grab authorization token from response
+            # Grab authorization token from response
+        return "_dremio" + response.json()['token']
     except requests.exceptions.RequestException as e:
-        print(e.request)
-    logging.info(f" Response from Dremio Generate Token {str(response)}")
-
-    if 'token' not in response.json():
-        return None
-
-    # Grab authorization token from response
-    # Grab authorization token from response
-    return "_dremio" + response.json()['token']
+        logging.info(f" Response from Dremio Generate Token {str(e)}")
 
 
-def main():
-    dremioServer = "dremio-dev.test.infoblox.com:9047"
-    dremio_reflection_url = f"https://{dremioServer}/api/v3/reflection/"
-    dremio_login_url = f"https://{dremioServer}/apiv2/login"
-    reflection_list = []
-    secret = get_secret(
-        "arn:aws:secretsmanager:us-east-1:902917483333:secret:pat-dremio_dev_admin-reflection_refresh-UjWnqc",
-        "us-east-1")
-    token = secret['temp-pat-dremio_dev_admin-reflection_refresh']
-    user_name = secret['username']
-    auth_token = generate_auth_token(user_name, token, dremio_login_url)
-    reflection_list = get_reflection_list(auth_token, dremio_reflection_url)
-    outcome = fetch_reflection_metadata(auth_token, dremio_reflection_url, reflection_list)
-    print(outcome)
-
-
-if __name__ == '__main__':
-    main()

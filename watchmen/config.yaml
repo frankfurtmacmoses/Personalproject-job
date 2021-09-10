@@ -74,12 +74,10 @@ niteowl:
   targets: github_targets.yaml
 
 ozymandias:
-  ##Pointing to dremio core api to be called
     ROOT_URL: https://dremio-dev.test.infoblox.com:9047
-    LOGIN_URL: /apiv2/login
-    REFLECTION_URL: /api/v3/reflection/
+    LOGIN_URL: https://dremio-dev.test.infoblox.com:9047/apiv2/login
+    REFLECTION_URL: https://dremio-dev.test.infoblox.com:9047/api/v3/reflection/
     dremio_secret_path: arn:aws:secretsmanager:us-east-1:902917483333:secret:pat-dremio_dev_admin-reflection_refresh-UjWnqc
-    ## secrete arn
     targets:
       region: us-east-1
       account: atg

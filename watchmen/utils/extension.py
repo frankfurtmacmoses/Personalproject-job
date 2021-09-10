@@ -12,7 +12,7 @@ import hashlib
 import json
 import os
 import re
-import jsonpickle
+
 
 from watchmen.utils.logger import get_logger
 
