@@ -660,10 +660,7 @@ class Rorschach(Watchman):
 
     def _generate_prefixes(self, prefix_format, offset_type, time_offset=1):
         """
-        Method to generate the prefix for each target based on the event frequency.
-        Will return multiple prefixes if they are variable by day and the time_offset brings us
-        back so we are looking at multiple days worth of data (i.e. running at 1am with a time_offset of 4)
-        Note: timedelta() does not support offset by months so relativedelta() is used
+        Method to handle generating prefixes for files to check.
         :param prefix_format: <string> The S3 key prefix format.
         :param offset_type: <string> The event type.
         :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
@@ -671,14 +668,16 @@ class Rorschach(Watchman):
                  <list<string>>: The properly formatted S3 prefixes with the correct date based off the time_offset.
                  <string>: Traceback if an exception was encountered, None otherwise.
         """
+        prefix_types = {
+            "Daily": self._generate_prefix,
+            "Hourly": self._generate_day_overlap_prefixes,
+            "Minutely": self._generate_day_overlap_prefixes,
+            "Monthly": self._generate_prefix,
+            "Weekly": self._generate_prefix
+        }
         try:
-            prefixes = set()
-            now = _datetime.datetime.now(pytz.utc)
-            check_time = now - relativedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
-
-            for check_date in date_range(check_time.date(), now.date()):
-                prefixes.add(check_date.strftime(prefix_format))
-
+            prefix_func = prefix_types[offset_type]
+            prefixes = prefix_func(prefix_format, offset_type, time_offset)
             return list(prefixes), None
         except Exception as ex:
             self.logger.error("ERROR Generating Prefixes!")
@@ -686,6 +685,37 @@ class Rorschach(Watchman):
             self.logger.exception("{}: {}".format(type(ex).__name__, ex))
             tb = traceback.format_exc()
             return None, tb
+
+    def _generate_day_overlap_prefixes(self, prefix_format, offset_type, time_offset):
+        """
+        Method to generate the prefix for each target based on the event frequency.
+        Will return multiple prefixes if they are variable by day and the time_offset brings us
+        back so we are looking at multiple days worth of data (i.e. running at 1am with a time_offset of 4)
+        :param prefix_format: <string> The S3 key prefix format.
+        :param offset_type: <string> The event type.
+        :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
+        :return: <list<string>>, <string>
+                 <list<string>>: The properly formatted S3 prefixes with the correct date based off the time_offset.
+        """
+        prefixes = set()
+        now = _datetime.datetime.now(pytz.utc)
+        check_time = now - relativedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
+        for check_date in date_range(check_time.date(), now.date()):
+            prefixes.add(check_date.strftime(prefix_format))
+        return prefixes
+
+    def _generate_prefix(self, prefix_format, offset_type, time_offset):
+        """
+        Returns a single prefix for events that don't require spanning over days.
+        :param prefix_format: <string> The S3 key prefix format.
+        :param offset_type: <string> The event type.
+        :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
+        :return: <list<string>>, <string>
+                 <list<string>>: The properly formatted S3 prefixes with the correct date based off the time_offset.
+        """
+        now = _datetime.datetime.now(pytz.utc)
+        check_time = now - relativedelta(**{EVENT_AND_OFFSET[offset_type]: time_offset})
+        return [check_time.strftime(prefix_format)]
 
     def _load_config(self, config_target_path):
         """
