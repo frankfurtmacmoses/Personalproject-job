@@ -640,7 +640,7 @@ class Rorschach(Watchman):
         Note: timedelta() does not support offset by months so relativedelta() is used
         :param prefix_format: <string> The S3 key prefix format.
         :param offset_type: <string> The event type.
-        :param time_offset: <int> The number of time frames to offset the file checks, defaults at 1.
+        :param prefix_offset: <int> The number of time frames to offset the file checks, defaults at 1.
         :return: <string>, <string>
                  <string>: The properly formatted S3 key with the correct date based off the time_offset.
                  <string>: Traceback if an exception was encountered, None otherwise.
