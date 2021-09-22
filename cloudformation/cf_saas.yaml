@@ -45,6 +45,7 @@ Resources:
           SNS_DATALAKEZONEMONITORS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.DataLakeZoneMonitors, !Ref 'AWS::NoValue']
           SNS_GENERICS3SAAS: !If [IsProd, !GetAtt SnsTopicStack.Outputs.GenericS3Saas, !Ref 'AWS::NoValue']
           SNS_NEWLYOBSERVEDDATA: !If [IsProd, !GetAtt SnsTopicStack.Outputs.NewlyObservedData, !Ref 'AWS::NoValue']
+          SNS_PSLS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.PslS3, !Ref 'AWS::NoValue']
           SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
           STORAGE_BUCKET: !FindInMap [EnvMap, !Ref 'Env', 'Bucket']
           ENVIRONMENT: !Ref Env
@@ -87,6 +88,16 @@ Resources:
         - Id: RorschachDailyScheduler1500
           Arn: !GetAtt WatchmenRorschachLambda.Arn
           Input: '{"Type": {"Daily": "15:00"}}'
+  RorschachWeeklyScheduledEvent1030:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: A Weekly event that kicks off the Rorschach Watchman at 10:30 AM every Monday
+      ScheduleExpression: cron(30 10 ? * MON *)
+      State: !If [ IsProd, ENABLED, DISABLED ]
+      Targets:
+        - Id: RorschachWeeklyScheduler1030
+          Arn: !GetAtt WatchmenRorschachLambda.Arn
+          Input: '{"Type": {"Weekly": "Mon,10:30"}}'
   InvokeRorschachHourlyLambdaPermission00:
     Type: 'AWS::Lambda::Permission'
     Properties:
@@ -101,6 +112,13 @@ Resources:
       Action: 'lambda:InvokeFunction'
       Principal: events.amazonaws.com
       SourceArn: !GetAtt RorschachDailyScheduledEvent1500.Arn
+  InvokeRorschachWeeklyLambdaPermission1030:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt WatchmenRorschachLambda.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt RorschachWeeklyScheduledEvent1030.Arn
 
   # Permissions used by all Watchmen
   WatchmenPolicy:
