@@ -154,3 +154,12 @@ Daily:
         suffix: .csv
         time_offset: 2
         min_total_files: 1
+
+Weekly:
+  'Mon':
+    '10:30':
+      - target_name: Psl
+        items:
+          - bucket_name: ib-dl-ci-emr-prod
+            full_path: analytics/enrichment-data/psl_infoblox_custom.dat
+            time_offset: 1
