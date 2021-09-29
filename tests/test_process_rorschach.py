@@ -1136,28 +1136,71 @@ class TestRorschach(unittest.TestCase):
         self.assertTrue(expected_tb in returned_tb)
 
     def test_generate_prefixes(self):
-        prefix_format_example = 'some/path/year=%0Y/month=%0m/day=%0d/'
         now = datetime.datetime.now(pytz.utc)
-        check_time_example = now - datetime.timedelta(**{'days': 1})
         rorschach_obj = self._create_rorschach()
-
-        # Test multiple prefixes (one for each day) when using daily offset
-        expected = [now.strftime(prefix_format_example), check_time_example.strftime(prefix_format_example)]
-        expected_tb = None
-        event_frequency = list(self.example_event_daily.get('Type').keys())[0]
-        returned, returned_tb = rorschach_obj._generate_prefixes(prefix_format_example, event_frequency)
-        self.assertEqual((set(expected), expected_tb), (set(returned), returned_tb))
-
-        # Test exception while generating key:
-        expected, expected_tb = None, 'Traceback'
-        returned, returned_tb = rorschach_obj._generate_key(None, None)
-        self.assertEqual(expected, returned)
-        self.assertTrue(expected_tb in returned_tb)
-
-        # Test exception while generating key:
-        expected, expected_tb = None, 'Traceback'
-        returned, returned_tb = rorschach_obj._generate_prefixes(None, None)
-        self.assertEqual(expected, returned)
+        tests = [
+            {
+                'prefix_format': 'some/path/year=%0Y/month=%0m/day=%0d/',
+                'offset_type': 'Daily',
+                'time_offset': 1,
+                'expected': [
+                    (now - relativedelta(**{'days': 1})).strftime('some/path/year=%0Y/month=%0m/day=%0d/')
+                ],
+                'has_error': False
+            },
+            {
+                'prefix_format': 'some/path/year=%0Y/month=%0m/day=%0d/',
+                'offset_type': 'Hourly',
+                'time_offset': 1,
+                'expected': [
+                    (now - relativedelta(**{'hours': 1})).strftime('some/path/year=%0Y/month=%0m/day=%0d/')
+                ],
+                'has_error': False
+            },
+            {
+                'prefix_format': 'some/path/year=%0Y/month=%0m/day=%0d/',
+                'offset_type': 'Weekly',
+                'time_offset': 1,
+                'expected': [
+                    (now - relativedelta(**{'weeks': 1})).strftime('some/path/year=%0Y/month=%0m/day=%0d/')
+                ],
+                'has_error': False
+            },
+            {
+                'prefix_format': 'some/path/year=%0Y/month=%0m/day=%0d/',
+                'offset_type': 'Monthly',
+                'time_offset': 2,
+                'expected': [
+                    (now - relativedelta(**{'months': 2})).strftime('some/path/year=%0Y/month=%0m/day=%0d/')
+                ],
+                'has_error': False
+            },
+            {
+                'prefix_format': 'some/path/year=%0Y/month=%0m/day=%0d/',
+                'offset_type': 'Quarterly',
+                'time_offset': 2,
+                'expected': None,
+                'has_error': True
+            },
+            {
+                'prefix_format': None,
+                'offset_type': None,
+                'time_offset': 2,
+                'expected': None,
+                'has_error': True
+            },
+        ]
+        for test in tests:
+            result, tb = rorschach_obj._generate_prefixes(
+                test['prefix_format'],
+                test['offset_type'],
+                test['time_offset']
+            )
+            self.assertEqual(test['expected'], result)
+            if not test['has_error']:
+                self.assertIsNone(tb)
+            else:
+                self.assertIsNotNone(tb)
 
     @patch('builtins.open', new_callable=mock_open())
     @patch('watchmen.process.rorschach.yaml.load')
