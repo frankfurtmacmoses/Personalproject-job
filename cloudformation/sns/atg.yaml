@@ -136,20 +136,6 @@ Resources:
         - Endpoint: minhhoang@infoblox.com
           Protocol: email
 
-  PslTopic:
-    Type: 'AWS::SNS::Topic'
-    Condition: IsProd
-    Properties:
-      DisplayName: PslS3
-      TopicName: !Sub ${SNSPrefix}PslS3
-      Subscription:
-        - Endpoint: rburton@infoblox.com
-          Protocol: email
-        - Endpoint: ldarocha@infoblox.com
-          Protocol: email
-        - Endpoint: djohnson@infoblox.com
-          Protocol: email
-
   ReaperFeedsTopic:
     Type: 'AWS::SNS::Topic'
     Condition: IsProd
@@ -297,10 +283,6 @@ Outputs:
   Msisac:
     Condition: IsProd
     Value: !Ref MsisacTopic
-
-  PslS3:
-    Condition: IsProd
-    Value: !Ref PslTopic
 
   ReaperFeeds:
     Condition: IsProd

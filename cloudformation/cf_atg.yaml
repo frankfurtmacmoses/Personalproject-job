@@ -265,7 +265,6 @@ Resources:
             SNS_FEDPHISHS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.FedPhish, !Ref 'AWS::NoValue' ]
             SNS_MAXMINDS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.Maxmind, !Ref 'AWS::NoValue' ]
             SNS_MSISACS3: !If [ IsProd, !GetAtt SnsTopicStack.Outputs.Msisac, !Ref 'AWS::NoValue' ]
-            SNS_PSLS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.PslS3, !Ref 'AWS::NoValue']
             SNS_THREATWAVES3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.ThreatWaveS3, !Ref 'AWS::NoValue']
             SNS_WATCHMENTEST: !If [IsProd, !Ref 'AWS::NoValue', !GetAtt SnsTopicStack.Outputs.WatchmenTest]
             SNS_WHOWASS3: !If [IsProd, !GetAtt SnsTopicStack.Outputs.Whowas, !Ref 'AWS::NoValue']
@@ -429,16 +428,6 @@ Resources:
           - Id: RorschachHourlyScheduler59
             Arn: !GetAtt WatchmenRorschachLambda.Arn
             Input: '{"Type": {"Hourly": "59"}}'
-    RorschachWeeklyScheduledEvent1030:
-      Type: 'AWS::Events::Rule'
-      Properties:
-        Description: A Weekly event that kicks off the Rorschach Watchman at 10:30 AM every Monday
-        ScheduleExpression: cron(30 10 ? * MON *)
-        State: !If [ IsProd, ENABLED, DISABLED ]
-        Targets:
-          - Id: RorschachWeeklyScheduler1030
-            Arn: !GetAtt WatchmenRorschachLambda.Arn
-            Input: '{"Type": {"Weekly": "Mon,10:30"}}'
     RorschachWeeklyScheduledEvent0800:
       Type: 'AWS::Events::Rule'
       Properties:
@@ -545,13 +534,6 @@ Resources:
         Action: 'lambda:InvokeFunction'
         Principal: events.amazonaws.com
         SourceArn: !GetAtt RorschachDailyScheduledEvent1700.Arn
-    InvokeRorschachWeeklyLambdaPermission1030:
-      Type: 'AWS::Lambda::Permission'
-      Properties:
-        FunctionName: !GetAtt WatchmenRorschachLambda.Arn
-        Action: 'lambda:InvokeFunction'
-        Principal: events.amazonaws.com
-        SourceArn: !GetAtt RorschachWeeklyScheduledEvent1030.Arn
     InvokeRorschachWeeklyLambdaPermission0800:
       Type: 'AWS::Lambda::Permission'
       Properties:

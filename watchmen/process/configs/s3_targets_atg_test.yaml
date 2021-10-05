@@ -25,14 +25,6 @@ Daily:
         min_total_files: 350
 
 Weekly:
-  'Mon':
-    '10:30':
-      - target_name: Psl
-        items:
-          - bucket_name: cyber-intel
-            full_path: analytics/enrichment-data/psl_infoblox_custom.dat
-            time_offset: 1
-
   'Tue':
     '08:00':
       - target_name: Maxmind
